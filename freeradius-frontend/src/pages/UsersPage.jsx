@@ -250,7 +250,7 @@ export default function UsersPage() {
                                             <TableCell>{user.username}</TableCell>
                                             <TableCell>{user.organization.name}</TableCell>
                                             <TableCell>
-                                                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                                                <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
                                                     {user.status === 'active' ? 'Active' : 'Disabled'}
                                                 </Badge>
                                             </TableCell>

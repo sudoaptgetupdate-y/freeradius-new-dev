@@ -4,7 +4,9 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  // --- START: แก้ไข/เพิ่มคลาสตรงนี้ ---
+  "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[80px]", // กำหนดความกว้างคงที่และจัดกลาง
+  // --- END ---
   {
     variants: {
       variant: {
@@ -13,8 +15,12 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "text-foreground",
+        // --- START: ปรับปรุงสีให้ดูสบายตาขึ้น ---
+        success: 
+          "border-transparent bg-emerald-500 text-white hover:bg-emerald-500/80",
+        // --- END ---
       },
     },
     defaultVariants: {
@@ -23,11 +29,11 @@ const badgeVariants = cva(
   }
 )
 
-function Badge({
+const Badge = ({
   className,
   variant,
   ...props
-}) {
+}) => {
   return (<div className={cn(badgeVariants({ variant }), className)} {...props} />);
 }
 

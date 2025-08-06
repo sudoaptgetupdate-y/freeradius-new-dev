@@ -15,6 +15,7 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import OrganizationsPage from './pages/OrganizationsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import NasPage from './pages/NasPage.jsx';
+import ProfilesPage from './pages/ProfilesPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
               { path: 'organizations', element: <OrganizationsPage /> },
               { path: 'users', element: <UsersPage /> },
               { path: 'nas', element: <NasPage /> },
+              { path: 'profiles', element: <ProfilesPage /> },
             ]
           }
         ]

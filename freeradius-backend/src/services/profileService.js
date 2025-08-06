@@ -8,9 +8,12 @@ const getAllProfiles = async () => {
 };
 
 const createProfile = async (data) => {
-  const { name, description } = data;
+  const { name, description } = data; // รับค่า description จาก data ที่ส่งมา
   return prisma.RadiusProfile.create({ 
-    data: { name, description } 
+    data: { 
+      name, 
+      description
+    } 
   });
 };
 

@@ -2,7 +2,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, LayoutDashboard, Server, Building, Users } from "lucide-react";
+import { LogOut, LayoutDashboard, Server, Building, Users, Settings } from "lucide-react"; // <-- เพิ่มไอคอน Settings
 
 // Component สำหรับรายการเมนูแต่ละอัน
 const NavItem = ({ to, icon, text }) => (
@@ -11,7 +11,7 @@ const NavItem = ({ to, icon, text }) => (
         className={({ isActive }) =>
             `flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-colors font-medium
             ${isActive
-                ? "bg-blue-100 text-blue-700"
+                ? "bg-primary text-primary-foreground"
                 : "text-slate-600 hover:bg-slate-200 hover:text-slate-900"
             }`
         }
@@ -46,6 +46,7 @@ export default function MainLayout() {
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" />
                     <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" />
                     <NavItem to="/users" icon={<Users size={18} />} text="Users" />
+                    <NavItem to="/profiles" icon={<Settings size={18} />} text="Profiles" /> {/* <-- เพิ่มเมนู Profiles */}
                     <NavItem to="/nas" icon={<Server size={18} />} text="NAS" />
                 </nav>
             </aside>
