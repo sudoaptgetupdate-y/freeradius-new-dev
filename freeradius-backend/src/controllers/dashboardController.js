@@ -10,6 +10,17 @@ const getDashboardStats = async (req, res, next) => {
   }
 };
 
+const getOnlineUsersGraphData = async (req, res, next) => {
+    try {
+        const { period } = req.query;
+        const data = await dashboardService.getOnlineUsersGraph(period);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
   getDashboardStats,
+  getOnlineUsersGraphData,
 };

@@ -1,16 +1,71 @@
 // src/services/dashboardService.js
 const prisma = require('../prisma');
 const { getFreeradiusStatus } = require('./statusService');
+const { startOfHour, subHours, startOfDay, subDays, startOfWeek, subWeeks, startOfMonth, subMonths, format } = require('date-fns');
+
+const getOnlineUsersGraph = async (period = 'day') => {
+    const now = new Date();
+    let timeBuckets = [];
+    let labelFormat;
+
+    switch (period) {
+        case 'day':
+            labelFormat = 'HH:00';
+            for (let i = 23; i >= 0; i--) {
+                const timePoint = startOfHour(subHours(now, i));
+                timeBuckets.push({ start: timePoint, label: format(timePoint, labelFormat) });
+            }
+            break;
+        case 'week':
+            labelFormat = 'EEE';
+            for (let i = 6; i >= 0; i--) {
+                const timePoint = startOfDay(subDays(now, i));
+                timeBuckets.push({ start: timePoint, label: format(timePoint, labelFormat) });
+            }
+            break;
+        case 'month':
+            labelFormat = 'MMM d';
+            for (let i = 3; i >= 0; i--) {
+                const timePoint = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+                timeBuckets.push({ start: timePoint, label: format(timePoint, labelFormat) });
+            }
+            break;
+        case 'year':
+            labelFormat = 'MMM';
+            for (let i = 11; i >= 0; i--) {
+                const timePoint = startOfMonth(subMonths(now, i));
+                timeBuckets.push({ start: timePoint, label: format(timePoint, labelFormat) });
+            }
+            break;
+    }
+
+    const dataPromises = timeBuckets.map(async (bucket, index) => {
+        const nextBucket = timeBuckets[index + 1];
+        const bucketEnd = nextBucket ? nextBucket.start : new Date();
+
+        const count = await prisma.radacct.count({
+            where: {
+                acctstarttime: { lt: bucketEnd },
+                OR: [
+                    { acctstoptime: { gte: bucket.start } },
+                    { acctstoptime: null }
+                ],
+            }
+        });
+
+        return { time: bucket.label, value: count };
+    });
+
+    return Promise.all(dataPromises);
+};
 
 const getDashboardData = async () => {
-    // 1. Summary Cards Data
     const onlineUsersCount = await prisma.radacct.count({ where: { acctstoptime: null } });
     const totalUsersCount = await prisma.user.count();
     const totalOrgsCount = await prisma.organization.count();
     const totalNasCount = await prisma.nas.count();
     const serviceStatus = await getFreeradiusStatus();
 
-    // 2. Recent Logins
     const recentLogins = await prisma.radacct.findMany({
         where: { acctstarttime: { not: null } },
         orderBy: { acctstarttime: 'desc' },
@@ -22,7 +77,6 @@ const getDashboardData = async () => {
         }
     });
     
-    // Enrich recent logins with full_name
     const usernames = recentLogins.map(l => l.username);
     const usersData = await prisma.user.findMany({
         where: { username: { in: usernames } },
@@ -35,7 +89,6 @@ const getDashboardData = async () => {
     }));
 
 
-    // 3. Top 5 Users by Data Usage (Today)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -48,7 +101,7 @@ const getDashboardData = async () => {
         },
         orderBy: {
             _sum: {
-                acctinputoctets: 'desc', // Just an example, we'll sum them up below
+                acctinputoctets: 'desc',
             },
         },
     });
@@ -87,4 +140,5 @@ const getDashboardData = async () => {
 
 module.exports = {
   getDashboardData,
+  getOnlineUsersGraph,
 };

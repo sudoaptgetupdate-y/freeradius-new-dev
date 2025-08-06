@@ -115,7 +115,7 @@ export default function MainLayout() {
                         "text-lg font-bold text-slate-800 whitespace-nowrap transition-opacity",
                         (isSidebarCollapsed && !isMobileMenuOpen) && "opacity-0 hidden"
                     )}>
-                        Freeradius UI
+                        RADIUS-NTNAKHON
                     </h1>
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">

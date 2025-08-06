@@ -8,10 +8,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Users, Building, Server, Wifi, ArrowRight, UserCheck, BarChart2 } from 'lucide-react';
+import { Users, Building, Server, Wifi, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle } from 'lucide-react'; // 1. Import icons ใหม่
 import { format } from 'date-fns';
+import OnlineUsersChartCard from '@/components/ui/OnlineUsersChartCard';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
-// --- Helper Function to format bytes ---
+// --- Helper Function (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -28,16 +34,16 @@ const formatBytes = (bytes, decimals = 2) => {
     return `${parseFloat((Number(b) / Number(k ** BigInt(i))).toFixed(dm))} ${sizes[i]}`;
 };
 
-
-// -- Component for the main statistic cards --
-const StatCard = ({ title, value, icon: Icon, onClick }) => (
+const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor }) => (
     <Card 
         className="shadow-sm border-subtle cursor-pointer hover:bg-muted/50 transition-colors"
         onClick={onClick}
     >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            <Icon className="h-5 w-5 text-muted-foreground" />
+            <div className={cn("p-2 rounded-md", iconBgColor)}>
+                <Icon className="h-5 w-5 text-primary-foreground" />
+            </div>
         </CardHeader>
         <CardContent>
             <p className="text-3xl font-bold">{value}</p>
@@ -46,35 +52,44 @@ const StatCard = ({ title, value, icon: Icon, onClick }) => (
     </Card>
 );
 
-// -- Component for Service Status card --
-const StatusCard = ({ status }) => {
+// --- START: แก้ไข StatusCard Component ---
+const StatusCard = ({ status, onRestart, isSuperAdmin }) => {
     const getStatusInfo = () => {
         switch (status) {
             case 'active':
-                return { variant: 'success', text: 'Active' };
+                return { variant: 'success', text: 'Active', Icon: CheckCircle2 };
             case 'inactive':
-                return { variant: 'secondary', text: 'Inactive' };
+                return { variant: 'secondary', text: 'Inactive', Icon: PauseCircle };
             case 'failed':
-                return { variant: 'destructive', text: 'Failed' };
+                return { variant: 'destructive', text: 'Failed', Icon: XCircle };
             default:
-                return { variant: 'secondary', text: 'Unknown' };
+                return { variant: 'secondary', text: 'Unknown', Icon: PauseCircle };
         }
     };
-    const { variant, text } = getStatusInfo();
+    const { variant, text, Icon } = getStatusInfo();
     return (
-        <Card className="shadow-sm border-subtle">
+        <Card className="shadow-sm border-subtle flex flex-col">
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">FreeRADIUS Status</CardTitle>
             </CardHeader>
-            <CardContent>
-                <Badge variant={variant} className="text-lg">{text}</Badge>
+            <CardContent className="flex-grow flex flex-col justify-center items-center">
+                <Badge variant={variant} className="text-sm h-10 px-4">
+                    <Icon className="mr-2 h-4 w-4" />
+                    {text}
+                </Badge>
             </CardContent>
+            {isSuperAdmin && (
+                <CardFooter>
+                    <Button variant="outline" size="sm" className="w-full" onClick={onRestart}>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Restart Service
+                    </Button>
+                </CardFooter>
+            )}
         </Card>
     );
 };
+// --- END: สิ้นสุดการแก้ไข ---
 
-
-// -- Component for displaying recent activity tables --
 const RecentActivityTable = ({ title, description, data, columns, viewAllLink, viewAllText }) => {
     const navigate = useNavigate();
     return (
@@ -130,23 +145,50 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuthStore();
     const navigate = useNavigate();
+    const isSuperAdmin = user?.role === 'superadmin';
+    const [isRestarting, setIsRestarting] = useState(false);
+    const [isRestartDialogOpen, setIsRestartDialogOpen] = useState(false);
+
+    const fetchStats = async () => {
+        if (!token) return;
+        setLoading(true);
+        try {
+            const response = await axiosInstance.get('/dashboard', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setStats(response.data.data);
+        } catch (error) {
+            toast.error("Failed to load dashboard data.");
+        } finally {
+            setLoading(false);
+        }
+    };
     
     useEffect(() => {
-        const fetchStats = async () => {
-            if (!token) return;
-            try {
-                const response = await axiosInstance.get('/dashboard', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setStats(response.data.data);
-            } catch (error) {
-                toast.error("Failed to load dashboard data.");
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchStats();
     }, [token]);
+
+    const handleRestartService = async () => {
+        setIsRestarting(true);
+        try {
+            await axiosInstance.post('/status/restart', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.info("Restart command sent.", {
+                description: "It may take a moment for the service to restart. Refreshing data in 5 seconds...",
+            });
+            setTimeout(() => {
+                fetchStats();
+            }, 5000);
+        } catch (error) {
+            toast.error("Failed to restart service.", {
+                description: error.response?.data?.message || "Please check server logs.",
+            });
+        } finally {
+            setIsRestarting(false);
+            setIsRestartDialogOpen(false);
+        }
+    };
 
     if (loading) {
         return <p>Loading dashboard...</p>;
@@ -168,62 +210,95 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.fullName?.split(' ')[0] || user?.username}!</h1>
-                <p className="text-muted-foreground">Here's a summary of your FreeRADIUS server.</p>
-            </div>
+        <>
+            <div className="space-y-8">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.fullName?.split(' ')[0] || user?.username}!</h1>
+                    <p className="text-muted-foreground">Here's a summary of your FreeRADIUS server.</p>
+                </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-                <StatCard 
-                    title="Online Users"
-                    value={stats.summary.onlineUsers || 0}
-                    icon={Wifi}
-                    onClick={() => navigate('/online-users')}
-                />
-                <StatCard 
-                    title="Total Users"
-                    value={stats.summary.totalUsers || 0}
-                    icon={Users}
-                    onClick={() => navigate('/users')}
-                />
-                <StatCard 
-                    title="Organizations"
-                    value={stats.summary.totalOrgs || 0}
-                    icon={Building}
-                    onClick={() => navigate('/organizations')}
-                />
-                <StatCard 
-                    title="NAS / Clients"
-                    value={stats.summary.totalNas || 0}
-                    icon={Server}
-                    onClick={() => navigate('/nas')}
-                />
-                <StatusCard status={stats.summary.serviceStatus} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="lg:col-span-1">
-                    <RecentActivityTable
-                        title="Recent Logins"
-                        description="The 5 most recent user authentications."
-                        data={stats.recentLogins}
-                        columns={recentLoginsColumns}
-                        viewAllLink="/history"
-                        viewAllText="View all history"
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+                    <StatCard 
+                        title="Online Users"
+                        value={stats.summary.onlineUsers || 0}
+                        icon={Wifi}
+                        onClick={() => navigate('/online-users')}
+                        iconBgColor="bg-blue-500"
+                    />
+                    <StatCard 
+                        title="Total Users"
+                        value={stats.summary.totalUsers || 0}
+                        icon={Users}
+                        onClick={() => navigate('/users')}
+                        iconBgColor="bg-emerald-500"
+                    />
+                    <StatCard 
+                        title="Organizations"
+                        value={stats.summary.totalOrgs || 0}
+                        icon={Building}
+                        onClick={() => navigate('/organizations')}
+                        iconBgColor="bg-orange-500"
+                    />
+                    <StatCard 
+                        title="NAS / Clients"
+                        value={stats.summary.totalNas || 0}
+                        icon={Server}
+                        onClick={() => navigate('/nas')}
+                        iconBgColor="bg-purple-500"
+                    />
+                    <StatusCard 
+                        status={stats.summary.serviceStatus} 
+                        isSuperAdmin={isSuperAdmin}
+                        onRestart={() => setIsRestartDialogOpen(true)} 
                     />
                 </div>
-                <div className="lg:col-span-1">
-                     <RecentActivityTable
-                        title="Top 5 Users (Today)"
-                        description="Users with the highest data usage today."
-                        data={stats.topUsersToday}
-                        columns={topUsersColumns}
-                        viewAllLink="/history"
-                        viewAllText="View all history"
-                    />
+
+                <div className="grid grid-cols-1 gap-6">
+                    <div className="h-[350px]">
+                        <OnlineUsersChartCard />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="lg:col-span-1">
+                        <RecentActivityTable
+                            title="Recent Logins"
+                            description="The 5 most recent user authentications."
+                            data={stats.recentLogins}
+                            columns={recentLoginsColumns}
+                            viewAllLink="/history"
+                            viewAllText="View all history"
+                        />
+                    </div>
+                    <div className="lg:col-span-1">
+                         <RecentActivityTable
+                            title="Top 5 Users (Today)"
+                            description="Users with the highest data usage today."
+                            data={stats.topUsersToday}
+                            columns={topUsersColumns}
+                            viewAllLink="/history"
+                            viewAllText="View all history"
+                        />
+                    </div>
                 </div>
             </div>
-        </div>
+            
+            <AlertDialog open={isRestartDialogOpen} onOpenChange={setIsRestartDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will restart the FreeRADIUS service. All active user sessions may be disconnected.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRestartService} disabled={isRestarting}>
+                            {isRestarting ? 'Restarting...' : 'Confirm Restart'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

@@ -7,6 +7,7 @@ async function main() {
   const ADMIN_USERNAME = "admin";
   const ADMIN_PASSWORD = "admin";
   const DEFAULT_PROFILE_NAME = "default-profile";
+  const REGISTER_ORG_NAME = "Register"; // 1. เพิ่มชื่อองค์กรใหม่
 
   console.log('Start seeding ...');
 
@@ -35,27 +36,39 @@ async function main() {
   // --- 2. Seed Default Radius Profile ---
   console.log(`Seeding profile: ${DEFAULT_PROFILE_NAME}`);
   
-  // ใช้ .upsert เพื่อสร้างถ้ายังไม่มี หรืออัปเดตถ้ามีอยู่แล้ว (ทำให้รันซ้ำได้)
-  await prisma.RadiusProfile.upsert({
+  const defaultProfile = await prisma.RadiusProfile.upsert({ // 2. เก็บผลลัพธ์ไว้ในตัวแปร
     where: { name: DEFAULT_PROFILE_NAME },
-    update: {}, // ไม่ต้องอัปเดตอะไรถ้าเจอ
+    update: {},
     create: {
       name: DEFAULT_PROFILE_NAME,
       description: 'Default profile with basic access rules',
-      // สร้าง Attributes ที่ผูกกันไปพร้อมกันเลย
       replyAttributes: {
         create: [
-          { groupname: DEFAULT_PROFILE_NAME, attribute: 'Session-Timeout', op: ':=', value: '28800' }, // 8 hours
+          { groupname: DEFAULT_PROFILE_NAME, attribute: 'Session-Timeout', op: ':=', value: '28800' },
         ]
       },
       checkAttributes: {
         create: [
-          { groupname: DEFAULT_PROFILE_NAME, attribute: 'Simultaneous-Use', op: ':=', value: '1' }, // 1 concurrent session
+          { groupname: DEFAULT_PROFILE_NAME, attribute: 'Simultaneous-Use', op: ':=', value: '1' },
         ]
       }
     }
   });
   console.log(`Profile '${DEFAULT_PROFILE_NAME}' is ready.`);
+
+  // --- START: 3. Seed Register Organization ---
+  console.log(`Seeding organization: ${REGISTER_ORG_NAME}`);
+  await prisma.organization.upsert({
+      where: { name: REGISTER_ORG_NAME },
+      update: {},
+      create: {
+          name: REGISTER_ORG_NAME,
+          login_identifier_type: 'manual',
+          radiusProfileId: defaultProfile.id, // 3. ใช้ ID จาก Profile ที่สร้างไว้
+      },
+  });
+  console.log(`Organization '${REGISTER_ORG_NAME}' is ready.`);
+  // --- END: สิ้นสุดส่วนที่เพิ่ม ---
   
   console.log('Seeding finished.');
 }
