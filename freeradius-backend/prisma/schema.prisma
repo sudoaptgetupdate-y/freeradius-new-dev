@@ -82,6 +82,7 @@ model radcheck {
   value     String @default("") @db.VarChar(253)
 
   @@index([username(length: 32)], map: "username")
+  @@unique([username, attribute])
 }
 
 model RadGroupCheck {

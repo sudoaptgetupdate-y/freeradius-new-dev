@@ -98,6 +98,20 @@ const deleteMultipleUsers = async (req, res, next) => {
   }
 };
 
+const toggleUserStatus = async (req, res, next) => {
+  try {
+    const { username } = req.params;
+    const result = await userService.toggleUserStatusByUsername(username);
+    res.status(200).json({
+      success: true,
+      message: `User '${username}' status updated to ${result.newStatus}.`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 module.exports = {
   createUser,
@@ -107,4 +121,5 @@ module.exports = {
   updateUser,
   moveUsersToOrganization,
   deleteMultipleUsers,
+  toggleUserStatus,
 };

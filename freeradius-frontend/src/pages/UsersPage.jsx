@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PlusCircle, Edit, Trash2, Move } from "lucide-react";
+import { Users, PlusCircle, Edit, Trash2, Move, Ban, CheckCircle } from "lucide-react";
 import UserFormDialog from "@/components/dialogs/UserFormDialog";
 import UserMoveDialog from "@/components/dialogs/UserMoveDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -43,6 +44,7 @@ export default function UsersPage() {
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+    const [userToToggle, setUserToToggle] = useState(null);
 
     const isBulkActionsEnabled = !!orgFilter;
 
@@ -98,6 +100,21 @@ export default function UsersPage() {
             toast.error(error.response?.data?.message || "Failed to delete users.");
         } finally {
             setIsBulkDeleteDialogOpen(false);
+        }
+    };
+
+    const confirmToggleStatus = async () => {
+        if (!userToToggle) return;
+        try {
+            await axiosInstance.put(`/users/${userToToggle.username}/status`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(`User '${userToToggle.username}' status has been updated.`);
+            refreshData();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to update user status.");
+        } finally {
+            setUserToToggle(null);
         }
     };
 
@@ -209,13 +226,14 @@ export default function UsersPage() {
                                     <TableHead>Full Name</TableHead>
                                     <TableHead>Username</TableHead>
                                     <TableHead>Organization</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     [...Array(10)].map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 5 : 4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                     ))
                                 ) : users.length > 0 ? (
                                     users.map((user) => (
@@ -231,19 +249,31 @@ export default function UsersPage() {
                                             <TableCell className="font-medium">{user.full_name}</TableCell>
                                             <TableCell>{user.username}</TableCell>
                                             <TableCell>{user.organization.name}</TableCell>
-                                            <TableCell className="text-center space-x-2">
+                                            <TableCell>
+                                                <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
+                                                    {user.status === 'active' ? 'Active' : 'Disabled'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center space-x-1">
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => setUserToToggle(user)}
+                                                >
+                                                  {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                </Button>
                                                 <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                                                    <Edit className="h-4 w-4 mr-2" /> Edit
+                                                    <Edit className="h-4 w-4" />
                                                 </Button>
                                                 <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                    <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={isBulkActionsEnabled ? 5 : 4} className="h-24 text-center">No users found.</TableCell>
+                                        <TableCell colSpan={isBulkActionsEnabled ? 6 : 5} className="h-24 text-center">No users found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -304,6 +334,21 @@ export default function UsersPage() {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={!!userToToggle} onOpenChange={(isOpen) => !isOpen && setUserToToggle(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to {userToToggle?.status === 'active' ? 'disable' : 'enable'} the user: <strong>{userToToggle?.username}</strong>?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmToggleStatus}>Confirm</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

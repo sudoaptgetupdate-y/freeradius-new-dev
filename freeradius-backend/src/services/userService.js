@@ -118,6 +118,7 @@ const getAllUsers = async (filters) => {
         id: true,
         username: true,
         full_name: true,
+        status: true,
         organizationId: true,
         national_id: true,
         employee_id: true,
@@ -352,6 +353,56 @@ const deleteUsersByUsernames = async (usernames) => {
   });
 };
 
+const toggleUserStatusByUsername = async (username) => {
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({
+      where: { username },
+    });
+
+    if (!user) {
+      throw new Error(`User with username '${username}' not found.`);
+    }
+
+    const newStatus = user.status === 'active' ? 'disabled' : 'active';
+
+    // อัปเดตสถานะในตาราง User
+    await tx.user.update({
+      where: { username },
+      data: { status: newStatus },
+    });
+
+    if (newStatus === 'disabled') {
+      // ถ้า disable: เพิ่ม Attribute เพื่อบังคับ Reject การ Login
+      // ใช้ updateMany เผื่อกรณีมี Auth-Type อยู่แล้ว
+      await tx.radcheck.upsert({
+        where: {
+          username_attribute: { // Prisma จะสร้าง unique constraint นี้ให้ถ้ายังไม่มี
+             username: username,
+             attribute: 'Auth-Type'
+          }
+        },
+        update: { value: 'Reject' },
+        create: {
+          username: username,
+          attribute: 'Auth-Type',
+          op: ':=',
+          value: 'Reject',
+        },
+      });
+    } else {
+      // ถ้า active: ลบ Attribute 'Auth-Type' := 'Reject' ออก
+      await tx.radcheck.deleteMany({
+        where: {
+          username: username,
+          attribute: 'Auth-Type',
+        },
+      });
+    }
+
+    return { newStatus };
+  });
+};
+
 
 module.exports = {
   createUserAndSync,
@@ -361,4 +412,5 @@ module.exports = {
   getUserByUsername,
   moveUsersToNewOrganization,
   deleteUsersByUsernames,
+  toggleUserStatusByUsername,
 };

@@ -8,7 +8,8 @@ const {
   updateUser, 
   getUser,
   moveUsersToOrganization,
-  deleteMultipleUsers
+  deleteMultipleUsers,
+  toggleUserStatus
 } = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
@@ -23,6 +24,7 @@ router.post('/', createUser);
 router.get('/', getUsers);
 router.post('/bulk-move', moveUsersToOrganization);
 router.post('/bulk-delete', deleteMultipleUsers);
+router.put('/:username/status', toggleUserStatus);
 router.get('/:username', getUser);
 router.delete('/:username', deleteUser);
 router.put('/:username', updateUser);
