@@ -159,11 +159,11 @@ export default function UsersPage() {
 
     return (
         <>
-            {/* --- START: แก้ไขส่วนนี้ --- */}
             <div className="h-full">
                 <Card className="h-full flex flex-col">
                     <CardHeader className="flex-shrink-0">
-                        <div className="flex justify-between items-center">
+                        {/* START: แก้ไขส่วนนี้ */}
+                        <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                             <div>
                                 <CardTitle className="flex items-center gap-2">
                                     <Users className="h-6 w-6" />
@@ -171,7 +171,7 @@ export default function UsersPage() {
                                 </CardTitle>
                                 <CardDescription>Manage all users in the system.</CardDescription>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
                                 {selectedUsers.length > 0 && isBulkActionsEnabled && (
                                     <>
                                         <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
@@ -189,8 +189,9 @@ export default function UsersPage() {
                                 </Button>
                             </div>
                         </div>
+                        {/* END: สิ้นสุดส่วนที่แก้ไข */}
                     </CardHeader>
-                    <CardContent className="flex-grow flex flex-col overflow-hidden">
+                    <CardContent className="flex-grow flex flex-col min-h-0">
                         <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
                             <Input
                                 placeholder="Search by username or full name..."
@@ -262,23 +263,25 @@ export default function UsersPage() {
                                                         {user.status === 'active' ? 'Active' : 'Disabled'}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="text-center space-x-1">
-                                                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() => setUserToToggle(user)}
-                                                    >
-                                                      {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                                    </Button>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center justify-center flex-wrap gap-1">
+                                                        <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                          variant="outline"
+                                                          size="sm"
+                                                          onClick={() => setUserToToggle(user)}
+                                                        >
+                                                          {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                        </Button>
+                                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -315,7 +318,6 @@ export default function UsersPage() {
                     </CardFooter>
                 </Card>
             </div>
-            {/* --- END: สิ้นสุดส่วนที่แก้ไข --- */}
 
             {isDialogOpen && (
                 <UserFormDialog
