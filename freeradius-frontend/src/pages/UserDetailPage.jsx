@@ -7,13 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label'; // <-- เพิ่มบรรทัดนี้
-import { ArrowLeft, Edit, Trash2, Ban, CheckCircle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaginatedFetch } from '@/hooks/usePaginatedFetch';
-import { format, formatDistanceStrict } from 'date-fns';
+import { formatDistanceStrict } from 'date-fns';
+import UserFormDialog from '@/components/dialogs/UserFormDialog';
 
-// --- Helper Functions ---
+// --- Helper Functions (ไม่มีการเปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -37,7 +39,7 @@ const calculateDuration = (startTime, stopTime) => {
 };
 
 
-// --- User Detail Component ---
+// --- UserInfoCard Component (ไม่มีการเปลี่ยนแปลง) ---
 const UserInfoCard = ({ user, onEdit }) => {
     if (!user) return null;
     return (
@@ -70,25 +72,42 @@ const UserInfoCard = ({ user, onEdit }) => {
     );
 };
 
-// --- History Table Component ---
+// --- START: แก้ไข UserHistoryTable Component ---
 const UserHistoryTable = ({ username }) => {
+     const [filters, setFilters] = useState({
+        startDate: "",
+        endDate: "",
+     });
+
      const { 
         data: history, 
         pagination, 
         isLoading, 
         handlePageChange,
-        handleItemsPerPageChange,
-    } = usePaginatedFetch("/history", 10, { searchTerm: username });
+    } = usePaginatedFetch("/history", 10, { 
+        searchTerm: username,
+        ...filters 
+    });
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
 
     return (
-        <Card>
+        <Card className="flex flex-col h-full">
             <CardHeader>
                 <CardTitle>Connection History</CardTitle>
+                <CardDescription>Reviewing past sessions for this user.</CardDescription>
             </CardHeader>
-            <CardContent>
-                 <div className="border rounded-md">
+            <CardContent className="flex-grow flex flex-col">
+                 <div className="flex gap-4 mb-4">
+                    <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
+                    <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
+                </div>
+                 {/* --- START: เพิ่ม div ครอบตารางเพื่อทำ Scroll --- */}
+                 <div className="border rounded-md relative flex-grow overflow-y-auto">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
                            <TableRow>
                                 <TableHead>Login Time</TableHead>
                                 <TableHead>Logout Time</TableHead>
@@ -128,21 +147,33 @@ const UserHistoryTable = ({ username }) => {
                         </TableBody>
                     </Table>
                 </div>
+                {/* --- END --- */}
             </CardContent>
-            {/* Pagination for history table can be added here if needed */}
+            <CardFooter className="flex-shrink-0 flex items-center justify-end gap-2 pt-4">
+                 <div className="text-sm text-muted-foreground mr-auto">
+                    Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
+                </div>
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
+                    Previous
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
+                    Next
+                </Button>
+            </CardFooter>
         </Card>
     )
 }
-
+// --- END ---
 
 export default function UserDetailPage() {
+    // ... (ส่วนนี้ไม่มีการเปลี่ยนแปลง)
     const { username } = useParams();
     const token = useAuthStore((state) => state.token);
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const fetchUser = async () => {
-        setIsLoading(true);
         try {
             const response = await axiosInstance.get(`/users/${username}`, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -156,15 +187,16 @@ export default function UserDetailPage() {
     };
 
     useEffect(() => {
+        setIsLoading(true);
         fetchUser();
     }, [username, token]);
 
     if (isLoading) {
-        return <div>Loading user details...</div>
+        return <div className="p-4">Loading user details...</div>
     }
 
     if (!user) {
-        return <div>User not found.</div>
+        return <div className="p-4">User not found.</div>
     }
 
     return (
@@ -176,12 +208,21 @@ export default function UserDetailPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
-                    <UserInfoCard user={user} onEdit={() => alert("Edit dialog will open here")} />
+                    <UserInfoCard user={user} onEdit={() => setIsEditDialogOpen(true)} />
                 </div>
                 <div className="lg:col-span-2">
                     <UserHistoryTable username={user.username} />
                 </div>
             </div>
+
+            {isEditDialogOpen && (
+                <UserFormDialog
+                    isOpen={isEditDialogOpen}
+                    setIsOpen={setIsEditDialogOpen}
+                    user={user}
+                    onSave={fetchUser}
+                />
+            )}
         </div>
     );
 }
