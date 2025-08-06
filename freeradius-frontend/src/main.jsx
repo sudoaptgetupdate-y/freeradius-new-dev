@@ -20,7 +20,8 @@ import ProfilesPage from './pages/ProfilesPage.jsx';
 import OnlineUsersPage from './pages/OnlineUsersPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
-import AdminProfilePage from './pages/AdminProfilePage.jsx'; // 1. แก้ไข Import
+import AdminProfilePage from './pages/AdminProfilePage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { path: 'login', element: <LoginPage /> },
+      { path: 'register', element: <RegisterPage /> },
       {
         element: <ProtectedRoute />,
         children: [

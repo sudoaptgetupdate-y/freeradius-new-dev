@@ -15,6 +15,7 @@ const statusRoutes = require('./routes/statusRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const onlineUserRoutes = require('./routes/onlineUserRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const registerRoutes = require('./routes/registerRoutes');
 
 const app = express();
 // ... middlewares ...
@@ -26,6 +27,8 @@ app.use(morgan('dev'));
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is healthy' });
 });
+
+app.use('/api/register', registerRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/nas', nasRoutes);

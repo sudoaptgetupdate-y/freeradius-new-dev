@@ -1,17 +1,18 @@
 // src/pages/LoginPage.jsx
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom'; // 1. เพิ่ม Link
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'; // 2. เพิ่ม CardFooter
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
+import { Separator } from '@/components/ui/separator'; // 3. เพิ่ม Separator
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const { login, token } = useAuthStore();
+    const { login, token, user } = useAuthStore();
     const [username, setUsername] = useState('admin');
     const [password, setPassword] = useState('admin');
     const [isLoading, setIsLoading] = useState(false);
@@ -21,17 +22,10 @@ export default function LoginPage() {
         setIsLoading(true);
         try {
             const response = await axiosInstance.post('/auth/login', { username, password });
-            
-            // --- START: แก้ไขส่วนนี้ ---
-            const { token, user } = response.data; // รับ token และ user object
-            
-            login(token, user); // ส่งข้อมูล user ทั้งหมดไปเก็บใน store
-            
-            toast.success(`Welcome, ${user.fullName || user.username}!`); // แสดง fullName ถ้ามี
-            // --- END: สิ้นสุดส่วนที่แก้ไข ---
-
+            const { token, user: userData } = response.data;
+            login(token, userData);
+            toast.success(`Welcome, ${userData.fullName || userData.username}!`);
             navigate('/dashboard');
-
         } catch (error) {
             toast.error("Login Failed", {
               description: error.response?.data?.message || "Please check your credentials.",
@@ -67,6 +61,17 @@ export default function LoginPage() {
                         </Button>
                     </form>
                 </CardContent>
+                {/* --- START: เพิ่มส่วนนี้ --- */}
+                <CardFooter className="flex-col items-center gap-4">
+                    <Separator />
+                    <p className="text-sm text-muted-foreground">
+                        Don't have an account?{' '}
+                        <Link to="/register" className="underline underline-offset-4 hover:text-primary">
+                            Register here
+                        </Link>
+                    </p>
+                </CardFooter>
+                {/* --- END: สิ้นสุดส่วนที่เพิ่ม --- */}
             </Card>
         </div>
     );
