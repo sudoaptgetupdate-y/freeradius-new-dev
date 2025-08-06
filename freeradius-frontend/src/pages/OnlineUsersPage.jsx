@@ -74,18 +74,15 @@ export default function OnlineUsersPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData 
-    } = usePaginatedFetch("/online-users", 15, {
+    } = usePaginatedFetch("/online-users", 5, { // <--- 1. เปลี่ยนค่า Default เป็น 5
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
         organizationId: orgFilter,
     });
 
     const [userToKick, setUserToKick] = useState(null);
-    const [now, setNow] = useState(new Date());
 
     useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 30000);
-        
         const fetchOrgs = async () => {
             try {
                 const response = await axiosInstance.get('/organizations', {
@@ -98,8 +95,6 @@ export default function OnlineUsersPage() {
         };
 
         fetchOrgs();
-
-        return () => clearInterval(timer);
     }, [token]);
 
     const handleOrgFilterChange = (value) => {
@@ -129,10 +124,9 @@ export default function OnlineUsersPage() {
     };
 
     return (
-        // --- START: แก้ไขส่วนนี้ ---
-        <div className="h-full">
-            <Card className="h-full flex flex-col">
-                <CardHeader className="flex-shrink-0">
+        <>
+            <Card>
+                <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle className="flex items-center gap-2"><Wifi className="h-6 w-6" />Online Users</CardTitle>
@@ -141,8 +135,8 @@ export default function OnlineUsersPage() {
                         <Button onClick={refreshData} variant="outline">Refresh</Button>
                     </div>
                 </CardHeader>
-                <CardContent className="flex-grow flex flex-col overflow-hidden">
-                    <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
+                <CardContent>
+                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Input
                             placeholder="Search by username, IP, or MAC..."
                             value={searchTerm}
@@ -163,9 +157,9 @@ export default function OnlineUsersPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="border rounded-md flex-grow overflow-y-auto relative">
+                    <div className="border rounded-md">
                         <Table>
-                            <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
+                            <TableHeader>
                                 <TableRow>
                                     <TableHead>Username</TableHead>
                                     <TableHead>Client IP</TableHead>
@@ -180,7 +174,7 @@ export default function OnlineUsersPage() {
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
-                                    [...Array(5)].map((_, i) => (
+                                    [...Array(pagination.itemsPerPage)].map((_, i) => (
                                         <TableRow key={i}><TableCell colSpan={9}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                     ))
                                 ) : onlineUsers.length > 0 ? (
@@ -216,13 +210,14 @@ export default function OnlineUsersPage() {
                         </Table>
                     </div>
                 </CardContent>
-                <CardFooter className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Label htmlFor="rows-per-page">Rows per page:</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {[15, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                                {/* --- 2. เปลี่ยนตัวเลือก --- */}
+                                {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -254,7 +249,6 @@ export default function OnlineUsersPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
-        // --- END: สิ้นสุดส่วนที่แก้ไข ---
+        </>
     );
 }

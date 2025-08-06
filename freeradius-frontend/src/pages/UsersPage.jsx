@@ -39,7 +39,7 @@ export default function UsersPage() {
         refreshData
     } = usePaginatedFetch(
         "/users",
-        10,
+        5, // <--- 1. เปลี่ยนค่า Default เป็น 5
         { organizationId: orgFilter }
     );
 
@@ -159,148 +159,147 @@ export default function UsersPage() {
 
     return (
         <>
-            <div className="h-full">
-                <Card className="h-full flex flex-col">
-                    <CardHeader className="flex-shrink-0">
-                        {/* START: แก้ไขส่วนนี้ */}
-                        <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users className="h-6 w-6" />
-                                    Users
-                                </CardTitle>
-                                <CardDescription>Manage all users in the system.</CardDescription>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-                                {selectedUsers.length > 0 && isBulkActionsEnabled && (
-                                    <>
-                                        <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
-                                            <Move className="mr-2 h-4 w-4" />
-                                            Move ({selectedUsers.length})
-                                        </Button>
-                                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)}>
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete ({selectedUsers.length})
-                                        </Button>
-                                    </>
-                                )}
-                                <Button onClick={handleAddNew}>
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add New
-                                </Button>
-                            </div>
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users className="h-6 w-6" />
+                                Users
+                            </CardTitle>
+                            <CardDescription>Manage all users in the system.</CardDescription>
                         </div>
-                        {/* END: สิ้นสุดส่วนที่แก้ไข */}
-                    </CardHeader>
-                    <CardContent className="flex-grow flex flex-col min-h-0">
-                        <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
-                            <Input
-                                placeholder="Search by username or full name..."
-                                value={searchTerm}
-                                onChange={(e) => handleSearchChange(e.target.value)}
-                                className="flex-grow"
-                            />
-                            <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
-                                <SelectTrigger className="w-full sm:w-[250px]">
-                                    <SelectValue placeholder="Filter by organization..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Organizations</SelectItem>
-                                    {organizations.map((org) => (
-                                        <SelectItem key={org.id} value={String(org.id)}>
-                                            {org.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+                            {selectedUsers.length > 0 && isBulkActionsEnabled && (
+                                <>
+                                    <Button variant="outline" size="sm" onClick={() => setIsMoveDialogOpen(true)}>
+                                        <Move className="mr-2 h-4 w-4" />
+                                        Move ({selectedUsers.length})
+                                    </Button>
+                                    <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteDialogOpen(true)}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete ({selectedUsers.length})
+                                    </Button>
+                                </>
+                            )}
+                            <Button size="sm" onClick={handleAddNew}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                            </Button>
                         </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
+                        <Input
+                            placeholder="Search by username or full name..."
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="flex-grow"
+                        />
+                        <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
+                            <SelectTrigger className="w-full sm:w-[250px]">
+                                <SelectValue placeholder="Filter by organization..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Organizations</SelectItem>
+                                {organizations.map((org) => (
+                                    <SelectItem key={org.id} value={String(org.id)}>
+                                        {org.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                        {!isBulkActionsEnabled && (
-                            <p className="flex-shrink-0 text-sm text-muted-foreground mb-4">
-                                Please select an organization from the filter to enable bulk actions.
-                            </p>
-                        )}
+                    {!isBulkActionsEnabled && (
+                        <p className="flex-shrink-0 text-sm text-muted-foreground mb-4">
+                            Please select an organization from the filter to enable bulk actions.
+                        </p>
+                    )}
 
-                        <div className="border rounded-md flex-grow overflow-y-auto relative">
-                            <Table>
-                                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
-                                    <TableRow>
-                                        {isBulkActionsEnabled && (
-                                            <TableHead className="w-[50px]">
-                                                <Checkbox
-                                                    checked={users.length > 0 && selectedUsers.length === users.length}
-                                                    onCheckedChange={handleSelectAll}
-                                                />
-                                            </TableHead>
-                                        )}
-                                        <TableHead>Full Name</TableHead>
-                                        <TableHead>Username</TableHead>
-                                        <TableHead>Organization</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        Array.from({ length: 10 }).map((_, i) => (
-                                            <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
-                                        ))
-                                    ) : users.length > 0 ? (
-                                        users.map((user) => (
-                                            <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
-                                                {isBulkActionsEnabled && (
-                                                    <TableCell>
-                                                        <Checkbox
-                                                            checked={selectedUsers.some(u => u.id === user.id)}
-                                                            onCheckedChange={(checked) => handleSelectSingle(checked, user)}
-                                                        />
-                                                    </TableCell>
-                                                )}
-                                                <TableCell className="font-medium">{user.full_name}</TableCell>
-                                                <TableCell>{user.username}</TableCell>
-                                                <TableCell>{user.organization.name}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
-                                                        {user.status === 'active' ? 'Active' : 'Disabled'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    <div className="inline-flex items-center justify-center flex-wrap gap-1">
-                                                        <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                          variant="outline"
-                                                          size="sm"
-                                                          onClick={() => setUserToToggle(user)}
-                                                        >
-                                                          {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                                        </Button>
-                                                        <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={isBulkActionsEnabled ? 6 : 5} className="h-24 text-center">No users found.</TableCell>
-                                        </TableRow>
+                    <div className="border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    {isBulkActionsEnabled && (
+                                        <TableHead className="w-[50px]">
+                                            <Checkbox
+                                                checked={users.length > 0 && selectedUsers.length === users.length}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
                                     )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                                    <TableHead>Full Name</TableHead>
+                                    <TableHead>Username</TableHead>
+                                    <TableHead>Organization</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-center">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    Array.from({ length: pagination.itemsPerPage }).map((_, i) => (
+                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                    ))
+                                ) : users.length > 0 ? (
+                                    users.map((user) => (
+                                        <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
+                                            {isBulkActionsEnabled && (
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedUsers.some(u => u.id === user.id)}
+                                                        onCheckedChange={(checked) => handleSelectSingle(checked, user)}
+                                                    />
+                                                </TableCell>
+                                            )}
+                                            <TableCell className="font-medium">{user.full_name}</TableCell>
+                                            <TableCell>{user.username}</TableCell>
+                                            <TableCell>{user.organization.name}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
+                                                    {user.status === 'active' ? 'Active' : 'Disabled'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="inline-flex items-center justify-center flex-wrap gap-1">
+                                                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                      variant="outline"
+                                                      size="sm"
+                                                      onClick={() => setUserToToggle(user)}
+                                                    >
+                                                      {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                    </Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={isBulkActionsEnabled ? 6 : 5} className="h-24 text-center">No users found.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 w-full">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Label htmlFor="rows-per-page">Rows per page:</Label>
                             <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                                 <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                                    {/* --- 2. เปลี่ยนตัวเลือก --- */}
+                                    {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -315,72 +314,28 @@ export default function UsersPage() {
                                 Next
                             </Button>
                         </div>
-                    </CardFooter>
-                </Card>
-            </div>
+                    </div>
+                </CardFooter>
+            </Card>
 
-            {isDialogOpen && (
-                <UserFormDialog
-                    isOpen={isDialogOpen}
-                    setIsOpen={setIsDialogOpen}
-                    user={editingUser}
-                    onSave={refreshData}
-                />
-            )}
-
-            {isMoveDialogOpen && (
-                <UserMoveDialog
-                    isOpen={isMoveDialogOpen}
-                    setIsOpen={setIsMoveDialogOpen}
-                    selectedUsers={selectedUsers}
-                    onMoveSuccess={onActionSuccess}
-                />
-            )}
-
+            {isDialogOpen && ( <UserFormDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} user={editingUser} onSave={refreshData} /> )}
+            {isMoveDialogOpen && ( <UserMoveDialog isOpen={isMoveDialogOpen} setIsOpen={setIsMoveDialogOpen} selectedUsers={selectedUsers} onMoveSuccess={onActionSuccess} /> )}
             <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the selected <strong>{selectedUsers.length} user(s)</strong>.
-                            This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
-                    </AlertDialogFooter>
+                    <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the selected <strong>{selectedUsers.length} user(s)</strong>. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
             <AlertDialog open={!!userToToggle} onOpenChange={(isOpen) => !isOpen && setUserToToggle(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to {userToToggle?.status === 'active' ? 'disable' : 'enable'} the user: <strong>{userToToggle?.username}</strong>?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmToggleStatus}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
+                    <AlertDialogHeader><AlertDialogTitle>Confirm Status Change</AlertDialogTitle><AlertDialogDescription>Are you sure you want to {userToToggle?.status === 'active' ? 'disable' : 'enable'} the user: <strong>{userToToggle?.username}</strong>?</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmToggleStatus}>Confirm</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
             <AlertDialog open={!!userToDelete} onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will permanently delete the user: <strong>{userToDelete?.username}</strong>.
-                            This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete}>Confirm</AlertDialogAction>
-                    </AlertDialogFooter>
+                    <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the user: <strong>{userToDelete?.username}</strong>. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmDelete}>Confirm</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>

@@ -84,7 +84,7 @@ const UserHistoryTable = ({ username }) => {
         isLoading, 
         handlePageChange,
         handleItemsPerPageChange,
-    } = usePaginatedFetch("/history", 10, { 
+    } = usePaginatedFetch("/history", 5, { // <--- 1. เปลี่ยนค่า Default เป็น 5
         searchTerm: username,
         ...filters 
     });
@@ -94,19 +94,19 @@ const UserHistoryTable = ({ username }) => {
     };
 
     return (
-        <Card className="flex flex-col h-full">
-            <CardHeader className="flex-shrink-0">
+        <Card>
+            <CardHeader>
                 <CardTitle>Connection History</CardTitle>
                 <CardDescription>Reviewing past sessions for this user.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col overflow-hidden">
-                 <div className="flex-shrink-0 flex gap-4 mb-4">
+            <CardContent>
+                 <div className="flex gap-4 mb-4">
                     <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
                     <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
                 </div>
-                 <div className="border rounded-md relative flex-grow overflow-y-auto">
+                 <div className="border rounded-md">
                     <Table>
-                        <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
+                        <TableHeader>
                            <TableRow>
                                 <TableHead>Login Time</TableHead>
                                 <TableHead>Logout Time</TableHead>
@@ -119,7 +119,7 @@ const UserHistoryTable = ({ username }) => {
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
-                                [...Array(5)].map((_, i) => (
+                                [...Array(pagination.itemsPerPage)].map((_, i) => (
                                     <TableRow key={i}><TableCell colSpan={7}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                 ))
                             ) : history.length > 0 ? (
@@ -153,7 +153,8 @@ const UserHistoryTable = ({ username }) => {
                     <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                            {/* --- 2. เปลี่ยนตัวเลือก --- */}
+                            {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -207,25 +208,22 @@ export default function UserDetailPage() {
     }
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
-            <div className="flex-shrink-0">
+        <div className="space-y-6">
+            <div>
                 <Link to="/users" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
                     <ArrowLeft className="h-4 w-4" />
                     Back to All Users
                 </Link>
             </div>
             
-            {/* START: แก้ไขส่วนนี้ */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
                     <UserInfoCard user={user} onEdit={() => setIsEditDialogOpen(true)} />
                 </div>
-                {/* 1. เพิ่ม min-h-0 ให้กับ div ที่ครอบ UserHistoryTable */}
-                <div className="lg:col-span-2 min-h-0">
+                <div className="lg:col-span-2">
                     <UserHistoryTable username={user.username} />
                 </div>
             </div>
-            {/* END: สิ้นสุดส่วนที่แก้ไข */}
 
             {isEditDialogOpen && (
                 <UserFormDialog

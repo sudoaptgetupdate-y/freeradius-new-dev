@@ -21,13 +21,15 @@ export default function LoginPage() {
         setIsLoading(true);
         try {
             const response = await axiosInstance.post('/auth/login', { username, password });
-            const { token } = response.data;
+            
+            // --- START: แก้ไขส่วนนี้ ---
+            const { token, user } = response.data; // รับ token และ user object
+            
+            login(token, user); // ส่งข้อมูล user ทั้งหมดไปเก็บใน store
+            
+            toast.success(`Welcome, ${user.fullName || user.username}!`); // แสดง fullName ถ้ามี
+            // --- END: สิ้นสุดส่วนที่แก้ไข ---
 
-            // TODO: เมื่อ Backend ส่งข้อมูล admin กลับมา ให้เอามาใส่ตรงนี้
-            const user = { username }; // ใช้ข้อมูลชั่วคราวไปก่อน
-
-            login(token, user);
-            toast.success(`Welcome, ${user.username}!`);
             navigate('/dashboard');
 
         } catch (error) {
@@ -39,7 +41,6 @@ export default function LoginPage() {
         }
     };
 
-    // ถ้า login อยู่แล้ว ให้ redirect ไปหน้า dashboard เลย
     if (token) {
         return <Navigate to="/dashboard" replace />;
     }

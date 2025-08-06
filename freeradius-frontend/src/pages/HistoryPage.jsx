@@ -85,7 +85,7 @@ export default function HistoryPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData 
-    } = usePaginatedFetch("/history", 15, { 
+    } = usePaginatedFetch("/history", 5, { // <--- 1. เปลี่ยนค่า Default เป็น 5
         ...filters,
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
@@ -110,118 +110,114 @@ export default function HistoryPage() {
     };
 
     return (
-        // --- START: แก้ไขส่วนนี้ ---
-        // 1. ห่อ Card ด้วย div และกำหนดให้ div นี้มีความสูงเต็มพื้นที่ที่ได้รับจาก Layout หลัก
-        <div className="h-full">
-            <Card className="h-full flex flex-col">
-                <CardHeader className="flex-shrink-0">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle className="flex items-center gap-2"><History className="h-6 w-6" />Connection History</CardTitle>
-                            <CardDescription>Review past user sessions and connection details.</CardDescription>
-                        </div>
-                        <Button onClick={refreshData} variant="outline">Refresh</Button>
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle className="flex items-center gap-2"><History className="h-6 w-6" />Connection History</CardTitle>
+                        <CardDescription>Review past user sessions and connection details.</CardDescription>
                     </div>
-                </CardHeader>
-                <CardContent className="flex-grow flex flex-col overflow-hidden">
-                    <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                        <Input
-                            placeholder="Search user, IP, MAC..."
-                            value={searchTerm}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="sm:col-span-2 lg:col-span-1"
-                        />
-                         <Select value={filters.organizationId || "all"} onValueChange={(value) => handleFilterChange('organizationId', value === 'all' ? '' : value)}>
-                            <SelectTrigger><SelectValue placeholder="Filter by organization..." /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Organizations</SelectItem>
-                                {organizations.map((org) => (
-                                    <SelectItem key={org.id} value={String(org.id)}>{org.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
-                        <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
-                    </div>
-                    <div className="border rounded-md flex-grow overflow-y-auto relative">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
+                    <Button onClick={refreshData} variant="outline">Refresh</Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <Input
+                        placeholder="Search user, IP, MAC..."
+                        value={searchTerm}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="sm:col-span-2 lg:col-span-1"
+                    />
+                     <Select value={filters.organizationId || "all"} onValueChange={(value) => handleFilterChange('organizationId', value === 'all' ? '' : value)}>
+                        <SelectTrigger><SelectValue placeholder="Filter by organization..." /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Organizations</SelectItem>
+                            {organizations.map((org) => (
+                                <SelectItem key={org.id} value={String(org.id)}>{org.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
+                    <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
+                </div>
+                <div className="border rounded-md">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>User</TableHead>
+                                <TableHead>Client IP</TableHead>
+                                <SortableHeader columnKey="logintime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Login Time</SortableHeader>
+                                <SortableHeader columnKey="logouttime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Logout Time</SortableHeader>
+                                <SortableHeader columnKey="duration" sortConfig={sortConfig} setSortConfig={setSortConfig}>Duration</SortableHeader>
+                                <TableHead>MAC Address</TableHead>
+                                <SortableHeader columnKey="dataup" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Up</SortableHeader>
+                                <SortableHeader columnKey="datadown" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Down</SortableHeader>
+                                <SortableHeader columnKey="totaldata" sortConfig={sortConfig} setSortConfig={setSortConfig}>Total Data</SortableHeader>
+                                <TableHead>Terminate Cause</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                [...Array(pagination.itemsPerPage)].map((_, i) => (
+                                    <TableRow key={i}><TableCell colSpan={10}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                ))
+                            ) : history.length > 0 ? (
+                                history.map((rec) => {
+                                    const dataUp = BigInt(rec.acctoutputoctets || 0);
+                                    const dataDown = BigInt(rec.acctinputoctets || 0);
+                                    return (
+                                        <TableRow key={rec.radacctid}>
+                                            <TableCell className="font-medium">{rec.full_name}<br/><span className="text-xs text-muted-foreground">{rec.username}</span></TableCell>
+                                            <TableCell className="font-mono">{rec.framedipaddress}</TableCell>
+                                            <TableCell>{rec.acctstarttime ? new Date(rec.acctstarttime).toLocaleString() : 'N/A'}</TableCell>
+                                            <TableCell>
+                                                {rec.acctstoptime ? (
+                                                    new Date(rec.acctstoptime).toLocaleString()
+                                                ) : (
+                                                    <Badge variant="success" className="w-auto">Still Online</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>{calculateDuration(rec.acctstarttime, rec.acctstoptime)}</TableCell>
+                                            <TableCell className="font-mono">{formatMacAddress(rec.callingstationid)}</TableCell>
+                                            <TableCell>{formatBytes(dataUp)}</TableCell>
+                                            <TableCell>{formatBytes(dataDown)}</TableCell>
+                                            <TableCell className="font-semibold">{formatBytes(dataUp + dataDown)}</TableCell>
+                                            <TableCell>{rec.acctterminatecause}</TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            ) : (
                                 <TableRow>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Client IP</TableHead>
-                                    <SortableHeader columnKey="logintime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Login Time</SortableHeader>
-                                    <SortableHeader columnKey="logouttime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Logout Time</SortableHeader>
-                                    <SortableHeader columnKey="duration" sortConfig={sortConfig} setSortConfig={setSortConfig}>Duration</SortableHeader>
-                                    <TableHead>MAC Address</TableHead>
-                                    <SortableHeader columnKey="dataup" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Up</SortableHeader>
-                                    <SortableHeader columnKey="datadown" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Down</SortableHeader>
-                                    <SortableHeader columnKey="totaldata" sortConfig={sortConfig} setSortConfig={setSortConfig}>Total Data</SortableHeader>
-                                    <TableHead>Terminate Cause</TableHead>
+                                    <TableCell colSpan={10} className="h-24 text-center">No history records found.</TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    [...Array(10)].map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan={10}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
-                                    ))
-                                ) : history.length > 0 ? (
-                                    history.map((rec) => {
-                                        const dataUp = BigInt(rec.acctoutputoctets || 0);
-                                        const dataDown = BigInt(rec.acctinputoctets || 0);
-                                        return (
-                                            <TableRow key={rec.radacctid}>
-                                                <TableCell className="font-medium">{rec.full_name}<br/><span className="text-xs text-muted-foreground">{rec.username}</span></TableCell>
-                                                <TableCell className="font-mono">{rec.framedipaddress}</TableCell>
-                                                <TableCell>{rec.acctstarttime ? new Date(rec.acctstarttime).toLocaleString() : 'N/A'}</TableCell>
-                                                <TableCell>
-                                                    {rec.acctstoptime ? (
-                                                        new Date(rec.acctstoptime).toLocaleString()
-                                                    ) : (
-                                                        <Badge variant="success" className="w-auto">Still Online</Badge>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>{calculateDuration(rec.acctstarttime, rec.acctstoptime)}</TableCell>
-                                                <TableCell className="font-mono">{formatMacAddress(rec.callingstationid)}</TableCell>
-                                                <TableCell>{formatBytes(dataUp)}</TableCell>
-                                                <TableCell>{formatBytes(dataDown)}</TableCell>
-                                                <TableCell className="font-semibold">{formatBytes(dataUp + dataDown)}</TableCell>
-                                                <TableCell>{rec.acctterminatecause}</TableCell>
-                                            </TableRow>
-                                        );
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={10} className="h-24 text-center">No history records found.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label htmlFor="rows-per-page">Rows per page:</Label>
-                        <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                            <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {[15, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
-                            Previous
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
-                            Next
-                        </Button>
-                    </div>
-                </CardFooter>
-            </Card>
-        </div>
-        // --- END: สิ้นสุดส่วนที่แก้ไข ---
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+            <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Label htmlFor="rows-per-page">Rows per page:</Label>
+                    <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                        <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {/* --- 2. เปลี่ยนตัวเลือก --- */}
+                            {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                    Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
+                        Previous
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
+                        Next
+                    </Button>
+                </div>
+            </CardFooter>
+        </Card>
     );
 }

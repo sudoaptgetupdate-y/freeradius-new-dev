@@ -28,7 +28,7 @@ export default function OrganizationsPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    } = usePaginatedFetch("/organizations");
+    } = usePaginatedFetch("/organizations", 5); // <--- 1. เปลี่ยนค่า Default เป็น 5
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
@@ -65,98 +65,95 @@ export default function OrganizationsPage() {
 
     return (
         <>
-            {/* --- START: แก้ไขส่วนนี้ --- */}
-            <div className="h-full">
-                <Card className="h-full flex flex-col">
-                    <CardHeader className="flex-shrink-0">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Building className="h-6 w-6" />
-                                    Organizations
-                                </CardTitle>
-                                <CardDescription>Manage all organizations in the system.</CardDescription>
-                            </div>
-                            <Button onClick={handleAddNew}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add New
-                            </Button>
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                                <Building className="h-6 w-6" />
+                                Organizations
+                            </CardTitle>
+                            <CardDescription>Manage all organizations in the system.</CardDescription>
                         </div>
-                    </CardHeader>
-                    <CardContent className="flex-grow flex flex-col overflow-hidden">
-                        <div className="flex-shrink-0 mb-4">
-                            <Input
-                                placeholder="Search by organization name..."
-                                value={searchTerm}
-                                onChange={(e) => handleSearchChange(e.target.value)}
-                            />
-                        </div>
-                        <div className="border rounded-md flex-grow overflow-y-auto relative">
-                            <Table>
-                                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Login Type</TableHead>
-                                        <TableHead>Radius Profile</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        [...Array(5)].map((_, i) => (
-                                            <TableRow key={i}>
-                                                <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : organizations.length > 0 ? (
-                                        organizations.map((org) => (
-                                            <TableRow key={org.id}>
-                                                <TableCell className="font-medium">{org.name}</TableCell>
-                                                <TableCell>{org.login_identifier_type}</TableCell>
-                                                <TableCell>{org.radiusProfile?.name || 'N/A'}</TableCell>
-                                                <TableCell className="text-center space-x-2">
-                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(org)}>
-                                                        <Edit className="h-4 w-4 mr-2" /> Edit
-                                                    </Button>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(org)}>
-                                                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">No organizations found.</TableCell>
+                        <Button onClick={handleAddNew}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="mb-4">
+                        <Input
+                            placeholder="Search by organization name..."
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                        />
+                    </div>
+                    <div className="border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Login Type</TableHead>
+                                    <TableHead>Radius Profile</TableHead>
+                                    <TableHead className="text-center">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    [...Array(pagination.itemsPerPage)].map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Label htmlFor="rows-per-page">Rows per page:</Label>
-                            <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                                <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
-                                Previous
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
-                                Next
-                            </Button>
-                        </div>
-                    </CardFooter>
-                </Card>
-            </div>
-            {/* --- END: สิ้นสุดส่วนที่แก้ไข --- */}
+                                    ))
+                                ) : organizations.length > 0 ? (
+                                    organizations.map((org) => (
+                                        <TableRow key={org.id}>
+                                            <TableCell className="font-medium">{org.name}</TableCell>
+                                            <TableCell>{org.login_identifier_type}</TableCell>
+                                            <TableCell>{org.radiusProfile?.name || 'N/A'}</TableCell>
+                                            <TableCell className="text-center space-x-2">
+                                                <Button variant="outline" size="sm" onClick={() => handleEdit(org)}>
+                                                    <Edit className="h-4 w-4 mr-2" /> Edit
+                                                </Button>
+                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(org)}>
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">No organizations found.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                            <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {/* --- 2. เปลี่ยนตัวเลือก --- */}
+                                {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
+                            Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
+                            Next
+                        </Button>
+                    </div>
+                </CardFooter>
+            </Card>
 
             {isDialogOpen && (
                 <OrganizationFormDialog
