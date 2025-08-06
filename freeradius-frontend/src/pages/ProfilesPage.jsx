@@ -1,10 +1,11 @@
 // src/pages/ProfilesPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
 import axiosInstance from "@/api/axiosInstance";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PlusCircle, Edit, Trash2, Settings } from "lucide-react";
 import ProfileFormDialog from "@/components/dialogs/ProfileFormDialog";
 import AttributeFormDialog from "@/components/dialogs/AttributeFormDialog";
@@ -14,6 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProfilesPage() {
     const token = useAuthStore((state) => state.token);
@@ -22,6 +24,15 @@ export default function ProfilesPage() {
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [detailedProfile, setDetailedProfile] = useState(null);
     const [isAttrLoading, setIsAttrLoading] = useState(false);
+    const [profileSearchTerm, setProfileSearchTerm] = useState("");
+    const [activeTab, setActiveTab] = useState('reply');
+
+    const filteredProfiles = useMemo(() => {
+        if (!profileSearchTerm) return profiles;
+        return profiles.filter(p => 
+            p.name.toLowerCase().includes(profileSearchTerm.toLowerCase())
+        );
+    }, [profiles, profileSearchTerm]);
 
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
     const [isAttrDialogOpen, setIsAttrDialogOpen] = useState(false);
@@ -52,7 +63,6 @@ export default function ProfilesPage() {
 
         fetchDetailedProfile();
     }, [selectedProfile, token]);
-
 
     const handleAddNewProfile = () => {
         setEditingProfile(null);
@@ -87,6 +97,7 @@ export default function ProfilesPage() {
     };
     
     const openAttributeDialog = (type) => {
+        setActiveTab(type);
         setAttrDialogData({ type: type, name: selectedProfile.name });
         setIsAttrDialogOpen(true);
     };
@@ -94,14 +105,14 @@ export default function ProfilesPage() {
     const refreshAttributes = () => {
         if (selectedProfile) {
             const currentSelected = { ...selectedProfile };
-            // การ set เป็น null แล้ว set กลับมาใหม่ เป็นเทคนิคในการบังคับให้ useEffect ทำงานอีกครั้ง
-            setSelectedProfile(null); 
+            setSelectedProfile(null);
             setTimeout(() => setSelectedProfile(currentSelected), 0);
         }
     }
 
     const handleDeleteAttribute = async (attributeId, type) => {
         try {
+            setActiveTab(type);
             await axiosInstance.delete(`/attributes/${type}/${attributeId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -114,7 +125,6 @@ export default function ProfilesPage() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* --- Left Column: Profile List --- */}
             <div className="md:col-span-1">
                 <Card>
                     <CardHeader>
@@ -125,11 +135,18 @@ export default function ProfilesPage() {
                                 Add New
                             </Button>
                         </div>
+                        <div className="pt-4">
+                            <Input 
+                                placeholder="Search profiles..."
+                                value={profileSearchTerm}
+                                onChange={(e) => setProfileSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </CardHeader>
-                    <CardContent>
-                        {isLoading && <p>Loading profiles...</p>}
+                    <CardContent className="max-h-[60vh] overflow-y-auto">
+                        {isLoading && <p className="text-center text-muted-foreground py-4">Loading profiles...</p>}
                         <div className="space-y-2">
-                           {profiles.map(profile => (
+                           {filteredProfiles.map(profile => (
                                 <div 
                                     key={profile.id}
                                     className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedProfile?.id === profile.id ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-accent'}`}
@@ -149,12 +166,14 @@ export default function ProfilesPage() {
                                     <p className="text-xs text-muted-foreground mt-1">{profile.description || 'No description'}</p>
                                 </div>
                            ))}
+                           {!isLoading && filteredProfiles.length === 0 && (
+                                <p className="text-center text-muted-foreground py-4">No profiles found.</p>
+                           )}
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* --- Right Column: Attribute Management --- */}
             <div className="md:col-span-2">
                 <Card className="min-h-[400px]">
                     <CardHeader>
@@ -176,32 +195,39 @@ export default function ProfilesPage() {
                                <p className="text-muted-foreground">Please select a profile from the list.</p>
                             </div>
                         ) : (
-                            <div className="space-y-6">
-                                <div>
+                            <Tabs value={activeTab} onValueChange={setActiveTab}>
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="reply">Reply Attributes</TabsTrigger>
+                                    <TabsTrigger value="check">Check Attributes</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="reply" className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-semibold">Reply Attributes</h3>
                                         <Button variant="outline" size="sm" onClick={() => openAttributeDialog('reply')}>
                                             <PlusCircle className="h-4 w-4 mr-2" /> Add Reply
                                         </Button>
                                     </div>
-                                    <AttributeTable attributes={detailedProfile.replyAttributes} type="reply" onDelete={handleDeleteAttribute} />
-                                </div>
-                                <div>
+                                    <div className="max-h-[50vh] overflow-y-auto">
+                                        <AttributeTable attributes={detailedProfile.replyAttributes} type="reply" onDelete={handleDeleteAttribute} />
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="check" className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-semibold">Check Attributes</h3>
                                         <Button variant="outline" size="sm" onClick={() => openAttributeDialog('check')}>
                                             <PlusCircle className="h-4 w-4 mr-2" /> Add Check
                                         </Button>
                                     </div>
-                                    <AttributeTable attributes={detailedProfile.checkAttributes} type="check" onDelete={handleDeleteAttribute} />
-                                </div>
-                            </div>
+                                     <div className="max-h-[50vh] overflow-y-auto">
+                                        <AttributeTable attributes={detailedProfile.checkAttributes} type="check" onDelete={handleDeleteAttribute} />
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
                         )}
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Dialogs */}
             {isProfileDialogOpen && (
                 <ProfileFormDialog 
                     isOpen={isProfileDialogOpen}

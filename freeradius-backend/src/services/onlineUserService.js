@@ -7,8 +7,8 @@ const getOnlineUsers = async (filters = {}) => {
     pageSize = 15, 
     searchTerm, 
     organizationId,
-    sortBy = 'acctstarttime',
-    sortOrder = 'desc'
+    sortBy = 'logintime', // Default sort
+    sortOrder = 'desc'    // Default order
   } = filters;
 
   const skip = (parseInt(page) - 1) * parseInt(pageSize);
@@ -42,16 +42,29 @@ const getOnlineUsers = async (filters = {}) => {
     };
   }
 
+  // --- START: ปรับปรุง Logic การเรียงข้อมูล ---
   let orderBy = {};
-  if (sortBy === 'logintime') {
-    orderBy = { acctstarttime: sortOrder };
-  } 
-  else if (sortBy === 'duration') {
-     orderBy = { acctstarttime: 'asc' };
+  const order = sortOrder === 'asc' ? 'asc' : 'desc';
+
+  switch (sortBy) {
+    case 'logintime':
+        orderBy = { acctstarttime: order };
+        break;
+    case 'duration':
+        // เรียง Duration มากไปน้อย คือเรียง Login Time มากไปน้อย (มาล่าสุด)
+        // เรียง Duration น้อยไปมาก คือเรียง Login Time น้อยไปมาก (มานานแล้ว)
+        orderBy = { acctstarttime: order };
+        break;
+    case 'dataup':
+        orderBy = { acctoutputoctets: order };
+        break;
+    case 'datadown':
+        orderBy = { acctinputoctets: order };
+        break;
+    default:
+        orderBy = { acctstarttime: 'desc' };
   }
-  else {
-      orderBy = { acctstarttime: 'desc' };
-  }
+  // --- END ---
 
   const [onlineSessions, totalRecords] = await prisma.$transaction([
     prisma.radacct.findMany({
@@ -64,8 +77,8 @@ const getOnlineUsers = async (filters = {}) => {
         callingstationid: true,
         acctinputoctets: true,
         acctoutputoctets: true,
-        nasipaddress: true, // <-- **นี่คือบรรทัดที่ผมทำตกไป และได้เพิ่มกลับเข้ามาแล้วครับ**
-        acctsessionid: true, // <-- เพิ่ม field นี้เข้ามาด้วย เพื่อใช้ในการ Kick
+        nasipaddress: true,
+        acctsessionid: true,
       },
       orderBy,
       skip,
@@ -90,6 +103,7 @@ const getOnlineUsers = async (filters = {}) => {
     full_name: userMap.get(session.username) || 'N/A',
   }));
 
+  // Post-query sorting for Total Data
   if (sortBy === 'totaldata') {
     combinedData.sort((a, b) => {
         const totalA = BigInt(a.acctinputoctets) + BigInt(a.acctoutputoctets);

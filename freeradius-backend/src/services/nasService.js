@@ -3,6 +3,28 @@ const prisma = require('../prisma');
 const { exec } = require('child_process');
 const os = require('os');
 
+/**
+ * Helper function to execute a shell command for reloading FreeRADIUS.
+ */
+const reloadFreeradiusService = () => {
+  if (os.platform() === 'linux') {
+    console.log('[NAS Service] Linux platform detected. Attempting to reload FreeRADIUS service...');
+    exec('sudo /bin/systemctl reload freeradius.service', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`[NAS Service] EXEC ERROR: Failed to reload FreeRADIUS: ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.error(`[NAS Service] EXEC STDERR: Error during FreeRADIUS reload: ${stderr}`);
+        return;
+      }
+      console.log(`[NAS Service] SUCCESS: FreeRADIUS reloaded successfully. Output: ${stdout}`);
+    });
+  } else {
+    console.log('[NAS Service] Non-Linux platform detected. Skipping service reload.');
+  }
+};
+
 const getAllNas = async () => {
   return prisma.nas.findMany({
     orderBy: {
@@ -27,22 +49,7 @@ const createNas = async (nasData) => {
     },
   });
 
-  if (os.platform() === 'linux') {
-    console.log('Linux platform detected. Attempting to reload FreeRADIUS service...');
-    exec('sudo /bin/systemctl reload freeradius.service', (error, stdout, stderr) => {
-      if (error) {
-        console.error(`EXEC ERROR: Failed to reload FreeRADIUS: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        console.error(`EXEC STDERR: Error during FreeRADIUS reload: ${stderr}`);
-        return;
-      }
-      console.log(`SUCCESS: FreeRADIUS reloaded successfully. Output: ${stdout}`);
-    });
-  } else {
-    console.log('Non-Linux platform detected (e.g., Windows). Skipping service reload.');
-  }
+  reloadFreeradiusService(); // เรียกใช้ Helper function
 
   return newNas;
 };
@@ -59,17 +66,19 @@ const updateNas = async (id, nasData) => {
         dataToUpdate.secret = secret;
     }
 
-    return prisma.nas.update({
+    const updatedNas = await prisma.nas.update({
         where: { id: parseInt(id, 10) },
         data: dataToUpdate
     });
+
+    reloadFreeradiusService(); // เรียกใช้ Helper function
+
+    return updatedNas;
 };
 
-// --- START: ฟังก์ชันที่แก้ไข ---
 const deleteNas = async (id) => {
     const nasId = parseInt(id, 10);
 
-    // 1. ค้นหาข้อมูล NAS ที่จะลบเพื่อเอา IP Address (nasname)
     const nasToDelete = await prisma.nas.findUnique({
         where: { id: nasId },
     });
@@ -78,23 +87,23 @@ const deleteNas = async (id) => {
         throw new Error(`NAS with ID ${nasId} not found.`);
     }
 
-    // 2. ตรวจสอบว่ามี User ที่กำลังออนไลน์ผ่าน NAS นี้หรือไม่
     const onlineUserCount = await prisma.radacct.count({
         where: {
             nasipaddress: nasToDelete.nasname,
-            acctstoptime: null, // acctstoptime เป็น null หมายถึงยังออนไลน์อยู่
+            acctstoptime: null,
         },
     });
 
-    // 3. ถ้ามี User ออนไลน์อยู่ ให้โยน Error กลับไป
     if (onlineUserCount > 0) {
         throw new Error(`Cannot delete NAS. There are ${onlineUserCount} user(s) currently online through this NAS.`);
     }
 
-    // 4. ถ้าไม่มี User ออนไลน์ จึงทำการลบ
-    return prisma.nas.delete({ where: { id: nasId }});
+    const deletedNas = await prisma.nas.delete({ where: { id: nasId }});
+    
+    reloadFreeradiusService(); // เรียกใช้ Helper function หลังลบสำเร็จ
+
+    return deletedNas;
 };
-// --- END: ฟังก์ชันที่แก้ไข ---
 
 
 module.exports = {

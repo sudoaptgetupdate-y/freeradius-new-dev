@@ -18,7 +18,6 @@ function useDebounce(value, delay) {
 }
 
 export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp = {}) {
-// --- END: แก้ไขบรรทัดนี้ ---
     const token = useAuthStore((state) => state.token);
     const [data, setData] = useState([]);
     const [pagination, setPagination] = useState({
@@ -29,27 +28,31 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
     });
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    // --- START: แก้ไขบรรทัดนี้ ---
     const [filters, setFilters] = useState(filtersProp);
-    // --- END: แก้ไขบรรทัดนี้ ---
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-    // --- START: เพิ่มโค้ดส่วนนี้เข้ามาทั้งหมด ---
-    // Effect นี้จะทำงานเมื่อค่า filter จากข้างนอก (filtersProp) เปลี่ยนไป
     useEffect(() => {
-        setFilters(filtersProp); // อัปเดต state ภายใน hook
-        setPagination(prev => ({ ...prev, currentPage: 1 })); // กลับไปหน้า 1 เมื่อมี filter ใหม่
-    }, [JSON.stringify(filtersProp)]); // ใช้ JSON.stringify เพื่อเช็คการเปลี่ยนแปลงของ object
+        setFilters(filtersProp);
+        setPagination(prev => ({ ...prev, currentPage: 1 }));
+    }, [JSON.stringify(filtersProp)]);
 
     const fetchData = useCallback(async () => {
         if (!token) return;
         setIsLoading(true);
         try {
+            // กรองเอาเฉพาะ filter ที่มีค่า ไม่ส่งค่าว่างไป
+            const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+                if (value) {
+                    acc[key] = value;
+                }
+                return acc;
+            }, {});
+
             const params = {
                 page: pagination.currentPage,
                 pageSize: pagination.itemsPerPage,
                 searchTerm: debouncedSearchTerm,
-                ...filters,
+                ...activeFilters,
             };
 
             const response = await axiosInstance.get(apiPath, {
@@ -59,9 +62,7 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
             
             const responseData = response.data.data;
 
-            // --- START: เพิ่ม Logic ตรวจสอบรูปแบบข้อมูลที่ได้รับ ---
             if (Array.isArray(responseData)) {
-                // กรณีที่ API ส่งกลับมาเป็น Array ตรงๆ (เช่น /organizations)
                 setData(responseData);
                 setPagination(prev => ({
                     ...prev,
@@ -69,16 +70,18 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
                     totalPages: Math.ceil(responseData.length / prev.itemsPerPage) || 1,
                 }));
             } else {
-                // กรณีที่ API ส่งกลับมาเป็น Object พร้อมข้อมูล Pagination (เช่น /users)
-                setData(responseData.users || responseData.organizations || []);
+                // --- START: แก้ไขส่วนนี้ ---
+                // เพิ่ม 'history' เข้าไปในรายการตรวจสอบ
+                setData(responseData.users || responseData.organizations || responseData.history || []);
                 setPagination({
                     currentPage: responseData.currentPage,
                     totalPages: responseData.totalPages,
-                    totalItems: responseData.totalUsers || responseData.totalOrgs || 0,
+                    // เพิ่ม 'totalRecords' สำหรับหน้า History
+                    totalItems: responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || 0,
                     itemsPerPage: pagination.itemsPerPage,
                 });
+                // --- END ---
             }
-            // --- END: สิ้นสุด Logic ที่เพิ่ม ---
 
         } catch (error) {
             toast.error(`Failed to fetch data from ${apiPath}`);

@@ -16,6 +16,8 @@ import OrganizationsPage from './pages/OrganizationsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import NasPage from './pages/NasPage.jsx';
 import ProfilesPage from './pages/ProfilesPage.jsx';
+import OnlineUsersPage from './pages/OnlineUsersPage.jsx';
+import HistoryPage from './pages/HistoryPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -33,7 +35,9 @@ const router = createBrowserRouter([
               { path: 'dashboard', element: <DashboardPage /> },
               { path: 'organizations', element: <OrganizationsPage /> },
               { path: 'users', element: <UsersPage /> },
+              { path: 'history', element: <HistoryPage /> },
               { path: 'nas', element: <NasPage /> },
+              { path: 'online-users', element: <OnlineUsersPage /> },
               { path: 'profiles', element: <ProfilesPage /> },
             ]
           }

@@ -18,7 +18,6 @@ const getAccountingHistory = async (filters) => {
 
   const whereClause = {};
 
-  // --- Date Filter Logic (ของเดิม) ---
   if (startDate) {
     const start = new Date(startDate);
     const end = endDate ? new Date(endDate) : new Date(startDate); 
@@ -27,7 +26,6 @@ const getAccountingHistory = async (filters) => {
     whereClause.acctstarttime = { gte: start, lte: end };
   }
   
-  // --- Organization Filter Logic (ของใหม่) ---
   let usersInOrg = [];
   if (organizationId) {
     usersInOrg = await prisma.user.findMany({
@@ -38,12 +36,10 @@ const getAccountingHistory = async (filters) => {
     if (usernamesInOrg.length > 0) {
       whereClause.username = { in: usernamesInOrg };
     } else {
-      // ถ้าไม่พบ user ในองค์กร ก็ไม่ต้องแสดงผลลัพธ์
       return { history: [], totalRecords: 0, totalPages: 0, currentPage: parseInt(page) };
     }
   }
 
-  // --- Search Term Logic (ปรับปรุงใหม่) ---
   if (searchTerm) {
     const userSearch = await prisma.user.findMany({
         where: { full_name: { contains: searchTerm } },
@@ -62,15 +58,30 @@ const getAccountingHistory = async (filters) => {
     }
   }
 
-  // --- Sorting Logic (ของใหม่) ---
-  const orderBy = {};
-  if (sortBy === 'totaldata') {
-    // การเรียงลำดับสำหรับ Total Data จะทำในโค้ดหลังจากดึงข้อมูล
-  } else if (['acctstarttime', 'acctstoptime', 'acctinputoctets', 'acctoutputoctets'].includes(sortBy)) {
-    orderBy[sortBy] = sortOrder;
-  } else {
-    orderBy['acctstarttime'] = 'desc'; // Fallback
+  // --- START: ปรับปรุง Logic การเรียงข้อมูล ---
+  let orderBy = {};
+  const order = sortOrder === 'asc' ? 'asc' : 'desc';
+
+  switch (sortBy) {
+    case 'logintime':
+        orderBy = { acctstarttime: order };
+        break;
+    case 'logouttime':
+        orderBy = { acctstoptime: order };
+        break;
+    case 'duration':
+        orderBy = { acctsessiontime: order };
+        break;
+    case 'dataup':
+        orderBy = { acctoutputoctets: order };
+        break;
+    case 'datadown':
+        orderBy = { acctinputoctets: order };
+        break;
+    default:
+        orderBy = { acctstarttime: 'desc' };
   }
+  // --- END ---
   
   const [history, totalRecords] = await prisma.$transaction([
     prisma.radacct.findMany({
@@ -82,7 +93,6 @@ const getAccountingHistory = async (filters) => {
     prisma.radacct.count({ where: whereClause }),
   ]);
   
-  // --- Data Enrichment (ของใหม่) ---
   const usernames = history.map(rec => rec.username);
   const usersData = await prisma.user.findMany({
       where: { username: { in: usernames } },
@@ -98,7 +108,7 @@ const getAccountingHistory = async (filters) => {
     full_name: userMap.get(rec.username) || 'N/A'
   }));
 
-  // --- Post-query sorting for Total Data ---
+  // Post-query sorting for Total Data
   if (sortBy === 'totaldata') {
     combinedData.sort((a, b) => {
         const totalA = BigInt(a.acctinputoctets) + BigInt(a.acctoutputoctets);
