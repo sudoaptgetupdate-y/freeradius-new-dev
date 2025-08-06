@@ -1,5 +1,6 @@
 // src/pages/UsersPage.jsx
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
 import axiosInstance from "@/api/axiosInstance";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PlusCircle, Edit, Trash2, Move, Ban, CheckCircle } from "lucide-react";
+import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle } from "lucide-react";
 import UserFormDialog from "@/components/dialogs/UserFormDialog";
 import UserMoveDialog from "@/components/dialogs/UserMoveDialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,7 +23,8 @@ import { toast } from "sonner";
 
 export default function UsersPage() {
     const token = useAuthStore((state) => state.token);
-    
+    const navigate = useNavigate();
+
     const [organizations, setOrganizations] = useState([]);
     const [orgFilter, setOrgFilter] = useState("");
 
@@ -36,11 +38,11 @@ export default function UsersPage() {
         handleItemsPerPageChange,
         refreshData
     } = usePaginatedFetch(
-        "/users", 
-        10, 
+        "/users",
+        10,
         { organizationId: orgFilter }
     );
-    
+
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
@@ -150,6 +152,10 @@ export default function UsersPage() {
             setUserToDelete(null);
         }
     };
+    
+    const handleViewDetails = (username) => {
+        navigate(`/users/${username}`);
+    };
 
     return (
         <>
@@ -204,10 +210,10 @@ export default function UsersPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    
+
                     {!isBulkActionsEnabled && (
                         <p className="text-sm text-muted-foreground mb-4">
-                            Please select an organization from the filter to enable bulk actions like moving or deleting multiple users.
+                            Please select an organization from the filter to enable bulk actions.
                         </p>
                     )}
 
@@ -218,7 +224,7 @@ export default function UsersPage() {
                                     {isBulkActionsEnabled && (
                                         <TableHead className="w-[50px]">
                                             <Checkbox
-                                                checked={selectedUsers.length === users.length && users.length > 0}
+                                                checked={users.length > 0 && selectedUsers.length === users.length}
                                                 onCheckedChange={handleSelectAll}
                                             />
                                         </TableHead>
@@ -232,7 +238,7 @@ export default function UsersPage() {
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
-                                    [...Array(10)].map((_, i) => (
+                                    Array.from({ length: 10 }).map((_, i) => (
                                         <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                     ))
                                 ) : users.length > 0 ? (
@@ -255,15 +261,18 @@ export default function UsersPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-center space-x-1">
+                                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
+                                                    <Eye className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
                                                 <Button
                                                   variant="outline"
                                                   size="sm"
                                                   onClick={() => setUserToToggle(user)}
                                                 >
                                                   {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                                </Button>
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                                                    <Edit className="h-4 w-4" />
                                                 </Button>
                                                 <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
                                                     <Trash2 className="h-4 w-4" />

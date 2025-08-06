@@ -4,9 +4,7 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  // --- START: แก้ไข/เพิ่มคลาสตรงนี้ ---
-  "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[80px]", // กำหนดความกว้างคงที่และจัดกลาง
-  // --- END ---
+  "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 w-[80px]",
   {
     variants: {
       variant: {
@@ -17,10 +15,9 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "text-foreground",
-        // --- START: ปรับปรุงสีให้ดูสบายตาขึ้น ---
+        // --- เพิ่ม variant ใหม่สำหรับสีเขียว ---
         success: 
           "border-transparent bg-emerald-500 text-white hover:bg-emerald-500/80",
-        // --- END ---
       },
     },
     defaultVariants: {
