@@ -19,6 +19,8 @@ import NasPage from './pages/NasPage.jsx';
 import ProfilesPage from './pages/ProfilesPage.jsx';
 import OnlineUsersPage from './pages/OnlineUsersPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
+import AdminsPage from './pages/AdminsPage.jsx';
+import AdminProfilePage from './pages/AdminProfilePage.jsx'; // 1. แก้ไข Import
 
 const router = createBrowserRouter([
   {
@@ -27,12 +29,11 @@ const router = createBrowserRouter([
     children: [
       { path: 'login', element: <LoginPage /> },
       {
-        element: <ProtectedRoute />, // 1. เช็คว่า Login หรือยัง
+        element: <ProtectedRoute />,
         children: [
           {
-            element: <MainLayout />, // 2. ถ้า Login แล้ว ให้แสดง Layout หลัก
+            element: <MainLayout />,
             children: [
-              // 3. หน้าต่างๆ ที่จะแสดงใน <Outlet /> ของ MainLayout
               { path: 'dashboard', element: <DashboardPage /> },
               { path: 'organizations', element: <OrganizationsPage /> },
               { path: 'users', element: <UsersPage /> },
@@ -41,6 +42,8 @@ const router = createBrowserRouter([
               { path: 'nas', element: <NasPage /> },
               { path: 'online-users', element: <OnlineUsersPage /> },
               { path: 'profiles', element: <ProfilesPage /> },
+              { path: 'admins', element: <AdminsPage /> },
+              { path: 'profile', element: <AdminProfilePage /> }, // 2. แก้ไข Element
             ]
           }
         ]

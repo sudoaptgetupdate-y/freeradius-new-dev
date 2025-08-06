@@ -1,10 +1,12 @@
-// src/components/layout/MainLayout.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Server, Building, Users, Settings, Wifi, History, Menu, User as UserIcon } from "lucide-react";
+import { 
+    LogOut, LayoutDashboard, Server, Building, Users, Settings, 
+    Wifi, History, Menu, User as UserIcon, UserCog 
+} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,6 +16,23 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
+
+const Footer = () => {
+    const currentYear = new Date().getFullYear();
+    return (
+        <footer className="bg-white border-t mt-auto flex-shrink-0">
+            <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-center items-center text-sm text-muted-foreground text-center">
+                    <p>
+                        &copy; {currentYear} Inventory Management System by the Engineering Team of NTPLC, Nakhon Si Thammarat. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </footer>
+    );
+};
 
 const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     <NavLink
@@ -42,8 +61,19 @@ export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout } = useAuthStore();
+    const isSuperAdmin = user?.role === 'superadmin';
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+    const handleIdle = useCallback(() => {
+        toast.warning("Logged out due to inactivity", {
+            description: "You have been automatically logged out for security purposes.",
+        });
+        logout();
+        navigate('/login', { replace: true });
+    }, [navigate, logout]);
+
+    useIdleTimeout(handleIdle, 600000);
 
     useEffect(() => {
         if (isMobileMenuOpen) {
@@ -77,7 +107,7 @@ export default function MainLayout() {
                 isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full",
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
-                 <div className="p-4 border-b flex items-center gap-3 h-[65px]">
+                <div className="p-4 border-b flex items-center gap-3 h-[65px]">
                     <div className="bg-primary p-2 rounded-lg">
                         <Server className="text-primary-foreground" size={24} />
                     </div>
@@ -96,6 +126,9 @@ export default function MainLayout() {
                     <NavItem to="/users" icon={<Users size={18} />} text="Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/profiles" icon={<Settings size={18} />} text="Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    {isSuperAdmin && (
+                         <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    )}
                 </nav>
             </aside>
 
@@ -109,7 +142,6 @@ export default function MainLayout() {
                             <Menu className="h-6 w-6" />
                         </Button>
                     </div>
-                    {/* --- START: แก้ไขส่วนนี้ --- */}
                     <div className="flex items-center gap-4">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -126,12 +158,11 @@ export default function MainLayout() {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {/* You can add a link to a profile page here in the future */}
-                                {/* <DropdownMenuItem onClick={() => navigate('/profile')}>
+                                <DropdownMenuItem onClick={() => navigate('/profile')}>
                                     <UserIcon className="mr-2 h-4 w-4" />
                                     <span>Profile</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator /> */}
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     <span>Log Out</span>
@@ -139,7 +170,6 @@ export default function MainLayout() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
-                    {/* --- END: สิ้นสุดส่วนที่แก้ไข --- */}
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
@@ -156,6 +186,8 @@ export default function MainLayout() {
                         </motion.div>
                     </AnimatePresence>
                 </main>
+                
+                <Footer />
             </div>
         </div>
     );
