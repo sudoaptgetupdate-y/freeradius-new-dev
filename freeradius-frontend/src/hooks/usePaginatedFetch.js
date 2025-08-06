@@ -17,7 +17,8 @@ function useDebounce(value, delay) {
     return debouncedValue;
 }
 
-export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, defaultFilters = {}) {
+export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp = {}) {
+// --- END: แก้ไขบรรทัดนี้ ---
     const token = useAuthStore((state) => state.token);
     const [data, setData] = useState([]);
     const [pagination, setPagination] = useState({
@@ -28,8 +29,17 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, defaultFilt
     });
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filters, setFilters] = useState(defaultFilters);
+    // --- START: แก้ไขบรรทัดนี้ ---
+    const [filters, setFilters] = useState(filtersProp);
+    // --- END: แก้ไขบรรทัดนี้ ---
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
+
+    // --- START: เพิ่มโค้ดส่วนนี้เข้ามาทั้งหมด ---
+    // Effect นี้จะทำงานเมื่อค่า filter จากข้างนอก (filtersProp) เปลี่ยนไป
+    useEffect(() => {
+        setFilters(filtersProp); // อัปเดต state ภายใน hook
+        setPagination(prev => ({ ...prev, currentPage: 1 })); // กลับไปหน้า 1 เมื่อมี filter ใหม่
+    }, [JSON.stringify(filtersProp)]); // ใช้ JSON.stringify เพื่อเช็คการเปลี่ยนแปลงของ object
 
     const fetchData = useCallback(async () => {
         if (!token) return;

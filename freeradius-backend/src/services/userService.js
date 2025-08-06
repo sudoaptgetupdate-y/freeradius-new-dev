@@ -95,7 +95,6 @@ const createUserAndSync = async (userData, adminId) => {
 };
 
 const getAllUsers = async (filters) => {
-  // ... (โค้ดส่วนนี้เหมือนเดิม ไม่มีการเปลี่ยนแปลง)
   const { searchTerm, organizationId, page = 1, pageSize = 10 } = filters;
 
   const whereClause = {};
@@ -126,6 +125,7 @@ const getAllUsers = async (filters) => {
         organization: {
           select: {
             name: true,
+            login_identifier_type: true,
           },
         },
         createdBy: {

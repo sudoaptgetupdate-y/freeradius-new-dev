@@ -1,5 +1,5 @@
 // src/pages/UsersPage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
 import axiosInstance from "@/api/axiosInstance";
@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Users, PlusCircle, Edit, Trash2, Move } from "lucide-react";
 import UserFormDialog from "@/components/dialogs/UserFormDialog";
+import UserMoveDialog from "@/components/dialogs/UserMoveDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -19,6 +21,10 @@ import { toast } from "sonner";
 
 export default function UsersPage() {
     const token = useAuthStore((state) => state.token);
+    
+    const [organizations, setOrganizations] = useState([]);
+    const [orgFilter, setOrgFilter] = useState("");
+
     const {
         data: users,
         pagination,
@@ -28,7 +34,57 @@ export default function UsersPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    } = usePaginatedFetch("/users");
+    } = usePaginatedFetch(
+        "/users", 
+        10, 
+        { organizationId: orgFilter }
+    );
+    
+    const [selectedUsers, setSelectedUsers] = useState([]);
+    const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+
+    // --- เพิ่ม: ตัวแปรเช็คว่าควร disable การเลือกหรือไม่ ---
+    const isSelectionDisabled = !orgFilter;
+
+    useEffect(() => {
+        const fetchOrgs = async () => {
+            try {
+                const response = await axiosInstance.get('/organizations', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setOrganizations(response.data.data);
+            } catch (error) {
+                toast.error("Failed to load organizations for filtering.");
+            }
+        };
+        fetchOrgs();
+        setSelectedUsers([]);
+    }, [token, pagination.currentPage, pagination.itemsPerPage, searchTerm, orgFilter]);
+
+    const handleOrgFilterChange = (value) => {
+        setOrgFilter(value === "all" ? "" : value);
+    };
+
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedUsers(users);
+        } else {
+            setSelectedUsers([]);
+        }
+    };
+
+    const handleSelectSingle = (checked, user) => {
+        if (checked) {
+            setSelectedUsers(prev => [...prev, user]);
+        } else {
+            setSelectedUsers(prev => prev.filter(u => u.id !== user.id));
+        }
+    };
+
+    const onMoveSuccess = () => {
+        setSelectedUsers([]);
+        refreshData();
+    };
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
@@ -51,7 +107,6 @@ export default function UsersPage() {
     const confirmDelete = async () => {
         if (!userToDelete) return;
         try {
-            // API endpoint สำหรับลบ user จะใช้ username
             await axiosInstance.delete(`/users/${userToDelete.username}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -76,23 +131,60 @@ export default function UsersPage() {
                             </CardTitle>
                             <CardDescription>Manage all users in the system.</CardDescription>
                         </div>
-                        <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {selectedUsers.length > 0 && !isSelectionDisabled && (
+                                <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
+                                    <Move className="mr-2 h-4 w-4" />
+                                    Move Selected ({selectedUsers.length})
+                                </Button>
+                            )}
+                            <Button onClick={handleAddNew}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="mb-4">
+                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Input
                             placeholder="Search by username or full name..."
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
+                            className="flex-grow"
                         />
+                        <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
+                            <SelectTrigger className="w-full sm:w-[250px]">
+                                <SelectValue placeholder="Filter by organization..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Organizations</SelectItem>
+                                {organizations.map((org) => (
+                                    <SelectItem key={org.id} value={String(org.id)}>
+                                        {org.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
+                    
+                    {/* --- เพิ่ม: คำอธิบายเมื่อ Checkbox ถูก disable --- */}
+                    {isSelectionDisabled && (
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Please select an organization from the filter to enable bulk actions.
+                        </p>
+                    )}
+
                     <div className="border rounded-md">
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]">
+                                        <Checkbox
+                                            disabled={isSelectionDisabled}
+                                            checked={!isSelectionDisabled && selectedUsers.length === users.length && users.length > 0}
+                                            onCheckedChange={handleSelectAll}
+                                        />
+                                    </TableHead>
                                     <TableHead>Full Name</TableHead>
                                     <TableHead>Username</TableHead>
                                     <TableHead>Organization</TableHead>
@@ -101,12 +193,19 @@ export default function UsersPage() {
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
-                                    [...Array(5)].map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan="4"><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                    [...Array(10)].map((_, i) => (
+                                        <TableRow key={i}><TableCell colSpan="5"><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                     ))
                                 ) : users.length > 0 ? (
                                     users.map((user) => (
-                                        <TableRow key={user.id}>
+                                        <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    disabled={isSelectionDisabled}
+                                                    checked={selectedUsers.some(u => u.id === user.id)}
+                                                    onCheckedChange={(checked) => handleSelectSingle(checked, user)}
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-medium">{user.full_name}</TableCell>
                                             <TableCell>{user.username}</TableCell>
                                             <TableCell>{user.organization.name}</TableCell>
@@ -122,7 +221,7 @@ export default function UsersPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">No users found.</TableCell>
+                                        <TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -159,6 +258,15 @@ export default function UsersPage() {
                     setIsOpen={setIsDialogOpen}
                     user={editingUser}
                     onSave={refreshData}
+                />
+            )}
+
+            {isMoveDialogOpen && (
+                <UserMoveDialog
+                    isOpen={isMoveDialogOpen}
+                    setIsOpen={setIsMoveDialogOpen}
+                    selectedUsers={selectedUsers}
+                    onMoveSuccess={onMoveSuccess}
                 />
             )}
 
