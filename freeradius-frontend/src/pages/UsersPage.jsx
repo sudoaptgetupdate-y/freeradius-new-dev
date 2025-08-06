@@ -42,9 +42,9 @@ export default function UsersPage() {
     
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+    const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
-    // --- เพิ่ม: ตัวแปรเช็คว่าควร disable การเลือกหรือไม่ ---
-    const isSelectionDisabled = !orgFilter;
+    const isBulkActionsEnabled = !!orgFilter;
 
     useEffect(() => {
         const fetchOrgs = async () => {
@@ -81,9 +81,24 @@ export default function UsersPage() {
         }
     };
 
-    const onMoveSuccess = () => {
+    const onActionSuccess = () => {
         setSelectedUsers([]);
         refreshData();
+    };
+
+    const confirmBulkDelete = async () => {
+        try {
+            const usernamesToDelete = selectedUsers.map(u => u.username);
+            await axiosInstance.post('/users/bulk-delete', { usernames: usernamesToDelete }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(`${selectedUsers.length} user(s) deleted successfully!`);
+            onActionSuccess();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete users.");
+        } finally {
+            setIsBulkDeleteDialogOpen(false);
+        }
     };
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -132,11 +147,17 @@ export default function UsersPage() {
                             <CardDescription>Manage all users in the system.</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                            {selectedUsers.length > 0 && !isSelectionDisabled && (
-                                <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
-                                    <Move className="mr-2 h-4 w-4" />
-                                    Move Selected ({selectedUsers.length})
-                                </Button>
+                            {selectedUsers.length > 0 && isBulkActionsEnabled && (
+                                <>
+                                    <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
+                                        <Move className="mr-2 h-4 w-4" />
+                                        Move ({selectedUsers.length})
+                                    </Button>
+                                    <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete ({selectedUsers.length})
+                                    </Button>
+                                </>
                             )}
                             <Button onClick={handleAddNew}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add New
@@ -167,10 +188,9 @@ export default function UsersPage() {
                         </Select>
                     </div>
                     
-                    {/* --- เพิ่ม: คำอธิบายเมื่อ Checkbox ถูก disable --- */}
-                    {isSelectionDisabled && (
+                    {!isBulkActionsEnabled && (
                         <p className="text-sm text-muted-foreground mb-4">
-                            Please select an organization from the filter to enable bulk actions.
+                            Please select an organization from the filter to enable bulk actions like moving or deleting multiple users.
                         </p>
                     )}
 
@@ -178,13 +198,14 @@ export default function UsersPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[50px]">
-                                        <Checkbox
-                                            disabled={isSelectionDisabled}
-                                            checked={!isSelectionDisabled && selectedUsers.length === users.length && users.length > 0}
-                                            onCheckedChange={handleSelectAll}
-                                        />
-                                    </TableHead>
+                                    {isBulkActionsEnabled && (
+                                        <TableHead className="w-[50px]">
+                                            <Checkbox
+                                                checked={selectedUsers.length === users.length && users.length > 0}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
+                                    )}
                                     <TableHead>Full Name</TableHead>
                                     <TableHead>Username</TableHead>
                                     <TableHead>Organization</TableHead>
@@ -194,18 +215,19 @@ export default function UsersPage() {
                             <TableBody>
                                 {isLoading ? (
                                     [...Array(10)].map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan="5"><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 5 : 4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                     ))
                                 ) : users.length > 0 ? (
                                     users.map((user) => (
                                         <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
-                                            <TableCell>
-                                                <Checkbox
-                                                    disabled={isSelectionDisabled}
-                                                    checked={selectedUsers.some(u => u.id === user.id)}
-                                                    onCheckedChange={(checked) => handleSelectSingle(checked, user)}
-                                                />
-                                            </TableCell>
+                                            {isBulkActionsEnabled && (
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedUsers.some(u => u.id === user.id)}
+                                                        onCheckedChange={(checked) => handleSelectSingle(checked, user)}
+                                                    />
+                                                </TableCell>
+                                            )}
                                             <TableCell className="font-medium">{user.full_name}</TableCell>
                                             <TableCell>{user.username}</TableCell>
                                             <TableCell>{user.organization.name}</TableCell>
@@ -221,7 +243,7 @@ export default function UsersPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">No users found.</TableCell>
+                                        <TableCell colSpan={isBulkActionsEnabled ? 5 : 4} className="h-24 text-center">No users found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -266,9 +288,25 @@ export default function UsersPage() {
                     isOpen={isMoveDialogOpen}
                     setIsOpen={setIsMoveDialogOpen}
                     selectedUsers={selectedUsers}
-                    onMoveSuccess={onMoveSuccess}
+                    onMoveSuccess={onActionSuccess}
                 />
             )}
+
+            <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the selected <strong>{selectedUsers.length} user(s)</strong>.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <AlertDialog open={!!userToDelete} onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}>
                 <AlertDialogContent>

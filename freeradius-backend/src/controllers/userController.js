@@ -79,7 +79,24 @@ const moveUsersToOrganization = async (req, res, next) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
-// --- END: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
+
+
+const deleteMultipleUsers = async (req, res, next) => {
+  try {
+    const { usernames } = req.body;
+    if (!usernames || !Array.isArray(usernames) || usernames.length === 0) {
+      return res.status(400).json({ success: false, message: 'Usernames array is required.' });
+    }
+    const result = await userService.deleteUsersByUsernames(usernames);
+    res.status(200).json({
+      success: true,
+      message: `${result.deletedCount} user(s) deleted successfully.`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 module.exports = {
@@ -88,5 +105,6 @@ module.exports = {
   getUser,
   deleteUser,
   updateUser,
-  moveUsersToOrganization, // <-- Export ฟังก์ชันใหม่
+  moveUsersToOrganization,
+  deleteMultipleUsers,
 };

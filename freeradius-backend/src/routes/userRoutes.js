@@ -7,7 +7,8 @@ const {
   deleteUser, 
   updateUser, 
   getUser,
-  moveUsersToOrganization // <-- Import ฟังก์ชันใหม่
+  moveUsersToOrganization,
+  deleteMultipleUsers
 } = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
@@ -20,13 +21,10 @@ router.use(authorize('superadmin', 'admin'));
 // Route Definitions
 router.post('/', createUser);
 router.get('/', getUsers);
+router.post('/bulk-move', moveUsersToOrganization);
+router.post('/bulk-delete', deleteMultipleUsers);
 router.get('/:username', getUser);
 router.delete('/:username', deleteUser);
 router.put('/:username', updateUser);
-
-// --- START: Route ที่เพิ่มเข้ามาใหม่ ---
-// Route นี้ต้องอยู่เหนือ Route ที่มี parameter เช่น /:username เพื่อไม่ให้ Express สับสน
-router.post('/bulk-move', moveUsersToOrganization);
-// --- END: Route ที่เพิ่มเข้ามาใหม่ ---
 
 module.exports = router;

@@ -330,6 +330,28 @@ const moveUsersToNewOrganization = async (userIds, targetOrganizationId) => {
     });
 };
 
+const deleteUsersByUsernames = async (usernames) => {
+  return prisma.$transaction(async (tx) => {
+    // 1. ลบจากตาราง radcheck
+    await tx.radcheck.deleteMany({
+      where: { username: { in: usernames } },
+    });
+
+    // 2. ลบจากตาราง radusergroup
+    await tx.radusergroup.deleteMany({
+      where: { username: { in: usernames } },
+    });
+    
+    // 3. ลบจากตาราง user หลัก
+    const deletedUsersResult = await tx.user.deleteMany({
+      where: { username: { in: usernames } },
+    });
+
+    // 4. คืนค่าจำนวนที่ลบได้
+    return { deletedCount: deletedUsersResult.count };
+  });
+};
+
 
 module.exports = {
   createUserAndSync,
@@ -338,4 +360,5 @@ module.exports = {
   updateUserByUsername,
   getUserByUsername,
   moveUsersToNewOrganization,
+  deleteUsersByUsernames,
 };
