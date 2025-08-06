@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { formatDistanceToNow } from 'date-fns';
 
-// --- Helper Functions ---
+// --- Helper Functions (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const b = typeof bytes === 'bigint' || typeof bytes === 'number' ? bytes : BigInt(bytes);
@@ -28,7 +28,6 @@ const formatBytes = (bytes, decimals = 2) => {
 
 const formatMacAddress = (mac) => {
     if (!mac || typeof mac !== 'string') return 'N/A';
-    // ลบตัวคั่นทั้งหมด (- หรือ :) ออกก่อน แล้วจึงจัดรูปแบบใหม่
     const cleanedMac = mac.replace(/[:-]/g, '');
     return (cleanedMac.match(/.{1,2}/g) || []).join(':').toUpperCase();
 };
@@ -78,7 +77,7 @@ export default function OnlineUsersPage() {
     } = usePaginatedFetch("/online-users", 15, {
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
-        organizationId: orgFilter, // <-- เพิ่ม Filter เข้าไปใน Hook
+        organizationId: orgFilter,
     });
 
     const [userToKick, setUserToKick] = useState(null);
@@ -130,9 +129,10 @@ export default function OnlineUsersPage() {
     };
 
     return (
-        <>
-            <Card>
-                <CardHeader>
+        // --- START: แก้ไขส่วนนี้ ---
+        <div className="h-full">
+            <Card className="h-full flex flex-col">
+                <CardHeader className="flex-shrink-0">
                     <div className="flex justify-between items-center">
                         <div>
                             <CardTitle className="flex items-center gap-2"><Wifi className="h-6 w-6" />Online Users</CardTitle>
@@ -141,8 +141,8 @@ export default function OnlineUsersPage() {
                         <Button onClick={refreshData} variant="outline">Refresh</Button>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <CardContent className="flex-grow flex flex-col overflow-hidden">
+                    <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
                         <Input
                             placeholder="Search by username, IP, or MAC..."
                             value={searchTerm}
@@ -163,9 +163,9 @@ export default function OnlineUsersPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="border rounded-md">
+                    <div className="border rounded-md flex-grow overflow-y-auto relative">
                         <Table>
-                            <TableHeader>
+                            <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
                                 <TableRow>
                                     <TableHead>Username</TableHead>
                                     <TableHead>Client IP</TableHead>
@@ -216,7 +216,7 @@ export default function OnlineUsersPage() {
                         </Table>
                     </div>
                 </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                <CardFooter className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Label htmlFor="rows-per-page">Rows per page:</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
@@ -254,6 +254,7 @@ export default function OnlineUsersPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </div>
+        // --- END: สิ้นสุดส่วนที่แก้ไข ---
     );
 }

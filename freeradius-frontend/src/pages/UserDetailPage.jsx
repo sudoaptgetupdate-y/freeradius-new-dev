@@ -9,13 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaginatedFetch } from '@/hooks/usePaginatedFetch';
 import { formatDistanceStrict } from 'date-fns';
 import UserFormDialog from '@/components/dialogs/UserFormDialog';
 
-// --- Helper Functions (ไม่มีการเปลี่ยนแปลง) ---
+// --- Helper Functions (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -39,7 +40,6 @@ const calculateDuration = (startTime, stopTime) => {
 };
 
 
-// --- UserInfoCard Component (ไม่มีการเปลี่ยนแปลง) ---
 const UserInfoCard = ({ user, onEdit }) => {
     if (!user) return null;
     return (
@@ -72,7 +72,6 @@ const UserInfoCard = ({ user, onEdit }) => {
     );
 };
 
-// --- START: แก้ไข UserHistoryTable Component ---
 const UserHistoryTable = ({ username }) => {
      const [filters, setFilters] = useState({
         startDate: "",
@@ -84,6 +83,7 @@ const UserHistoryTable = ({ username }) => {
         pagination, 
         isLoading, 
         handlePageChange,
+        handleItemsPerPageChange,
     } = usePaginatedFetch("/history", 10, { 
         searchTerm: username,
         ...filters 
@@ -95,16 +95,15 @@ const UserHistoryTable = ({ username }) => {
 
     return (
         <Card className="flex flex-col h-full">
-            <CardHeader>
+            <CardHeader className="flex-shrink-0">
                 <CardTitle>Connection History</CardTitle>
                 <CardDescription>Reviewing past sessions for this user.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col">
-                 <div className="flex gap-4 mb-4">
+            <CardContent className="flex-grow flex flex-col overflow-hidden">
+                 <div className="flex-shrink-0 flex gap-4 mb-4">
                     <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
                     <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
                 </div>
-                 {/* --- START: เพิ่ม div ครอบตารางเพื่อทำ Scroll --- */}
                  <div className="border rounded-md relative flex-grow overflow-y-auto">
                     <Table>
                         <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
@@ -147,26 +146,34 @@ const UserHistoryTable = ({ username }) => {
                         </TableBody>
                     </Table>
                 </div>
-                {/* --- END --- */}
             </CardContent>
-            <CardFooter className="flex-shrink-0 flex items-center justify-end gap-2 pt-4">
-                 <div className="text-sm text-muted-foreground mr-auto">
+            <CardFooter className="flex-shrink-0 flex items-center justify-between gap-2 pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Label htmlFor="rows-per-page">Rows per page:</Label>
+                    <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                        <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="text-sm text-muted-foreground">
                     Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
                 </div>
-                <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
-                    Previous
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
-                    Next
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
+                        Previous
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
+                        Next
+                    </Button>
+                </div>
             </CardFooter>
         </Card>
     )
 }
-// --- END ---
 
 export default function UserDetailPage() {
-    // ... (ส่วนนี้ไม่มีการเปลี่ยนแปลง)
     const { username } = useParams();
     const token = useAuthStore((state) => state.token);
     const [user, setUser] = useState(null);
@@ -200,20 +207,25 @@ export default function UserDetailPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <Link to="/users" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
-                <ArrowLeft className="h-4 w-4" />
-                Back to All Users
-            </Link>
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-shrink-0">
+                <Link to="/users" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to All Users
+                </Link>
+            </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* START: แก้ไขส่วนนี้ */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow min-h-0">
                 <div className="lg:col-span-1">
                     <UserInfoCard user={user} onEdit={() => setIsEditDialogOpen(true)} />
                 </div>
-                <div className="lg:col-span-2">
+                {/* 1. เพิ่ม min-h-0 ให้กับ div ที่ครอบ UserHistoryTable */}
+                <div className="lg:col-span-2 min-h-0">
                     <UserHistoryTable username={user.username} />
                 </div>
             </div>
+            {/* END: สิ้นสุดส่วนที่แก้ไข */}
 
             {isEditDialogOpen && (
                 <UserFormDialog

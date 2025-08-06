@@ -159,159 +159,163 @@ export default function UsersPage() {
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle className="flex items-center gap-2">
-                                <Users className="h-6 w-6" />
-                                Users
-                            </CardTitle>
-                            <CardDescription>Manage all users in the system.</CardDescription>
+            {/* --- START: แก้ไขส่วนนี้ --- */}
+            <div className="h-full">
+                <Card className="h-full flex flex-col">
+                    <CardHeader className="flex-shrink-0">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Users className="h-6 w-6" />
+                                    Users
+                                </CardTitle>
+                                <CardDescription>Manage all users in the system.</CardDescription>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {selectedUsers.length > 0 && isBulkActionsEnabled && (
+                                    <>
+                                        <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
+                                            <Move className="mr-2 h-4 w-4" />
+                                            Move ({selectedUsers.length})
+                                        </Button>
+                                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete ({selectedUsers.length})
+                                        </Button>
+                                    </>
+                                )}
+                                <Button onClick={handleAddNew}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                                </Button>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow flex flex-col overflow-hidden">
+                        <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
+                            <Input
+                                placeholder="Search by username or full name..."
+                                value={searchTerm}
+                                onChange={(e) => handleSearchChange(e.target.value)}
+                                className="flex-grow"
+                            />
+                            <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
+                                <SelectTrigger className="w-full sm:w-[250px]">
+                                    <SelectValue placeholder="Filter by organization..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Organizations</SelectItem>
+                                    {organizations.map((org) => (
+                                        <SelectItem key={org.id} value={String(org.id)}>
+                                            {org.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {!isBulkActionsEnabled && (
+                            <p className="flex-shrink-0 text-sm text-muted-foreground mb-4">
+                                Please select an organization from the filter to enable bulk actions.
+                            </p>
+                        )}
+
+                        <div className="border rounded-md flex-grow overflow-y-auto relative">
+                            <Table>
+                                <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
+                                    <TableRow>
+                                        {isBulkActionsEnabled && (
+                                            <TableHead className="w-[50px]">
+                                                <Checkbox
+                                                    checked={users.length > 0 && selectedUsers.length === users.length}
+                                                    onCheckedChange={handleSelectAll}
+                                                />
+                                            </TableHead>
+                                        )}
+                                        <TableHead>Full Name</TableHead>
+                                        <TableHead>Username</TableHead>
+                                        <TableHead>Organization</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-center">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        Array.from({ length: 10 }).map((_, i) => (
+                                            <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                        ))
+                                    ) : users.length > 0 ? (
+                                        users.map((user) => (
+                                            <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
+                                                {isBulkActionsEnabled && (
+                                                    <TableCell>
+                                                        <Checkbox
+                                                            checked={selectedUsers.some(u => u.id === user.id)}
+                                                            onCheckedChange={(checked) => handleSelectSingle(checked, user)}
+                                                        />
+                                                    </TableCell>
+                                                )}
+                                                <TableCell className="font-medium">{user.full_name}</TableCell>
+                                                <TableCell>{user.username}</TableCell>
+                                                <TableCell>{user.organization.name}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
+                                                        {user.status === 'active' ? 'Active' : 'Disabled'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-center space-x-1">
+                                                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                      variant="outline"
+                                                      size="sm"
+                                                      onClick={() => setUserToToggle(user)}
+                                                    >
+                                                      {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                    </Button>
+                                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={isBulkActionsEnabled ? 6 : 5} className="h-24 text-center">No users found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Label htmlFor="rows-per-page">Rows per page:</Label>
+                            <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                                <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                            Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
                         </div>
                         <div className="flex items-center gap-2">
-                            {selectedUsers.length > 0 && isBulkActionsEnabled && (
-                                <>
-                                    <Button variant="outline" onClick={() => setIsMoveDialogOpen(true)}>
-                                        <Move className="mr-2 h-4 w-4" />
-                                        Move ({selectedUsers.length})
-                                    </Button>
-                                    <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete ({selectedUsers.length})
-                                    </Button>
-                                </>
-                            )}
-                            <Button onClick={handleAddNew}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
+                                Previous
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
+                                Next
                             </Button>
                         </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
-                        <Input
-                            placeholder="Search by username or full name..."
-                            value={searchTerm}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="flex-grow"
-                        />
-                        <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
-                            <SelectTrigger className="w-full sm:w-[250px]">
-                                <SelectValue placeholder="Filter by organization..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Organizations</SelectItem>
-                                {organizations.map((org) => (
-                                    <SelectItem key={org.id} value={String(org.id)}>
-                                        {org.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {!isBulkActionsEnabled && (
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Please select an organization from the filter to enable bulk actions.
-                        </p>
-                    )}
-
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    {isBulkActionsEnabled && (
-                                        <TableHead className="w-[50px]">
-                                            <Checkbox
-                                                checked={users.length > 0 && selectedUsers.length === users.length}
-                                                onCheckedChange={handleSelectAll}
-                                            />
-                                        </TableHead>
-                                    )}
-                                    <TableHead>Full Name</TableHead>
-                                    <TableHead>Username</TableHead>
-                                    <TableHead>Organization</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    Array.from({ length: 10 }).map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
-                                    ))
-                                ) : users.length > 0 ? (
-                                    users.map((user) => (
-                                        <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
-                                            {isBulkActionsEnabled && (
-                                                <TableCell>
-                                                    <Checkbox
-                                                        checked={selectedUsers.some(u => u.id === user.id)}
-                                                        onCheckedChange={(checked) => handleSelectSingle(checked, user)}
-                                                    />
-                                                </TableCell>
-                                            )}
-                                            <TableCell className="font-medium">{user.full_name}</TableCell>
-                                            <TableCell>{user.username}</TableCell>
-                                            <TableCell>{user.organization.name}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
-                                                    {user.status === 'active' ? 'Active' : 'Disabled'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-center space-x-1">
-                                                <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  onClick={() => setUserToToggle(user)}
-                                                >
-                                                  {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={isBulkActionsEnabled ? 6 : 5} className="h-24 text-center">No users found.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label htmlFor="rows-per-page">Rows per page:</Label>
-                        <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                            <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
-                            Previous
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
-                            Next
-                        </Button>
-                    </div>
-                </CardFooter>
-            </Card>
+                    </CardFooter>
+                </Card>
+            </div>
+            {/* --- END: สิ้นสุดส่วนที่แก้ไข --- */}
 
             {isDialogOpen && (
                 <UserFormDialog
