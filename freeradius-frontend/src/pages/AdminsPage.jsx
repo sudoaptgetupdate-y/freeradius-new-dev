@@ -6,50 +6,93 @@ import axiosInstance from "@/api/axiosInstance";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Edit, Trash2, UserCog } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { PlusCircle, Edit, Trash2, UserCog, Ban, CheckCircle } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-// สมมติว่าเราจะสร้าง AdminFormDialog ในขั้นตอนต่อไป
-// import AdminFormDialog from "@/components/dialogs/AdminFormDialog";
+import AdminFormDialog from "@/components/dialogs/AdminFormDialog";
 
 export default function AdminsPage() {
+    // --- START: แก้ไขส่วนนี้ ---
+    const currentUser = useAuthStore((state) => state.user);
     const token = useAuthStore((state) => state.token);
+    // --- END: สิ้นสุดส่วนที่แก้ไข ---
+
     const { data: admins, isLoading, refreshData } = usePaginatedFetch("/admins");
 
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [editingAdmin, setEditingAdmin] = useState(null);
-    const [adminToDelete, setAdminToDelete] = useState(null);
+    const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+    const [adminToAction, setAdminToAction] = useState(null);
+    const [actionType, setActionType] = useState('');
 
     const handleAddNew = () => {
         setEditingAdmin(null);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
 
     const handleEdit = (admin) => {
         setEditingAdmin(admin);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
 
     const handleDelete = (admin) => {
-        setAdminToDelete(admin);
+        setActionType('delete');
+        setAdminToAction(admin);
+        setIsConfirmDialogOpen(true);
+    };
+    
+    const handleToggleStatus = (admin) => {
+        setActionType('toggle');
+        setAdminToAction(admin);
+        setIsConfirmDialogOpen(true);
+    }
+
+    const confirmAction = async () => {
+        if (!adminToAction) return;
+
+        if (actionType === 'delete') {
+            try {
+                await axiosInstance.delete(`/admins/${adminToAction.id}`, { headers: { Authorization: `Bearer ${token}` } });
+                toast.success(`Admin '${adminToAction.username}' deleted successfully!`);
+                refreshData();
+            } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to delete admin.");
+            }
+        } else if (actionType === 'toggle') {
+            try {
+                await axiosInstance.put(`/admins/${adminToAction.id}/status`, {}, { headers: { Authorization: `Bearer ${token}` }});
+                toast.success(`Admin '${adminToAction.username}' status updated!`);
+                refreshData();
+            } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to update status.");
+            }
+        }
+    };
+    
+    const handleConfirmDialogClose = (isOpen) => {
+        setIsConfirmDialogOpen(isOpen);
+        if (!isOpen) {
+            setTimeout(() => {
+                setAdminToAction(null);
+                setActionType('');
+            }, 150);
+        }
     };
 
-    const confirmDelete = async () => {
-        if (!adminToDelete) return;
-        try {
-            await axiosInstance.delete(`/admins/${adminToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Admin '${adminToDelete.username}' deleted successfully!`);
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete admin.");
-        } finally {
-            setAdminToDelete(null);
+    const getDialogDescription = () => {
+        if (!adminToAction) return '';
+        if (actionType === 'delete') {
+            return `This will permanently delete the admin: ${adminToAction.username}.`;
         }
+        if (actionType === 'toggle') {
+            const nextStatus = adminToAction.status === 'active' ? 'deactivate' : 'activate';
+            return `Are you sure you want to ${nextStatus} the admin: ${adminToAction.username}?`;
+        }
+        return '';
     };
 
     return (
@@ -78,6 +121,7 @@ export default function AdminsPage() {
                                     <TableHead>Username</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Role</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -85,7 +129,7 @@ export default function AdminsPage() {
                                 {isLoading ? (
                                     [...Array(3)].map((_, i) => (
                                         <TableRow key={i}>
-                                            <TableCell colSpan={5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            <TableCell colSpan={6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
                                         </TableRow>
                                     ))
                                 ) : admins.length > 0 ? (
@@ -95,19 +139,37 @@ export default function AdminsPage() {
                                             <TableCell>{admin.username}</TableCell>
                                             <TableCell>{admin.email}</TableCell>
                                             <TableCell>{admin.role}</TableCell>
-                                            <TableCell className="text-center space-x-2">
+                                            <TableCell>
+                                                <Badge variant={admin.status === 'active' ? 'success' : 'secondary'}>
+                                                    {admin.status === 'active' ? 'Active' : 'Inactive'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-center space-x-1">
                                                 <Button variant="outline" size="sm" onClick={() => handleEdit(admin)}>
-                                                    <Edit className="h-4 w-4 mr-2" /> Edit
+                                                    <Edit className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(admin)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleToggleStatus(admin)}
+                                                    disabled={admin.id === currentUser.id}
+                                                >
+                                                    {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                </Button>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(admin)}
+                                                    disabled={admin.id === currentUser.id}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">No administrators found.</TableCell>
+                                        <TableCell colSpan={6} className="h-24 text-center">No administrators found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -116,26 +178,31 @@ export default function AdminsPage() {
                 </CardContent>
             </Card>
 
-            {/* {isDialogOpen && (
+            {isFormDialogOpen && (
                 <AdminFormDialog
-                    isOpen={isDialogOpen}
-                    setIsOpen={setIsDialogOpen}
+                    isOpen={isFormDialogOpen}
+                    setIsOpen={setIsFormDialogOpen}
                     admin={editingAdmin}
                     onSave={refreshData}
                 />
-            )} */}
-
-            <AlertDialog open={!!adminToDelete} onOpenChange={(isOpen) => !isOpen && setAdminToDelete(null)}>
+            )}
+            
+            <AlertDialog open={isConfirmDialogOpen} onOpenChange={handleConfirmDialogClose}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the admin: <strong>{adminToDelete?.username}</strong>.
+                            {getDialogDescription()}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogAction 
+                          onClick={confirmAction} 
+                          className={actionType === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}
+                        >
+                          Confirm
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

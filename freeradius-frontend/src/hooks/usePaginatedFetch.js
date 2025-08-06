@@ -1,5 +1,5 @@
 // src/hooks/usePaginatedFetch.js
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import useAuthStore from "@/store/authStore";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
@@ -30,21 +30,20 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState(filtersProp);
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const stringifiedFilters = JSON.stringify(filtersProp);
 
     useEffect(() => {
         setFilters(filtersProp);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
-    }, [JSON.stringify(filtersProp)]);
+        setPagination(prev => ({ ...prev, currentPage: 1, itemsPerPage: initialItemsPerPage }));
+    }, [stringifiedFilters, initialItemsPerPage]);
 
+    // --- START: แก้ไขโครงสร้าง Hook ทั้งหมดเพื่อแก้ปัญหา Loop ---
     const fetchData = useCallback(async () => {
         if (!token) return;
         setIsLoading(true);
         try {
-            // กรองเอาเฉพาะ filter ที่มีค่า ไม่ส่งค่าว่างไป
             const activeFilters = Object.entries(filters).reduce((acc, [key, value]) => {
-                if (value) {
-                    acc[key] = value;
-                }
+                if (value) acc[key] = value;
                 return acc;
             }, {});
 
@@ -55,34 +54,25 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
                 ...activeFilters,
             };
 
-            const response = await axiosInstance.get(apiPath, {
-                headers: { Authorization: `Bearer ${token}` },
-                params,
-            });
-            
+            const response = await axiosInstance.get(apiPath, { params, headers: { Authorization: `Bearer ${token}` } });
             const responseData = response.data.data;
 
             if (Array.isArray(responseData)) {
                 setData(responseData);
+                const newTotalItems = responseData.length;
+                const newTotalPages = Math.ceil(newTotalItems / pagination.itemsPerPage) || 1;
+                setPagination(prev => ({ ...prev, totalItems: newTotalItems, totalPages: newTotalPages }));
+            } else {
+                const items = responseData.users || responseData.organizations || responseData.history || responseData.admins || [];
+                const total = responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || responseData.totalAdmins || 0;
+                setData(items);
                 setPagination(prev => ({
                     ...prev,
-                    totalItems: responseData.length,
-                    totalPages: Math.ceil(responseData.length / prev.itemsPerPage) || 1,
-                }));
-            } else {
-                // --- START: แก้ไขส่วนนี้ ---
-                // เพิ่ม 'history' เข้าไปในรายการตรวจสอบ
-                setData(responseData.users || responseData.organizations || responseData.history || []);
-                setPagination({
                     currentPage: responseData.currentPage,
                     totalPages: responseData.totalPages,
-                    // เพิ่ม 'totalRecords' สำหรับหน้า History
-                    totalItems: responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || 0,
-                    itemsPerPage: pagination.itemsPerPage,
-                });
-                // --- END ---
+                    totalItems: total,
+                }));
             }
-
         } catch (error) {
             toast.error(`Failed to fetch data from ${apiPath}`);
         } finally {
@@ -93,6 +83,7 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+    // --- END: สิ้นสุดการแก้ไขโครงสร้าง Hook ---
 
     const handleSearchChange = (value) => {
         setSearchTerm(value);
@@ -100,17 +91,20 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
     };
 
     const handlePageChange = (newPage) => {
-        if (newPage > 0 && newPage <= pagination.totalPages) {
-            setPagination(prev => ({ ...prev, currentPage: newPage }));
-        }
+        setPagination(prev => {
+            if (newPage > 0 && newPage <= prev.totalPages) {
+                return { ...prev, currentPage: newPage };
+            }
+            return prev;
+        });
     };
 
     const handleItemsPerPageChange = (newSize) => {
-        setPagination({
-            ...pagination,
+        setPagination(prev => ({
+            ...prev,
             itemsPerPage: parseInt(newSize, 10),
             currentPage: 1,
-        });
+        }));
     };
 
     return {

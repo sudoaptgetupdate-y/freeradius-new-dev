@@ -19,24 +19,25 @@ const login = async (req, res, next) => {
       return res.status(401).json({ message: 'Incorrect username or password' });
     }
 
+    // --- START: เพิ่มการตรวจสอบ Status ---
+    if (admin.status !== 'active') {
+        return res.status(403).json({ message: 'Your account has been disabled. Please contact the administrator.' });
+    }
+    // --- END: สิ้นสุดส่วนที่แก้ไข ---
+
     const token = jwt.sign(
       { id: admin.id, role: admin.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    // --- START: แก้ไขส่วนนี้ ---
-    // 1. ลบรหัสผ่านออกจาก object ก่อนส่งกลับ
     const { password: _, ...adminData } = admin;
 
-    // 2. ส่งข้อมูล admin (ที่ไม่มีรหัสผ่าน) กลับไปพร้อมกับ token
     res.status(200).json({
       success: true,
       token,
-      user: adminData, // <--- เพิ่ม user data ใน response
+      user: adminData,
     });
-    // --- END: สิ้นสุดส่วนที่แก้ไข ---
-
   } catch (error) {
     next(error);
   }

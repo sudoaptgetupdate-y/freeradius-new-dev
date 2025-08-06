@@ -1,6 +1,6 @@
 // src/routes/adminRoutes.js
 const express = require('express');
-const { createNewAdmin, getAllAdmins, deleteAdminById, getAdmin, updateAdmin } = require('../controllers/adminController');
+const { createNewAdmin, getAllAdmins, deleteAdminById, getAdmin, updateAdmin, toggleStatus } = require('../controllers/adminController');
 const { protect } = require('../middlewares/authMiddleware'); // Import ยามคนแรก
 const { authorize } = require('../middlewares/roleMiddleware'); // Import ยามคนที่สอง
 const router = express.Router();
@@ -14,6 +14,7 @@ router.post('/', createNewAdmin);
 router.get('/', getAllAdmins);
 router.get('/:id', getAdmin);
 router.put('/:id', updateAdmin);
+router.put('/:id/status', toggleStatus);
 router.delete('/:id', deleteAdminById);
 
 module.exports = router;
