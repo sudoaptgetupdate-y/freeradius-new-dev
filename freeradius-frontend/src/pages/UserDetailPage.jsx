@@ -3,14 +3,14 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePaginatedFetch } from '@/hooks/usePaginatedFetch';
 import { formatDistanceStrict } from 'date-fns';
@@ -39,7 +39,6 @@ const calculateDuration = (startTime, stopTime) => {
     return formatDistanceStrict(new Date(stopTime), new Date(startTime));
 };
 
-
 const UserInfoCard = ({ user, onEdit }) => {
     if (!user) return null;
     return (
@@ -48,22 +47,55 @@ const UserInfoCard = ({ user, onEdit }) => {
                 <CardTitle>{user.full_name}</CardTitle>
                 <CardDescription>@{user.username}</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-                <div>
-                    <Label className="text-muted-foreground">Status</Label>
-                    <div className="mt-1">
-                        <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
-                            {user.status === 'active' ? 'Active' : 'Disabled'}
-                        </Badge>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <Label className="text-muted-foreground">Status</Label>
+                        <div className="mt-1">
+                            <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
+                                {user.status === 'active' ? 'Active' : 'Disabled'}
+                            </Badge>
+                        </div>
                     </div>
+                     <div>
+                        <Label className="text-muted-foreground">Organization</Label>
+                        <p className="font-medium">{user.organization?.name}</p>
+                    </div>
+                    
+                    {user.email ? (
+                        <div>
+                            <Label className="text-muted-foreground">Email</Label>
+                            <p className="font-medium break-words">{user.email}</p>
+                        </div>
+                    ) : (
+                        <div>
+                            <Label className="text-muted-foreground">Email</Label>
+                            <div className="flex items-center gap-2 text-sm text-yellow-600">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Not provided</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {user.phoneNumber ? (
+                        <div>
+                            <Label className="text-muted-foreground">Phone Number</Label>
+                            <p className="font-medium">{user.phoneNumber}</p>
+                        </div>
+                    ) : (
+                        <div>
+                            <Label className="text-muted-foreground">Phone Number</Label>
+                             <div className="flex items-center gap-2 text-sm text-yellow-600">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>Not provided</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {user.national_id && <div><Label className="text-muted-foreground">National ID</Label><p className="font-medium">{user.national_id}</p></div>}
+                    {user.employee_id && <div><Label className="text-muted-foreground">Employee ID</Label><p className="font-medium">{user.employee_id}</p></div>}
+                    {user.student_id && <div><Label className="text-muted-foreground">Student ID</Label><p className="font-medium">{user.student_id}</p></div>}
                 </div>
-                 <div>
-                    <Label className="text-muted-foreground">Organization</Label>
-                    <p className="font-medium">{user.organization?.name}</p>
-                </div>
-                {user.national_id && <div><Label className="text-muted-foreground">National ID</Label><p className="font-medium">{user.national_id}</p></div>}
-                {user.employee_id && <div><Label className="text-muted-foreground">Employee ID</Label><p className="font-medium">{user.employee_id}</p></div>}
-                {user.student_id && <div><Label className="text-muted-foreground">Student ID</Label><p className="font-medium">{user.student_id}</p></div>}
             </CardContent>
             <CardFooter>
                  <Button onClick={onEdit}><Edit className="mr-2 h-4 w-4" /> Edit User</Button>
@@ -84,7 +116,7 @@ const UserHistoryTable = ({ username }) => {
         isLoading, 
         handlePageChange,
         handleItemsPerPageChange,
-    } = usePaginatedFetch("/history", 5, { // <--- 1. เปลี่ยนค่า Default เป็น 5
+    } = usePaginatedFetch("/history", 5, {
         searchTerm: username,
         ...filters 
     });
@@ -153,7 +185,6 @@ const UserHistoryTable = ({ username }) => {
                     <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {/* --- 2. เปลี่ยนตัวเลือก --- */}
                             {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                         </SelectContent>
                     </Select>

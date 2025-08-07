@@ -191,6 +191,8 @@ model User {
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdById    Int?
   createdBy      Administrator? @relation("AdminCreatedUsers", fields: [createdById], references: [id])
+  email          String?      @unique
+  phoneNumber    String?
 
   @@index([organizationId], map: "User_organizationId_fkey")
 }

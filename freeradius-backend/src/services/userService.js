@@ -4,7 +4,6 @@ const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 
 const createUserAndSync = async (userData, adminId) => {
-  // ... (โค้ดส่วนนี้เหมือนเดิม ไม่มีการเปลี่ยนแปลง)
   const { 
     organizationId, 
     password, 
@@ -12,7 +11,9 @@ const createUserAndSync = async (userData, adminId) => {
     national_id, 
     employee_id, 
     student_id, 
-    username: manualUsername 
+    username: manualUsername,
+    email,          // <-- เพิ่ม email
+    phoneNumber     // <-- เพิ่ม phoneNumber
   } = userData;
 
   if (!organizationId) {
@@ -68,6 +69,8 @@ const createUserAndSync = async (userData, adminId) => {
       national_id: national_id || null,
       employee_id: employee_id || null,
       student_id: student_id || null,
+      email: email || null,                  // <-- เพิ่ม email
+      phoneNumber: phoneNumber || null,      // <-- เพิ่ม phoneNumber
       createdById: adminId,
     };
 
@@ -123,6 +126,8 @@ const getAllUsers = async (filters) => {
         national_id: true,
         employee_id: true,
         student_id: true,
+        email: true,
+        phoneNumber: true,
         organization: {
           select: {
             name: true,
@@ -154,7 +159,6 @@ const getAllUsers = async (filters) => {
 };
 
 const getUserByUsername = async (username) => {
-  // ... (โค้ดส่วนนี้เหมือนเดิม ไม่มีการเปลี่ยนแปลง)
   const user = await prisma.user.findUnique({
     where: { username: username },
     include: {
@@ -169,7 +173,6 @@ const getUserByUsername = async (username) => {
 };
 
 const deleteUserByUsername = async (username) => {
-  // ... (โค้ดส่วนนี้เหมือนเดิม ไม่มีการเปลี่ยนแปลง)
   return prisma.$transaction(async (tx) => {
     await tx.user.deleteMany({
         where: { username: username },
@@ -195,16 +198,15 @@ const deleteUserByUsername = async (username) => {
 };
 
 const updateUserByUsername = async (username, updateData) => {
-  const { password, full_name, organizationId } = updateData;
+  const { password, full_name, organizationId, email, phoneNumber } = updateData;
 
-  if (!password && !full_name && (organizationId === undefined || organizationId === null)) {
+  if (!password && !full_name && !email && !phoneNumber && (organizationId === undefined || organizationId === null)) {
     throw new Error('No new data provided for update.');
   }
 
   return prisma.$transaction(async (tx) => {
     const existingUser = await tx.user.findUnique({
       where: { username: username },
-      // --- เพิ่ม: ดึงข้อมูล organization เดิมมาด้วย ---
       include: {
         organization: true,
       },
@@ -214,12 +216,16 @@ const updateUserByUsername = async (username, updateData) => {
       throw new Error(`User with username '${username}' not found.`);
     }
 
-    const updatedResults = {};
     const dataToUpdateInUserTable = {};
 
     if (full_name) {
       dataToUpdateInUserTable.full_name = full_name;
-      updatedResults.full_name = 'updated';
+    }
+    if (email !== undefined) {
+        dataToUpdateInUserTable.email = email;
+    }
+    if (phoneNumber !== undefined) {
+        dataToUpdateInUserTable.phoneNumber = phoneNumber;
     }
 
     if (password) {
@@ -229,7 +235,6 @@ const updateUserByUsername = async (username, updateData) => {
         where: { username: username, attribute: 'Crypt-Password' },
         data: { value: hashedPassword },
       });
-      updatedResults.password = 'updated';
     }
 
     if (organizationId && existingUser.organizationId !== organizationId) {
@@ -242,11 +247,9 @@ const updateUserByUsername = async (username, updateData) => {
         throw new Error('Target organization or its associated profile not found.');
       }
       
-      // --- START: เพิ่ม Logic ตรวจสอบ Type ---
       if (existingUser.organization.login_identifier_type !== newOrg.login_identifier_type) {
         throw new Error('Cannot move user to an organization with a different login identifier type.');
       }
-      // --- END: สิ้นสุด Logic ตรวจสอบ Type ---
 
       await tx.radusergroup.updateMany({
         where: { username: username },
@@ -254,7 +257,6 @@ const updateUserByUsername = async (username, updateData) => {
       });
       
       dataToUpdateInUserTable.organizationId = organizationId;
-      updatedResults.organization = 'updated';
     }
 
     if (Object.keys(dataToUpdateInUserTable).length > 0) {
@@ -264,7 +266,7 @@ const updateUserByUsername = async (username, updateData) => {
       });
     }
 
-    return updatedResults;
+    return { message: 'User updated' };
   });
 };
 
@@ -287,16 +289,14 @@ const moveUsersToNewOrganization = async (userIds, targetOrganizationId) => {
 
         const usersToMove = await tx.user.findMany({
             where: { id: { in: userIds } },
-            include: { organization: true }, // ดึงข้อมูลองค์กรเดิม
+            include: { organization: true },
         });
         
-        // --- START: เพิ่ม Logic ตรวจสอบ Type ---
         for (const user of usersToMove) {
             if (user.organization.login_identifier_type !== targetOrganization.login_identifier_type) {
                 throw new Error(`Cannot move user '${user.username}' as their organization type does not match the target organization type.`);
             }
         }
-        // --- END: สิ้นสุด Logic ตรวจสอบ Type ---
         
         const usernamesToMove = new Set(usersToMove.map(u => u.username));
 
@@ -333,22 +333,18 @@ const moveUsersToNewOrganization = async (userIds, targetOrganizationId) => {
 
 const deleteUsersByUsernames = async (usernames) => {
   return prisma.$transaction(async (tx) => {
-    // 1. ลบจากตาราง radcheck
     await tx.radcheck.deleteMany({
       where: { username: { in: usernames } },
     });
 
-    // 2. ลบจากตาราง radusergroup
     await tx.radusergroup.deleteMany({
       where: { username: { in: usernames } },
     });
     
-    // 3. ลบจากตาราง user หลัก
     const deletedUsersResult = await tx.user.deleteMany({
       where: { username: { in: usernames } },
     });
 
-    // 4. คืนค่าจำนวนที่ลบได้
     return { deletedCount: deletedUsersResult.count };
   });
 };
@@ -365,18 +361,15 @@ const toggleUserStatusByUsername = async (username) => {
 
     const newStatus = user.status === 'active' ? 'disabled' : 'active';
 
-    // อัปเดตสถานะในตาราง User
     await tx.user.update({
       where: { username },
       data: { status: newStatus },
     });
 
     if (newStatus === 'disabled') {
-      // ถ้า disable: เพิ่ม Attribute เพื่อบังคับ Reject การ Login
-      // ใช้ updateMany เผื่อกรณีมี Auth-Type อยู่แล้ว
       await tx.radcheck.upsert({
         where: {
-          username_attribute: { // Prisma จะสร้าง unique constraint นี้ให้ถ้ายังไม่มี
+          username_attribute: {
              username: username,
              attribute: 'Auth-Type'
           }
@@ -390,7 +383,6 @@ const toggleUserStatusByUsername = async (username) => {
         },
       });
     } else {
-      // ถ้า active: ลบ Attribute 'Auth-Type' := 'Reject' ออก
       await tx.radcheck.deleteMany({
         where: {
           username: username,
