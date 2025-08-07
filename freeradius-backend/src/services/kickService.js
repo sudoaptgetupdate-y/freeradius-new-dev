@@ -1,26 +1,37 @@
 // src/services/kickService.js
 const prisma = require('../prisma');
-const { exec } = require('child_process');
+const { execFile } = require('child_process'); // 1. เปลี่ยนมาใช้ execFile
 const os = require('os');
 
 /**
- * Executes a shell command and returns a promise.
+ * Executes a shell command securely and returns a promise.
  * @param {string} command The command to execute.
+ * @param {string[]} args The arguments for the command.
+ * @param {string} stdinData The data to pipe to the command's stdin.
  * @returns {Promise<string>} A promise that resolves with the stdout of the command.
  */
-const executeCommand = (command) => {
+const executeCommand = (command, args, stdinData) => {
+  // ยังคงจำลองการทำงานบน OS อื่นที่ไม่ใช่ Linux
   if (os.platform() !== 'linux') {
-    console.log(`SKIPPING command on non-linux OS: "${command}"`);
+    console.log(`SKIPPING command on non-linux OS: "${command} ${args.join(' ')}"`);
     return Promise.resolve('Kick command simulated on non-Linux OS.');
   }
+
+  // 2. เปลี่ยนมาใช้ execFile ซึ่งปลอดภัยกว่า
   return new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
+    const child = execFile(command, args, (error, stdout, stderr) => {
       if (error) {
         reject(new Error(stderr || error.message));
         return;
       }
       resolve(stdout);
     });
+
+    // 3. ส่งข้อมูล user ผ่าน stdin แทนการต่อ string ใน command
+    if (stdinData) {
+      child.stdin.write(stdinData);
+      child.stdin.end();
+    }
   });
 };
 
@@ -31,11 +42,17 @@ const executeCommand = (command) => {
 const kickUserSession = async (sessionData) => {
   const { username, nasipaddress, acctsessionid } = sessionData;
 
+  // 4. เพิ่มการตรวจสอบ Input เบื้องต้น เพื่อป้องกันอักขระแปลกปลอม
+  if (!/^[a-zA-Z0-9._-]+$/.test(username) || 
+      !/^[a-zA-Z0-9:.-]+$/.test(nasipaddress) || 
+      !/^[a-zA-Z0-9]+$/.test(acctsessionid)) {
+      throw new Error('Invalid characters detected in session data.');
+  }
+
   if (!username || !nasipaddress || !acctsessionid) {
     throw new Error('Username, NAS IP, and Session ID are required to kick a user.');
   }
 
-  // 1. ค้นหา Secret ของ NAS (FortiGate) จาก IP Address
   const nas = await prisma.nas.findFirst({
     where: { nasname: nasipaddress },
   });
@@ -45,16 +62,23 @@ const kickUserSession = async (sessionData) => {
   }
 
   const nasSecret = nas.secret;
-  const disconnectPort = 3799; // Standard port for CoA/Disconnect
+  const disconnectPort = 3799;
 
-  // 2. สร้าง Command สำหรับ radclient
-  // เราส่งทั้ง User-Name และ Acct-Session-Id เพื่อระบุ Session ให้แม่นยำที่สุด
-  const command = `echo "User-Name=${username},Acct-Session-Id=${acctsessionid}" | radclient -x ${nasipaddress}:${disconnectPort} disconnect ${nasSecret}`;
+  // 5. เตรียมข้อมูลที่จะส่งผ่าน stdin
+  const stdinData = `User-Name=${username},Acct-Session-Id=${acctsessionid}`;
+  
+  // 6. เตรียม arguments แยกเป็นอาร์เรย์
+  const args = [
+    '-x',
+    `${nasipaddress}:${disconnectPort}`,
+    'disconnect',
+    nasSecret,
+  ];
 
-  console.log(`Executing kick command: ${command}`);
+  console.log(`Executing kick command: /usr/bin/radclient with args: [${args.join(', ')}]`);
 
-  // 3. รัน Command
-  return executeCommand(command);
+  // 7. รันคำสั่งอย่างปลอดภัยโดยแยกระหว่าง "คำสั่ง", "arguments", และ "ข้อมูล"
+  return executeCommand('/usr/bin/radclient', args, stdinData);
 };
 
 module.exports = {
