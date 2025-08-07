@@ -3,14 +3,17 @@ const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 
 const selfRegisterUser = async (userData) => {
-  const { fullName, username, nationalId, password } = userData;
+  // --- START: แก้ไขส่วนนี้ ---
+  // 1. รับค่า email และ phoneNumber เข้ามาแทน nationalId
+  const { fullName, username, email, phoneNumber, password } = userData;
 
-  // 1. ตรวจสอบข้อมูลเบื้องต้น
-  if (!fullName || !username || !nationalId || !password) {
+  // 2. ตรวจสอบข้อมูลใหม่ทั้งหมด
+  if (!fullName || !username || !email || !phoneNumber || !password) {
     throw new Error('All fields are required.');
   }
+  // --- END ---
 
-  // 2. ค้นหาองค์กร "Register"
+  // 3. ค้นหาองค์กร "Register" (ยังคงเดิม)
   const registerOrg = await prisma.organization.findUnique({
     where: { name: 'Register' },
     include: { radiusProfile: true },
@@ -23,12 +26,12 @@ const selfRegisterUser = async (userData) => {
     throw new Error('Registration profile is not configured. Please contact an administrator.');
   }
   
-  // 3. ตรวจสอบ Username และ National ID ซ้ำ
+  // 4. ตรวจสอบ Username และ Email ซ้ำ (ปรับปรุง)
   const existingUser = await prisma.user.findFirst({
     where: {
         OR: [
             { username: username },
-            { national_id: nationalId }
+            { email: email } // <-- ตรวจสอบ Email ซ้ำด้วย
         ]
     }
   });
@@ -37,15 +40,15 @@ const selfRegisterUser = async (userData) => {
     if (existingUser.username === username) {
         throw new Error('This username is already taken.');
     }
-    if (existingUser.national_id === nationalId) {
-        throw new Error('This National ID has already been registered.');
+    if (existingUser.email === email) { // <-- เพิ่มเงื่อนไขตรวจสอบ Email
+        throw new Error('This email has already been registered.');
     }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const profile_name = registerOrg.radiusProfile.name;
 
-  // 4. สร้างผู้ใช้ใน Transaction เพื่อความปลอดภัยของข้อมูล
+  // 5. สร้างผู้ใช้ใน Transaction (เพิ่ม email, phoneNumber และลบ nationalId)
   return prisma.$transaction(async (tx) => {
     const newUser = await tx.user.create({
       data: {
@@ -53,8 +56,9 @@ const selfRegisterUser = async (userData) => {
         username: username,
         password: hashedPassword,
         full_name: fullName,
-        national_id: nationalId,
-        status: 'inactive', // <-- ตั้งค่าสถานะเริ่มต้นเป็น inactive
+        email: email,             // <-- เพิ่ม
+        phoneNumber: phoneNumber, // <-- เพิ่ม
+        status: 'inactive', 
       },
     });
 
@@ -75,7 +79,6 @@ const selfRegisterUser = async (userData) => {
       },
     });
 
-    // ไม่ส่งรหัสผ่านกลับไป
     const { password: _, ...safeUserData } = newUser;
     return safeUserData;
   });
