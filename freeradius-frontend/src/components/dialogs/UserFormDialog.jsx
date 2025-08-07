@@ -57,7 +57,9 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
             setIsDataReady(false);
             axiosInstance.get('/organizations', { headers: { Authorization: `Bearer ${token}` } })
                 .then(response => {
-                    const fetchedOrgs = response.data.data;
+                    // --- START: แก้ไขส่วนนี้ ---
+                    const fetchedOrgs = response.data.data.organizations;
+                    // --- END ---
                     setAllOrganizations(fetchedOrgs);
 
                     if (user) {
@@ -165,7 +167,6 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                             <Input id="full_name" value={formData.full_name} onChange={handleInputChange} placeholder="e.g., John Doe" required disabled={isFieldsDisabled} />
                         </div>
 
-                        {/* --- START: แก้ไขการแสดงผลฟอร์ม --- */}
                         {loginIdentifierType === 'manual' && (
                             <div className="space-y-2">
                                 <RequiredLabel htmlFor="username">Username</RequiredLabel>
@@ -185,7 +186,6 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                             </div>
                         )}
                         
-                        {/* National ID: แสดงเสมอ แต่จะ Required เฉพาะเมื่อ type คือ 'national_id' */}
                         <div className="space-y-2">
                             {loginIdentifierType === 'national_id' ? (
                                 <RequiredLabel htmlFor="national_id">National ID</RequiredLabel>
@@ -194,7 +194,6 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                             )}
                             <Input id="national_id" value={formData.national_id} onChange={handleInputChange} placeholder="13-digit ID number" required={loginIdentifierType === 'national_id'} disabled={isEditMode || isFieldsDisabled}/>
                         </div>
-                        {/* --- END --- */}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">

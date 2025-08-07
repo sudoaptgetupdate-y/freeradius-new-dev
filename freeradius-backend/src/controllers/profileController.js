@@ -29,20 +29,29 @@ const getProfile = async (req, res, next) => {
 };
 
 // --- START: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
-const removeProfile = async (req, res, next) => {
+const updateProfile = async (req, res, next) => {
   try {
-    await profileService.deleteProfile(req.params.id);
-    res.status(200).json({ success: true, message: 'Profile deleted successfully' });
+    const updatedProfile = await profileService.updateProfile(req.params.id, req.body);
+    res.status(200).json({ success: true, data: updatedProfile });
   } catch (error) {
-    // ส่ง Error message ที่เราสร้างเองกลับไปให้ Frontend
     res.status(400).json({ success: false, message: error.message });
   }
 };
 // --- END: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
 
+const removeProfile = async (req, res, next) => {
+  try {
+    await profileService.deleteProfile(req.params.id);
+    res.status(200).json({ success: true, message: 'Profile deleted successfully' });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getProfiles,
   createProfile,
   getProfile,
-  removeProfile, // <-- Export ฟังก์ชันใหม่
+  updateProfile, // <-- Export ฟังก์ชันใหม่
+  removeProfile,
 };
