@@ -204,3 +204,11 @@ model RadiusAttributeDefinition {
   type        String
   createdAt   DateTime @default(now())
 }
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

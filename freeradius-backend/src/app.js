@@ -2,6 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const path = require('path'); // 👈 เพิ่มเข้ามา
 
 const authRoutes = require('./routes/authRoutes');
 const nasRoutes = require('./routes/nasRoutes');
@@ -17,6 +18,7 @@ const onlineUserRoutes = require('./routes/onlineUserRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const registerRoutes = require('./routes/registerRoutes');
 const attributeDefinitionRoutes = require('./routes/attributeDefinitionRoutes');
+const settingsRoutes = require('./routes/settingsRoutes'); // 👈 เพิ่มเข้ามา
 
 const app = express();
 // ... middlewares ...
@@ -24,12 +26,17 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// 👈 ทำให้ Client สามารถเข้าถึงไฟล์ในโฟลเดอร์ public ได้
+// เช่น /uploads/logo-12345.png
+app.use(express.static(path.join(__dirname, '../public')));
+
 // --- Routes ---
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'Backend is healthy' });
 });
 
 app.use('/api/register', registerRoutes);
+app.use('/api/settings', settingsRoutes); // 👈 เพิ่มเข้ามา
 
 app.use('/api/auth', authRoutes);
 app.use('/api/nas', nasRoutes);

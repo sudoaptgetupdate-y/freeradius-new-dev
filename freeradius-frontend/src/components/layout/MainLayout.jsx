@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 // --- START: แก้ไขส่วนนี้ (เพิ่ม ListChecks) ---
 import { 
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
-    Wifi, History, Menu, User as UserIcon, UserCog, ListChecks
+    Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette
 } from "lucide-react";
 // --- END: สิ้นสุดการแก้ไข ---
 import {
@@ -138,6 +138,7 @@ export default function MainLayout() {
                             <div className="space-y-1">
                                 <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text="Attributes" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             </div>
                         </div>
                     )}

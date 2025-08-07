@@ -23,6 +23,7 @@ import AdminsPage from './pages/AdminsPage.jsx';
 import AdminProfilePage from './pages/AdminProfilePage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
+import CustomizationPage from './pages/CustomizationPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
               { path: 'admins', element: <AdminsPage /> },
               { path: 'profile', element: <AdminProfilePage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
+              { path: 'customization', element: <CustomizationPage /> },
             ]
           }
         ]

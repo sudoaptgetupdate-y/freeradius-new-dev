@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
 import { ArrowLeft, Building } from 'lucide-react';
-// --- 1. Import Dialog components ---
 import {
   Dialog,
   DialogContent,
@@ -20,7 +19,6 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -33,19 +31,29 @@ export default function RegisterPage() {
     });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    
     const [botCheck, setBotCheck] = useState({ num1: 0, num2: 0, answer: '' });
 
-    // --- 2. สร้าง State สำหรับเก็บข้อความ Terms (ในอนาคตจะดึงจาก API) ---
-    const [termsContent, setTermsContent] = useState(
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. ... (ใส่ข้อความเต็มๆ ที่นี่)"
-    );
+    // --- START: แก้ไขส่วนนี้ ---
+    // 1. สร้าง State สำหรับเก็บข้อมูลการตั้งค่าทั้งหมดใน Object เดียว
+    const [settings, setSettings] = useState({
+        logoUrl: '',
+        backgroundUrl: '',
+        terms: 'Loading terms...' // ข้อความเริ่มต้น
+    });
 
     useEffect(() => {
         generateBotCheck();
-        // ในอนาคตสามารถ fetch ข้อความ Terms of Service จาก API ที่นี่
-        // axiosInstance.get('/api/settings/terms').then(res => setTermsContent(res.data.content));
+        // 2. ดึงข้อมูลการตั้งค่าทั้งหมดจาก API เมื่อหน้าเว็บโหลด
+        axiosInstance.get('/settings')
+          .then(response => {
+            // 3. อัปเดต State ด้วยข้อมูลที่ได้จาก Backend
+            setSettings(response.data.data);
+          })
+          .catch(() => {
+            toast.error("Could not load registration page settings.");
+          });
     }, []);
+    // --- END ---
 
     const generateBotCheck = () => {
         setBotCheck({
@@ -75,15 +83,7 @@ export default function RegisterPage() {
 
         setIsLoading(true);
         try {
-            const payload = {
-                fullName: formData.fullName,
-                username: formData.username,
-                email: formData.email,
-                phoneNumber: formData.phoneNumber,
-                password: formData.password,
-            };
-            await axiosInstance.post('/register', payload);
-            
+            await axiosInstance.post('/register', formData);
             toast.success("Registration Successful!", {
                 description: "Please wait for an administrator to approve your account.",
                 duration: 5000,
@@ -99,18 +99,33 @@ export default function RegisterPage() {
         }
     };
 
+    const pageStyle = settings.backgroundUrl ? {
+        backgroundImage: `url(${settings.backgroundUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+    } : {
+        backgroundColor: 'hsl(220 14.3% 95.9%)'
+    };
+
     return (
-        <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
-            <Card className="w-full max-w-md shadow-lg">
+        <div className="flex items-center justify-center min-h-screen p-4 transition-all" style={pageStyle}>
+            <Card className="w-full max-w-md shadow-lg bg-white/90 backdrop-blur-sm">
                 <CardHeader className="text-center">
-                    <div className="mx-auto bg-slate-100 p-3 rounded-full w-fit mb-4">
-                        <Building className="h-10 w-10 text-primary" />
+                    <div className="mx-auto mb-4">
+                        {settings.logoUrl ? (
+                           <img src={settings.logoUrl} alt="Company Logo" className="h-20 object-contain" />
+                        ) : (
+                           <div className="bg-slate-100 p-3 rounded-full w-fit">
+                               <Building className="h-10 w-10 text-primary" />
+                           </div>
+                        )}
                     </div>
                     <CardTitle className="text-2xl">Create Your Account</CardTitle>
                     <CardDescription>Fill out the form to get started.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Form fields... (คงเดิม) */}
                         <div className="space-y-2">
                             <Label htmlFor="fullName">Full Name</Label>
                             <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
@@ -135,13 +150,11 @@ export default function RegisterPage() {
                                 <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Create a strong password" required />
                             </div>
                         </div>
-                        
                         <div className="space-y-2 pt-2">
                             <Label htmlFor="botCheck">Security Question: What is {botCheck.num1} + {botCheck.num2}?</Label>
                             <Input id="botCheck" type="number" value={botCheck.answer} onChange={(e) => setBotCheck({...botCheck, answer: e.target.value})} required />
                         </div>
-
-                        {/* --- 3. แก้ไขส่วนของ Terms ให้ใช้ Dialog --- */}
+                        
                         <Dialog>
                             <div className="items-top flex space-x-2 pt-2">
                                 <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
@@ -157,13 +170,13 @@ export default function RegisterPage() {
                              <DialogContent className="sm:max-w-[625px]">
                                 <DialogHeader>
                                   <DialogTitle>Terms of Service and Privacy Policy</DialogTitle>
-                                  <DialogDescription>
-                                    Please read and agree to the terms before continuing.
-                                  </DialogDescription>
                                 </DialogHeader>
-                                <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground">
-                                   {termsContent}
+                                {/* --- START: แก้ไขส่วนนี้ --- */}
+                                {/* 4. แสดงข้อความ Terms จาก State ที่ถูกต้อง */}
+                                <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">
+                                   {settings.terms}
                                 </div>
+                                {/* --- END --- */}
                                 <DialogFooter>
                                     <DialogClose asChild>
                                         <Button type="button">Close</Button>
