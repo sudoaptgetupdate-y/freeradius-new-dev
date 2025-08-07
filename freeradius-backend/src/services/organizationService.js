@@ -19,32 +19,46 @@ const createOrganization = async (orgData) => {
 };
 
 const getAllOrganizations = async (filters = {}) => {
-  const { searchTerm } = filters;
+  const { searchTerm, page = 1, pageSize = 10 } = filters;
   const whereClause = {};
 
   if (searchTerm) {
     whereClause.name = {
       contains: searchTerm,
+      mode: 'insensitive', // Optional: ทำให้ค้นหาแบบ case-insensitive
     };
   }
+  
+  const skip = (parseInt(page) - 1) * parseInt(pageSize);
+  const take = parseInt(pageSize);
 
-  return prisma.organization.findMany({
-    where: whereClause,
-    // --- START: แก้ไขส่วนนี้ ---
-    select: {
-        id: true,
-        name: true,
-        login_identifier_type: true,
-        radiusProfileId: true, // Field ที่ต้องการเพื่อให้ Edit Dialog ทำงานถูกต้อง
-        radiusProfile: {
-            select: {
-                name: true
-            }
-        }
-    },
-    // --- END: สิ้นสุดส่วนที่แก้ไข ---
-    orderBy: { name: 'asc' },
-  });
+  const [organizations, totalOrgs] = await prisma.$transaction([
+    prisma.organization.findMany({
+      where: whereClause,
+      select: {
+          id: true,
+          name: true,
+          login_identifier_type: true,
+          radiusProfileId: true,
+          radiusProfile: {
+              select: {
+                  name: true
+              }
+          }
+      },
+      orderBy: { name: 'asc' },
+      skip: skip,
+      take: take,
+    }),
+    prisma.organization.count({ where: whereClause }),
+  ]);
+  
+  return {
+    organizations,
+    totalOrgs,
+    totalPages: Math.ceil(totalOrgs / take),
+    currentPage: parseInt(page),
+  };
 };
 
 const getOrganizationById = async (orgId) => {

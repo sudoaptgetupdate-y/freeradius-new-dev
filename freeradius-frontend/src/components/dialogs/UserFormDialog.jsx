@@ -9,13 +9,11 @@ import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 
-// --- START: เพิ่ม Component สำหรับ Label ที่มีเครื่องหมายดอกจัน ---
 const RequiredLabel = ({ htmlFor, children }) => (
     <Label htmlFor={htmlFor}>
         {children} <span className="text-red-500">*</span>
     </Label>
 );
-// --- END: สิ้นสุด Component ---
 
 const OrganizationCombobox = ({ selectedValue, onSelect, organizations }) => (
     <Select value={selectedValue ? String(selectedValue) : ""} onValueChange={onSelect}>
@@ -40,8 +38,8 @@ const initialFormData = {
     national_id: '',
     employee_id: '',
     student_id: '',
-    email: '', // เพิ่ม email
-    phoneNumber: '', // เพิ่ม phoneNumber
+    email: '',
+    phoneNumber: '',
 };
 
 export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
@@ -71,8 +69,8 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                             national_id: user.national_id || '',
                             employee_id: user.employee_id || '',
                             student_id: user.student_id || '',
-                            email: user.email || '', // เพิ่ม email
-                            phoneNumber: user.phoneNumber || '', // เพิ่ม phoneNumber
+                            email: user.email || '',
+                            phoneNumber: user.phoneNumber || '',
                             password: '',
                         });
                     } else {
@@ -119,7 +117,7 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
     };
 
     const handleOrgChange = (value) => {
-        setFormData(prev => ({ ...prev, organizationId: value }));
+        setFormData(prev => ({ ...initialFormData, organizationId: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -167,33 +165,36 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                             <Input id="full_name" value={formData.full_name} onChange={handleInputChange} placeholder="e.g., John Doe" required disabled={isFieldsDisabled} />
                         </div>
 
+                        {/* --- START: แก้ไขการแสดงผลฟอร์ม --- */}
                         {loginIdentifierType === 'manual' && (
                             <div className="space-y-2">
                                 <RequiredLabel htmlFor="username">Username</RequiredLabel>
                                 <Input id="username" value={formData.username} onChange={handleInputChange} placeholder="e.g., johndoe" required disabled={isEditMode || isFieldsDisabled} />
                             </div>
                         )}
-
-                        {loginIdentifierType === 'national_id' && (
-                             <div className="space-y-2">
-                                <RequiredLabel htmlFor="national_id">National ID</RequiredLabel>
-                                <Input id="national_id" value={formData.national_id} onChange={handleInputChange} placeholder="13-digit ID number" required disabled={isEditMode || isFieldsDisabled}/>
-                            </div>
-                        )}
-
                         {loginIdentifierType === 'employee_id' && (
                             <div className="space-y-2">
                                 <RequiredLabel htmlFor="employee_id">Employee ID</RequiredLabel>
                                 <Input id="employee_id" value={formData.employee_id} onChange={handleInputChange} placeholder="e.g., EMP001" required disabled={isEditMode || isFieldsDisabled} />
                             </div>
                         )}
-
                         {loginIdentifierType === 'student_id' && (
                             <div className="space-y-2">
                                 <RequiredLabel htmlFor="student_id">Student ID</RequiredLabel>
                                 <Input id="student_id" value={formData.student_id} onChange={handleInputChange} placeholder="e.g., 6601001" required disabled={isEditMode || isFieldsDisabled} />
                             </div>
                         )}
+                        
+                        {/* National ID: แสดงเสมอ แต่จะ Required เฉพาะเมื่อ type คือ 'national_id' */}
+                        <div className="space-y-2">
+                            {loginIdentifierType === 'national_id' ? (
+                                <RequiredLabel htmlFor="national_id">National ID</RequiredLabel>
+                            ) : (
+                                <Label htmlFor="national_id">National ID (Optional)</Label>
+                            )}
+                            <Input id="national_id" value={formData.national_id} onChange={handleInputChange} placeholder="13-digit ID number" required={loginIdentifierType === 'national_id'} disabled={isEditMode || isFieldsDisabled}/>
+                        </div>
+                        {/* --- END --- */}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">

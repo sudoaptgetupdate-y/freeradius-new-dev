@@ -85,7 +85,7 @@ export default function HistoryPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData 
-    } = usePaginatedFetch("/history", 5, { // <--- 1. เปลี่ยนค่า Default เป็น 5
+    } = usePaginatedFetch("/history", 5, {
         ...filters,
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
@@ -97,7 +97,7 @@ export default function HistoryPage() {
                 const response = await axiosInstance.get('/organizations', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setOrganizations(response.data.data);
+                setOrganizations(response.data.data.organizations);
             } catch (error) {
                 toast.error("Failed to load organizations for filtering.");
             }
@@ -201,7 +201,6 @@ export default function HistoryPage() {
                     <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {/* --- 2. เปลี่ยนตัวเลือก --- */}
                             {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                         </SelectContent>
                     </Select>

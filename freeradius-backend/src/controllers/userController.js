@@ -112,6 +112,27 @@ const toggleUserStatus = async (req, res, next) => {
   }
 };
 
+const importUsers = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No CSV file uploaded.' });
+    }
+
+    const result = await userService.importUsersFromCSV(req.file.path);
+    res.status(200).json({
+      success: true,
+      message: `${result.successCount} users imported successfully.`,
+      data: result,
+    });
+  } catch (error) {
+    // ส่ง error กลับไปในรูปแบบที่ Frontend ออกแบบไว้
+    if (error.errors) {
+      return res.status(400).json({ success: false, message: 'Validation failed', errors: error.errors });
+    }
+    next(error);
+  }
+};
+// --- END ---
 
 module.exports = {
   createUser,
@@ -122,4 +143,5 @@ module.exports = {
   moveUsersToOrganization,
   deleteMultipleUsers,
   toggleUserStatus,
+  importUsers,
 };

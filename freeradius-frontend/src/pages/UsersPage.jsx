@@ -10,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle } from "lucide-react";
+import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle, Upload } from "lucide-react";
 import UserFormDialog from "@/components/dialogs/UserFormDialog";
 import UserMoveDialog from "@/components/dialogs/UserMoveDialog";
+import UserImportDialog from "@/components/dialogs/UserImportDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,7 +40,7 @@ export default function UsersPage() {
         refreshData
     } = usePaginatedFetch(
         "/users",
-        5, // <--- 1. เปลี่ยนค่า Default เป็น 5
+        5,
         { organizationId: orgFilter }
     );
 
@@ -47,6 +48,7 @@ export default function UsersPage() {
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
     const [userToToggle, setUserToToggle] = useState(null);
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
     const isBulkActionsEnabled = !!orgFilter;
 
@@ -56,7 +58,7 @@ export default function UsersPage() {
                 const response = await axiosInstance.get('/organizations', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                setOrganizations(response.data.data);
+                setOrganizations(response.data.data.organizations);
             } catch (error) {
                 toast.error("Failed to load organizations for filtering.");
             }
@@ -182,6 +184,9 @@ export default function UsersPage() {
                                     </Button>
                                 </>
                             )}
+                            <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)}>
+                                <Upload className="mr-2 h-4 w-4" /> Import Users
+                            </Button>
                             <Button size="sm" onClick={handleAddNew}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add New
                             </Button>
@@ -298,7 +303,6 @@ export default function UsersPage() {
                             <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                                 <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    {/* --- 2. เปลี่ยนตัวเลือก --- */}
                                     {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                                 </SelectContent>
                             </Select>
@@ -320,6 +324,8 @@ export default function UsersPage() {
 
             {isDialogOpen && ( <UserFormDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} user={editingUser} onSave={refreshData} /> )}
             {isMoveDialogOpen && ( <UserMoveDialog isOpen={isMoveDialogOpen} setIsOpen={setIsMoveDialogOpen} selectedUsers={selectedUsers} onMoveSuccess={onActionSuccess} /> )}
+            {isImportDialogOpen && ( <UserImportDialog isOpen={isImportDialogOpen} setIsOpen={setIsImportDialogOpen} onImportSuccess={onActionSuccess} /> )}
+            
             <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the selected <strong>{selectedUsers.length} user(s)</strong>. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
