@@ -196,3 +196,11 @@ model User {
 
   @@index([organizationId], map: "User_organizationId_fkey")
 }
+
+model RadiusAttributeDefinition {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  type        String
+  createdAt   DateTime @default(now())
+}

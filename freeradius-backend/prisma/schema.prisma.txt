@@ -82,6 +82,7 @@ model radcheck {
   value     String @default("") @db.VarChar(253)
 
   @@index([username(length: 32)], map: "username")
+  @@unique([username, attribute])
 }
 
 model RadGroupCheck {
@@ -147,6 +148,7 @@ model Administrator {
   fullName     String?
   email        String   @unique
   phoneNumber  String?
+  status       String   @default("active")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   createdUsers User[]   @relation("AdminCreatedUsers")
@@ -189,6 +191,16 @@ model User {
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdById    Int?
   createdBy      Administrator? @relation("AdminCreatedUsers", fields: [createdById], references: [id])
+  email          String?      @unique
+  phoneNumber    String?
 
   @@index([organizationId], map: "User_organizationId_fkey")
+}
+
+model RadiusAttributeDefinition {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  type        String
+  createdAt   DateTime @default(now())
 }

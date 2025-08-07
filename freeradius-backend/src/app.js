@@ -16,6 +16,7 @@ const historyRoutes = require('./routes/historyRoutes');
 const onlineUserRoutes = require('./routes/onlineUserRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const registerRoutes = require('./routes/registerRoutes');
+const attributeDefinitionRoutes = require('./routes/attributeDefinitionRoutes');
 
 const app = express();
 // ... middlewares ...
@@ -38,6 +39,7 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/attributes', attributeRoutes);
 app.use('/api/status', statusRoutes);
+app.use('/api/attribute-definitions', attributeDefinitionRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/online-users', onlineUserRoutes);
 app.use('/api/dashboard', dashboardRoutes);

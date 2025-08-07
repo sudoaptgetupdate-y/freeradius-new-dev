@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const { COMMON_ATTRIBUTES } = require('../src/config/radiusAttributes');
 
 const prisma = new PrismaClient();
 
@@ -7,7 +8,7 @@ async function main() {
   const ADMIN_USERNAME = "admin";
   const ADMIN_PASSWORD = "admin";
   const DEFAULT_PROFILE_NAME = "default-profile";
-  const REGISTER_ORG_NAME = "Register"; // 1. เพิ่มชื่อองค์กรใหม่
+  const REGISTER_ORG_NAME = "Register";
 
   console.log('Start seeding ...');
 
@@ -36,7 +37,7 @@ async function main() {
   // --- 2. Seed Default Radius Profile ---
   console.log(`Seeding profile: ${DEFAULT_PROFILE_NAME}`);
   
-  const defaultProfile = await prisma.RadiusProfile.upsert({ // 2. เก็บผลลัพธ์ไว้ในตัวแปร
+  const defaultProfile = await prisma.RadiusProfile.upsert({
     where: { name: DEFAULT_PROFILE_NAME },
     update: {},
     create: {
@@ -44,19 +45,23 @@ async function main() {
       description: 'Default profile with basic access rules',
       replyAttributes: {
         create: [
-          { groupname: DEFAULT_PROFILE_NAME, attribute: 'Session-Timeout', op: ':=', value: '28800' },
+          // --- START: แก้ไขส่วนนี้ (ลบ groupname ออก) ---
+          { attribute: 'Session-Timeout', op: ':=', value: '28800' },
+          // --- END ---
         ]
       },
       checkAttributes: {
         create: [
-          { groupname: DEFAULT_PROFILE_NAME, attribute: 'Simultaneous-Use', op: ':=', value: '1' },
+          // --- START: แก้ไขส่วนนี้ (ลบ groupname ออก) ---
+          { attribute: 'Simultaneous-Use', op: ':=', value: '1' },
+          // --- END ---
         ]
       }
     }
   });
   console.log(`Profile '${DEFAULT_PROFILE_NAME}' is ready.`);
 
-  // --- START: 3. Seed Register Organization ---
+  // --- 3. Seed Register Organization ---
   console.log(`Seeding organization: ${REGISTER_ORG_NAME}`);
   await prisma.organization.upsert({
       where: { name: REGISTER_ORG_NAME },
@@ -64,12 +69,42 @@ async function main() {
       create: {
           name: REGISTER_ORG_NAME,
           login_identifier_type: 'manual',
-          radiusProfileId: defaultProfile.id, // 3. ใช้ ID จาก Profile ที่สร้างไว้
+          radiusProfileId: defaultProfile.id,
       },
   });
   console.log(`Organization '${REGISTER_ORG_NAME}' is ready.`);
-  // --- END: สิ้นสุดส่วนที่เพิ่ม ---
   
+  // --- 4. Seed Default Radius Attributes ---
+  console.log('Seeding default RADIUS attributes...');
+  
+  const allAttributes = [];
+  
+  COMMON_ATTRIBUTES.reply.forEach(attr => {
+    allAttributes.push({ ...attr, type: 'reply' });
+  });
+
+  COMMON_ATTRIBUTES.check.forEach(attr => {
+    allAttributes.push({ ...attr, type: 'check' });
+  });
+
+  await Promise.all(
+    allAttributes.map(attr => 
+      prisma.radiusAttributeDefinition.upsert({
+        where: { name: attr.name },
+        update: {
+            description: attr.description,
+            type: attr.type,
+        }, 
+        create: {
+          name: attr.name,
+          description: attr.description,
+          type: attr.type,
+        },
+      })
+    )
+  );
+  console.log('Default RADIUS attributes are ready.');
+
   console.log('Seeding finished.');
 }
 

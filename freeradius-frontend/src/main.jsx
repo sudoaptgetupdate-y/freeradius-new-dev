@@ -22,6 +22,7 @@ import HistoryPage from './pages/HistoryPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
 import AdminProfilePage from './pages/AdminProfilePage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -45,7 +46,8 @@ const router = createBrowserRouter([
               { path: 'online-users', element: <OnlineUsersPage /> },
               { path: 'profiles', element: <ProfilesPage /> },
               { path: 'admins', element: <AdminsPage /> },
-              { path: 'profile', element: <AdminProfilePage /> }, // 2. แก้ไข Element
+              { path: 'profile', element: <AdminProfilePage /> },
+              { path: 'attribute-management', element: <AttributeManagementPage /> },
             ]
           }
         ]

@@ -1,5 +1,5 @@
 // src/components/dialogs/AttributeFormDialog.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
-import { COMMON_ATTRIBUTES, OPERATORS } from "@/lib/radiusAttributes";
+
+// --- START: แก้ไขส่วนนี้ ---
+// 1. ย้าย OPERATORS เข้ามาไว้ในไฟล์นี้โดยตรง
+const OPERATORS = [":=", "=", "==", "+=", ">", ">=", "<", "<="];
+// --- END: สิ้นสุดการแก้ไข ---
 
 export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, attributeType, onSave }) {
     const token = useAuthStore((state) => state.token);
@@ -18,6 +22,29 @@ export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, at
         value: ''
     });
     const [isLoading, setIsLoading] = useState(false);
+    
+    const [attributeList, setAttributeList] = useState([]);
+    const [isAttrListLoading, setIsAttrListLoading] = useState(true);
+
+    useEffect(() => {
+        if (isOpen) {
+            const fetchAttributes = async () => {
+                setIsAttrListLoading(true);
+                try {
+                    const response = await axiosInstance.get('/attribute-definitions', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const filtered = response.data.data.filter(attr => attr.type === attributeType);
+                    setAttributeList(filtered);
+                } catch (error) {
+                    toast.error("Failed to load attribute list.");
+                } finally {
+                    setIsAttrListLoading(false);
+                }
+            };
+            fetchAttributes();
+        }
+    }, [isOpen, attributeType, token]);
 
     const handleSelectChange = (id, value) => {
         setFormData(prev => ({ ...prev, [id]: value }));
@@ -49,8 +76,6 @@ export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, at
         }
     };
     
-    const attributeList = COMMON_ATTRIBUTES[attributeType] || [];
-
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
@@ -61,12 +86,12 @@ export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, at
                     <div className="space-y-2">
                         <Label htmlFor="attribute">Attribute</Label>
                         <Select value={formData.attribute} onValueChange={(value) => handleSelectChange('attribute', value)} required>
-                            <SelectTrigger id="attribute">
-                                <SelectValue placeholder="Select a common attribute..." />
+                            <SelectTrigger id="attribute" disabled={isAttrListLoading}>
+                                <SelectValue placeholder={isAttrListLoading ? "Loading attributes..." : "Select an attribute..."} />
                             </SelectTrigger>
                             <SelectContent>
                                 {attributeList.map(attr => (
-                                    <SelectItem key={attr.name} value={attr.name}>
+                                    <SelectItem key={attr.id} value={attr.name}>
                                         {attr.name} <span className="text-muted-foreground ml-2">- {attr.description}</span>
                                     </SelectItem>
                                 ))}

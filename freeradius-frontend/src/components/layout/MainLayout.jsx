@@ -1,12 +1,15 @@
+// src/components/layout/MainLayout.jsx
 import { useState, useEffect, useCallback } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
+// --- START: แก้ไขส่วนนี้ (เพิ่ม ListChecks) ---
 import { 
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
-    Wifi, History, Menu, User as UserIcon, UserCog 
+    Wifi, History, Menu, User as UserIcon, UserCog, ListChecks
 } from "lucide-react";
+// --- END: สิ้นสุดการแก้ไข ---
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -115,7 +118,7 @@ export default function MainLayout() {
                         "text-lg font-bold text-slate-800 whitespace-nowrap transition-opacity",
                         (isSidebarCollapsed && !isMobileMenuOpen) && "opacity-0 hidden"
                     )}>
-                        RADIUS-NTNAKHON
+                        Freeradius UI
                     </h1>
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
@@ -126,8 +129,17 @@ export default function MainLayout() {
                     <NavItem to="/users" icon={<Users size={18} />} text="Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/profiles" icon={<Settings size={18} />} text="Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    {isSuperAdmin && (
-                         <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    
+                    {(isSuperAdmin) && (
+                         <div className="pt-2">
+                            <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                                System
+                            </p>
+                            <div className="space-y-1">
+                                <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text="Attributes" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            </div>
+                        </div>
                     )}
                 </nav>
             </aside>

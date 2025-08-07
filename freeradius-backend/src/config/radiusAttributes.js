@@ -1,8 +1,6 @@
-// src/lib/radiusAttributes.js
+// src/config/radiusAttributes.js
 
-// รายชื่อ Attributes ที่ใช้บ่อย
-// เราสามารถมาเพิ่มได้อีกในอนาคต
-export const COMMON_ATTRIBUTES = {
+const COMMON_ATTRIBUTES = {
   reply: [
     { name: 'Session-Timeout', description: 'Max session time in seconds' },
     { name: 'Idle-Timeout', description: 'Disconnect if idle for seconds' },
@@ -17,5 +15,4 @@ export const COMMON_ATTRIBUTES = {
   ]
 };
 
-// Operator ที่ใช้ได้
-export const OPERATORS = [":=", "=", "==", "+=", ">", ">=", "<", "<="];
+module.exports = { COMMON_ATTRIBUTES };
