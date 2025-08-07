@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const csv = require('csv-parser');
 
-// --- (ฟังก์ชันอื่นๆ ทั้งหมดตั้งแต่ createUserAndSync จนถึง toggleUserStatusByUsername ให้คงไว้เหมือนเดิม) ---
+// --- START: แก้ไขฟังก์ชันนี้ ---
 const createUserAndSync = async (userData, adminId) => {
   const { 
     organizationId, 
@@ -39,21 +39,27 @@ const createUserAndSync = async (userData, adminId) => {
   if (!full_name) throw new Error('Full Name is required.');
 
   let username;
+
+  // เพิ่มการตรวจสอบข้อมูลที่ขัดแย้งกัน เหมือนกับใน CSV Import
   switch (login_identifier_type) {
     case 'manual':
       if (!manualUsername) throw new Error('Username is required for this organization type.');
+      if (national_id || employee_id || student_id) throw new Error('National ID, Employee ID, and Student ID must be empty for manual type.');
       username = manualUsername;
       break;
     case 'national_id':
       if (!national_id) throw new Error('National ID is required for this organization type.');
+      if (manualUsername || employee_id || student_id) throw new Error('Username, Employee ID, and Student ID must be empty for national_id type.');
       username = national_id;
       break;
     case 'employee_id':
       if (!employee_id) throw new Error('Employee ID is required for this organization type.');
+      if (manualUsername || national_id || student_id) throw new Error('Username, National ID, and Student ID must be empty for employee_id type.');
       username = employee_id;
       break;
     case 'student_id':
       if (!student_id) throw new Error('Student ID is required for this organization type.');
+      if (manualUsername || national_id || employee_id) throw new Error('Username, National ID, and Employee ID must be empty for student_id type.');
       username = student_id;
       break;
     default:
@@ -98,6 +104,9 @@ const createUserAndSync = async (userData, adminId) => {
     return { newUser };
   });
 };
+// --- END: สิ้นสุดการแก้ไข ---
+
+// --- (ฟังก์ชันอื่นๆ ที่เหลือให้คงไว้เหมือนเดิม) ---
 
 const getAllUsers = async (filters) => {
   const { searchTerm, organizationId, page = 1, pageSize = 10 } = filters;
@@ -397,7 +406,6 @@ const toggleUserStatusByUsername = async (username) => {
   });
 };
 
-// --- START: แทนที่ฟังก์ชันนี้ทั้งหมด ---
 const importUsersFromCSV = (filePath) => {
   return new Promise(async (resolve, reject) => {
     const usersToCreate = [];
@@ -405,13 +413,6 @@ const importUsersFromCSV = (filePath) => {
     let rowIndex = 1;
 
     try {
-      // 1. อ่านไฟล์เป็น Buffer และลบ BOM ด้วยตัวเอง
-      let fileBuffer = fs.readFileSync(filePath);
-      if (fileBuffer[0] === 0xEF && fileBuffer[1] === 0xBB && fileBuffer[2] === 0xBF) {
-        fileBuffer = fileBuffer.slice(3);
-      }
-      const fileContent = fileBuffer.toString('utf8');
-
       const allOrgs = await prisma.organization.findMany({ include: { radiusProfile: true } });
       const allUsers = await prisma.user.findMany({
         select: { username: true, email: true },
@@ -423,110 +424,123 @@ const importUsersFromCSV = (filePath) => {
       const usernamesInFile = new Set();
       const emailsInFile = new Set();
       
-      // 2. ใช้ csv-parser กับ String ที่สะอาดแล้ว
-      const parser = csv({
-        mapHeaders: ({ header }) => header.trim() // ทำความสะอาด Header เผื่อไว้
-      })
-      .on('data', (row) => {
-        rowIndex++;
-        const cleanedRow = Object.fromEntries(Object.entries(row).map(([key, value]) => [key, value ? value.trim() : '']));
-        
-        const { organizationName, fullName, password, username, national_id, employee_id, student_id, email, phoneNumber } = cleanedRow;
+      fs.createReadStream(filePath, { encoding: 'utf8' })
+        .pipe(csv({
+          mapHeaders: ({ header }) => header.trim(),
+          bom: true
+        }))
+        .on('data', (row) => {
+          rowIndex++;
+          const cleanedRow = Object.fromEntries(Object.entries(row).map(([key, value]) => [key, value ? value.trim() : '']));
+          
+          const { organizationName, fullName, password, username, national_id, employee_id, student_id, email, phoneNumber } = cleanedRow;
 
-        if (!organizationName || !fullName || !password) {
-          return errors.push({ row: rowIndex, message: `Missing required data (organizationName, fullName, password)` });
-        }
-        const org = orgMap.get(organizationName.toLowerCase());
-        if (!org) {
-          return errors.push({ row: rowIndex, message: `Organization '${organizationName}' not found.` });
-        }
-        if (!org.radiusProfile) {
-          return errors.push({ row: rowIndex, message: `Organization '${organizationName}' does not have a Radius Profile assigned.`});
-        }
-        if (email && (existingEmails.has(email) || emailsInFile.has(email))) {
-          return errors.push({ row: rowIndex, message: `Email '${email}' already exists.` });
-        }
-        if(email) emailsInFile.add(email);
-        
-        let finalUsername = '';
-        switch (org.login_identifier_type) {
-          case 'manual':
-            if (!username) return errors.push({ row: rowIndex, message: `Username is required for organization '${organizationName}'.` });
-            finalUsername = username; break;
-          case 'national_id':
-            if (!national_id) return errors.push({ row: rowIndex, message: `National ID is required for organization '${organizationName}'.` });
-            finalUsername = national_id; break;
-          case 'employee_id':
-            if (!employee_id) return errors.push({ row: rowIndex, message: `Employee ID is required for organization '${organizationName}'.` });
-            finalUsername = employee_id; break;
-          case 'student_id':
-            if (!student_id) return errors.push({ row: rowIndex, message: `Student ID is required for organization '${organizationName}'.` });
-            finalUsername = student_id; break;
-          default:
-            return errors.push({ row: rowIndex, message: `Unsupported login type for organization '${organizationName}'.` });
-        }
-        if (existingUsernames.has(finalUsername) || usernamesInFile.has(finalUsername)) {
-          return errors.push({ row: rowIndex, message: `Identifier (username/ID) '${finalUsername}' already exists.` });
-        }
-        usernamesInFile.add(finalUsername);
-        usersToCreate.push({ ...cleanedRow, organizationId: org.id, username: finalUsername, profileName: org.radiusProfile.name });
-      })
-      .on('end', async () => {
-        fs.unlinkSync(filePath);
-        if (errors.length > 0) { return reject({ errors }); }
-        
-        try {
-          await prisma.$transaction(async (tx) => {
-            for (const userData of usersToCreate) {
-              const hashedPassword = await bcrypt.hash(userData.password, 10);
-              await tx.user.create({
-                data: {
-                  organizationId: userData.organizationId,
-                  username: userData.username,
-                  password: hashedPassword,
-                  full_name: userData.fullName,
-                  national_id: userData.national_id || null,
-                  employee_id: userData.employee_id || null,
-                  student_id: userData.student_id || null,
-                  email: userData.email || null,
-                  phoneNumber: userData.phoneNumber || null,
-                },
-              });
-              await tx.radcheck.create({
-                data: {
-                  username: userData.username,
-                  attribute: 'Crypt-Password',
-                  op: ':=',
-                  value: hashedPassword,
-                },
-              });
-              await tx.radusergroup.create({
-                data: {
-                  username: userData.username,
-                  groupname: userData.profileName,
-                  priority: 10,
-                },
-              });
-            }
-          });
-          resolve({ successCount: usersToCreate.length });
-        } catch (transactionError) {
-          console.error("Transaction Error:", transactionError);
-          reject({ message: 'A database error occurred during import. No users were created.' });
-        }
-      });
-
-      parser.write(fileContent);
-      parser.end();
+          if (!organizationName || !fullName || !password) {
+            return errors.push({ row: rowIndex, message: `Missing required data (organizationName, fullName, password)` });
+          }
+          const org = orgMap.get(organizationName.toLowerCase());
+          if (!org) {
+            return errors.push({ row: rowIndex, message: `Organization '${organizationName}' not found.` });
+          }
+          if (!org.radiusProfile) {
+            return errors.push({ row: rowIndex, message: `Organization '${organizationName}' does not have a Radius Profile assigned.`});
+          }
+          if (email && (existingEmails.has(email) || emailsInFile.has(email))) {
+            return errors.push({ row: rowIndex, message: `Email '${email}' already exists.` });
+          }
+          if(email) emailsInFile.add(email);
+          
+          let finalUsername = '';
+          switch (org.login_identifier_type) {
+            case 'manual':
+              if (!username) return errors.push({ row: rowIndex, message: `Username is required for organization '${organizationName}'.` });
+              if (national_id || employee_id || student_id) return errors.push({ row: rowIndex, message: `National ID, Employee ID, and Student ID must be empty for manual type.` });
+              finalUsername = username; 
+              break;
+            case 'national_id':
+              if (!national_id) return errors.push({ row: rowIndex, message: `National ID is required for organization '${organizationName}'.` });
+              if (username || employee_id || student_id) return errors.push({ row: rowIndex, message: `Username, Employee ID, and Student ID must be empty for national_id type.` });
+              finalUsername = national_id; 
+              break;
+            case 'employee_id':
+              if (!employee_id) return errors.push({ row: rowIndex, message: `Employee ID is required for organization '${organizationName}'.` });
+              if (username || national_id || student_id) return errors.push({ row: rowIndex, message: `Username, National ID, and Student ID must be empty for employee_id type.` });
+              finalUsername = employee_id; 
+              break;
+            case 'student_id':
+              if (!student_id) return errors.push({ row: rowIndex, message: `Student ID is required for organization '${organizationName}'.` });
+              if (username || national_id || employee_id) return errors.push({ row: rowIndex, message: `Username, National ID, and Employee ID must be empty for student_id type.` });
+              finalUsername = student_id; 
+              break;
+            default:
+              return errors.push({ row: rowIndex, message: `Unsupported login type for organization '${organizationName}'.` });
+          }
+          if (existingUsernames.has(finalUsername) || usernamesInFile.has(finalUsername)) {
+            return errors.push({ row: rowIndex, message: `Identifier (username/ID) '${finalUsername}' already exists.` });
+          }
+          usernamesInFile.add(finalUsername);
+          usersToCreate.push({ ...cleanedRow, organizationId: org.id, username: finalUsername, profileName: org.radiusProfile.name });
+        })
+        .on('end', async () => {
+          fs.unlinkSync(filePath);
+          if (errors.length > 0) {
+            return reject({ errors });
+          }
+          
+          try {
+            await prisma.$transaction(async (tx) => {
+              for (const userData of usersToCreate) {
+                const hashedPassword = await bcrypt.hash(userData.password, 10);
+                await tx.user.create({
+                  data: {
+                    organizationId: userData.organizationId,
+                    username: userData.username,
+                    password: hashedPassword,
+                    full_name: userData.fullName,
+                    national_id: userData.national_id || null,
+                    employee_id: userData.employee_id || null,
+                    student_id: userData.student_id || null,
+                    email: userData.email || null,
+                    phoneNumber: userData.phoneNumber || null,
+                  },
+                });
+                await tx.radcheck.create({
+                  data: {
+                    username: userData.username,
+                    attribute: 'Crypt-Password',
+                    op: ':=',
+                    value: hashedPassword,
+                  },
+                });
+                await tx.radusergroup.create({
+                  data: {
+                    username: userData.username,
+                    groupname: userData.profileName,
+                    priority: 10,
+                  },
+                });
+              }
+            });
+            resolve({ successCount: usersToCreate.length });
+          } catch (transactionError) {
+            console.error("Transaction Error:", transactionError);
+            reject({ message: 'A database error occurred during import. No users were created.' });
+          }
+        })
+        .on('error', (error) => {
+          fs.unlinkSync(filePath);
+          console.error("CSV Stream Error:", error);
+          reject({ message: 'An error occurred while parsing the CSV file.' });
+        });
 
     } catch (error) {
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      console.error("CSV Import Error:", error);
-      reject({ message: 'An unexpected error occurred while processing the file.' });
+      console.error("CSV Import Setup Error:", error);
+      reject({ message: 'An unexpected error occurred while setting up the import process.' });
     }
   });
 };
-// --- END ---
+
 
 module.exports = {
   createUserAndSync,

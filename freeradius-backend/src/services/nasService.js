@@ -5,24 +5,31 @@ const os = require('os');
 
 /**
  * Helper function to execute a shell command for reloading FreeRADIUS.
+ * This function now returns a Promise.
  */
 const reloadFreeradiusService = () => {
-  if (os.platform() === 'linux') {
+  return new Promise((resolve, reject) => {
+    if (os.platform() !== 'linux') {
+      console.log('[NAS Service] Non-Linux platform detected. Skipping service reload.');
+      // หากไม่ใช่ Linux ให้ถือว่าสำเร็จไปเลย
+      return resolve('Skipped service reload on non-Linux OS.');
+    }
+
     console.log('[NAS Service] Linux platform detected. Attempting to reload FreeRADIUS service...');
     exec('sudo /bin/systemctl reload freeradius.service', (error, stdout, stderr) => {
       if (error) {
-        console.error(`[NAS Service] EXEC ERROR: Failed to reload FreeRADIUS: ${error.message}`);
-        return;
+        const errorMessage = `[NAS Service] EXEC ERROR: Failed to reload FreeRADIUS: ${stderr || error.message}`;
+        console.error(errorMessage);
+        // Reject a promise if there's an error.
+        return reject(new Error(errorMessage));
       }
-      if (stderr) {
-        console.error(`[NAS Service] EXEC STDERR: Error during FreeRADIUS reload: ${stderr}`);
-        return;
-      }
-      console.log(`[NAS Service] SUCCESS: FreeRADIUS reloaded successfully. Output: ${stdout}`);
+      
+      const successMessage = `[NAS Service] SUCCESS: FreeRADIUS reloaded successfully. Output: ${stdout}`;
+      console.log(successMessage);
+      // Resolve the promise on success.
+      resolve(successMessage);
     });
-  } else {
-    console.log('[NAS Service] Non-Linux platform detected. Skipping service reload.');
-  }
+  });
 };
 
 const getAllNas = async () => {
@@ -49,7 +56,15 @@ const createNas = async (nasData) => {
     },
   });
 
-  reloadFreeradiusService(); // เรียกใช้ Helper function
+  // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ reload
+  try {
+    await reloadFreeradiusService();
+  } catch (reloadError) {
+    // โยน Error ต่อไปเพื่อให้ Controller หรือส่วนอื่นๆ จัดการ
+    // หรืออาจจะแค่ Log ไว้โดยไม่ขัดขวางการทำงานหลักก็ได้
+    console.error('Service reload failed after creating NAS, but the NAS was saved to the database.');
+    // throw new Error('NAS created, but failed to reload service.'); // Uncomment if you want to notify the user
+  }
 
   return newNas;
 };
@@ -70,8 +85,14 @@ const updateNas = async (id, nasData) => {
         where: { id: parseInt(id, 10) },
         data: dataToUpdate
     });
-
-    reloadFreeradiusService(); // เรียกใช้ Helper function
+    
+    // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ reload
+    try {
+        await reloadFreeradiusService();
+    } catch (reloadError) {
+        console.error('Service reload failed after updating NAS, but the changes were saved to the database.');
+        // throw new Error('NAS updated, but failed to reload service.'); // Uncomment if you want to notify the user
+    }
 
     return updatedNas;
 };
@@ -100,7 +121,13 @@ const deleteNas = async (id) => {
 
     const deletedNas = await prisma.nas.delete({ where: { id: nasId }});
     
-    reloadFreeradiusService(); // เรียกใช้ Helper function หลังลบสำเร็จ
+    // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ reload
+    try {
+        await reloadFreeradiusService();
+    } catch (reloadError) {
+        console.error('Service reload failed after deleting NAS, but the NAS was removed from the database.');
+        // throw new Error('NAS deleted, but failed to reload service.'); // Uncomment if you want to notify the user
+    }
 
     return deletedNas;
 };

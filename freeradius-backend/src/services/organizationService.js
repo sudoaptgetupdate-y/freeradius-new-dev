@@ -2,7 +2,6 @@
 const prisma = require('../prisma');
 
 const createOrganization = async (orgData) => {
-  // --- แก้ไข: รับ radiusProfileId เข้ามาด้วย ---
   const { name, login_identifier_type, radiusProfileId } = orgData;
 
   if (!radiusProfileId) {
@@ -13,7 +12,7 @@ const createOrganization = async (orgData) => {
     data: {
       name,
       login_identifier_type: login_identifier_type || 'manual',
-      radiusProfileId: parseInt(radiusProfileId), // <-- เพิ่มข้อมูลนี้
+      radiusProfileId: parseInt(radiusProfileId),
     },
   });
 };
@@ -25,7 +24,7 @@ const getAllOrganizations = async (filters = {}) => {
   if (searchTerm) {
     whereClause.name = {
       contains: searchTerm,
-      mode: 'insensitive', // Optional: ทำให้ค้นหาแบบ case-insensitive
+      mode: 'insensitive',
     };
   }
   
@@ -72,43 +71,55 @@ const getOrganizationById = async (orgId) => {
 };
 
 const updateOrganization = async (orgId, updateData) => {
-  // --- แก้ไข: รับ radiusProfileId เข้ามาด้วย ---
   const { name, login_identifier_type, radiusProfileId } = updateData;
   return prisma.organization.update({
     where: { id: parseInt(orgId, 10) },
     data: {
       name,
       login_identifier_type,
-      radiusProfileId: parseInt(radiusProfileId), // <-- เพิ่มข้อมูลนี้
+      radiusProfileId: parseInt(radiusProfileId),
     },
   });
 };
 
-// --- START: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
+// --- START: แก้ไขฟังก์ชันนี้ ---
 const deleteOrganization = async (orgId) => {
   const organizationId = parseInt(orgId, 10);
 
-  // 1. ตรวจสอบว่ามี User สังกัดองค์กรนี้หรือไม่
+  // 1. ค้นหาองค์กรที่จะลบ
+  const organizationToDelete = await prisma.organization.findUnique({
+    where: { id: organizationId },
+  });
+
+  if (!organizationToDelete) {
+    throw new Error('Organization not found.');
+  }
+
+  // 2. ตรวจสอบชื่อองค์กร ถ้าเป็น "Register" ให้โยน Error ทันที
+  if (organizationToDelete.name === 'Register') {
+    throw new Error('The "Register" organization is critical for the system and cannot be deleted.');
+  }
+
+  // 3. ตรวจสอบว่ามี User สังกัดองค์กรนี้หรือไม่ (Logic เดิม)
   const userCount = await prisma.user.count({
     where: { organizationId: organizationId },
   });
 
-  // 2. ถ้ามี ให้โยน Error
   if (userCount > 0) {
     throw new Error(`Cannot delete organization. There are ${userCount} user(s) associated with it.`);
   }
 
-  // 3. ถ้าไม่มี จึงทำการลบ
+  // 4. ถ้าไม่มี จึงทำการลบ (Logic เดิม)
   return prisma.organization.delete({
     where: { id: organizationId },
   });
 };
-// --- END: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
+// --- END: สิ้นสุดการแก้ไข ---
 
 module.exports = {
   createOrganization,
   getAllOrganizations,
   getOrganizationById,
   updateOrganization,
-  deleteOrganization, // <-- Export ฟังก์ชันใหม่
+  deleteOrganization,
 };
