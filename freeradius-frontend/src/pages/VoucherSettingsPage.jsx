@@ -1,24 +1,79 @@
 // src/pages/VoucherSettingsPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import { Save } from 'lucide-react';
+import useAuthStore from '@/store/authStore';
+import axiosInstance from '@/api/axiosInstance';
+
+const initialSettings = {
+    voucherLogoUrl: '',
+    voucherSsid: 'Free-WiFi',
+    voucherHeaderText: 'WiFi Voucher',
+    voucherFooterText: 'Enjoy your connection!'
+};
 
 export default function VoucherSettingsPage() {
-    // This is a placeholder for state management (e.g., fetching/saving settings)
-    const [logo, setLogo] = useState(null);
-    const [ssid, setSsid] = useState('My-WiFi');
-    const [headerText, setHeaderText] = useState('WiFi Voucher');
-    const [footerText, setFooterText] = useState('Thank you!');
+    const token = useAuthStore((state) => state.token);
+    const [settings, setSettings] = useState(initialSettings);
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSave = () => {
-        // Placeholder for save logic
-        alert('Settings saved!');
+    useEffect(() => {
+        setIsLoading(true);
+        axiosInstance.get('/settings')
+          .then(response => {
+              const fetchedSettings = response.data.data;
+              setSettings({
+                  voucherSsid: fetchedSettings.voucherSsid || initialSettings.voucherSsid,
+                  voucherHeaderText: fetchedSettings.voucherHeaderText || initialSettings.voucherHeaderText,
+                  voucherFooterText: fetchedSettings.voucherFooterText || initialSettings.voucherFooterText,
+              });
+              setLogoPreview(fetchedSettings.voucherLogoUrl || '');
+          })
+          .catch(() => toast.error("Could not load settings."))
+          .finally(() => setIsLoading(false));
+    }, []);
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
     };
-    
+
+    const handleSave = async () => {
+        setIsLoading(true);
+        const formData = new FormData();
+        if (logoFile) {
+            formData.append('voucherLogo', logoFile);
+        }
+        formData.append('voucherSsid', settings.voucherSsid);
+        formData.append('voucherHeaderText', settings.voucherHeaderText);
+        formData.append('voucherFooterText', settings.voucherFooterText);
+
+        toast.promise(
+            axiosInstance.post('/settings', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}`
+                }
+            }),
+            {
+                loading: 'Saving settings...',
+                success: 'Voucher settings saved successfully!',
+                error: (err) => err.response?.data?.message || "Failed to save settings.",
+                finally: () => setIsLoading(false),
+            }
+        );
+    };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
@@ -28,38 +83,40 @@ export default function VoucherSettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div>
-                        <Label htmlFor="logo">Logo</Label>
-                        <Input id="logo" type="file" onChange={(e) => setLogo(e.target.files[0])} />
+                        <Label htmlFor="voucherLogo">Voucher Logo</Label>
+                        <Input id="voucherLogo" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} />
+                        <p className="text-sm text-muted-foreground pt-1">If no logo is uploaded, the main site logo will be used.</p>
                     </div>
                      <div>
-                        <Label htmlFor="ssid">WiFi Name (SSID)</Label>
-                        <Input id="ssid" value={ssid} onChange={(e) => setSsid(e.target.value)} />
+                        <Label htmlFor="voucherSsid">WiFi Name (SSID)</Label>
+                        <Input id="voucherSsid" value={settings.voucherSsid} onChange={(e) => setSettings({...settings, voucherSsid: e.target.value})} />
                     </div>
                     <div>
-                        <Label htmlFor="headerText">Header Text</Label>
-                        <Input id="headerText" value={headerText} onChange={(e) => setHeaderText(e.target.value)} />
+                        <Label htmlFor="voucherHeaderText">Header Text</Label>
+                        <Input id="voucherHeaderText" value={settings.voucherHeaderText} onChange={(e) => setSettings({...settings, voucherHeaderText: e.target.value})} />
                     </div>
                     <div>
-                        <Label htmlFor="footerText">Footer Text</Label>
-                        <Textarea id="footerText" value={footerText} onChange={(e) => setFooterText(e.target.value)} />
+                        <Label htmlFor="voucherFooterText">Footer Text</Label>
+                        <Textarea id="voucherFooterText" value={settings.voucherFooterText} onChange={(e) => setSettings({...settings, voucherFooterText: e.target.value})} />
                     </div>
-                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save Settings</Button>
+                    <Button onClick={handleSave} disabled={isLoading}>
+                        <Save className="mr-2 h-4 w-4" /> 
+                        {isLoading ? 'Saving...' : 'Save Settings'}
+                    </Button>
                 </CardContent>
             </Card>
             <Card>
-                <CardHeader>
-                    <CardTitle>Live Preview</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Live Preview</CardTitle></CardHeader>
                 <CardContent>
                     <div className="p-4 border-2 border-dashed rounded-lg text-center">
-                        {logo && <img src={URL.createObjectURL(logo)} alt="logo" className="mx-auto h-12 mb-2"/>}
-                        <h3 className="font-bold">{headerText}</h3>
-                        <p className="text-sm">SSID: {ssid}</p>
+                        {logoPreview && <img src={logoPreview} alt="logo preview" className="mx-auto h-12 mb-2"/>}
+                        <h3 className="font-bold">{settings.voucherHeaderText}</h3>
+                        <p className="text-sm">SSID: {settings.voucherSsid}</p>
                         <div className="my-4 p-2 bg-gray-100 rounded">
                             <p>Username: <strong>sampleuser</strong></p>
                             <p>Password: <strong>samplepass</strong></p>
                         </div>
-                        <p className="text-xs">{footerText}</p>
+                        <p className="text-xs">{settings.voucherFooterText}</p>
                     </div>
                 </CardContent>
             </Card>

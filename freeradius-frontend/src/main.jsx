@@ -25,9 +25,8 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
 import CustomizationPage from './pages/CustomizationPage.jsx';
 import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
-import VoucherGenerationPage from './pages/VoucherGenerationPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
-import VoucherPrintPage from './pages/VoucherPrintPage.jsx'; // <--- ตรวจสอบว่า import ถูกต้อง
+import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import VoucherSettingsPage from './pages/VoucherSettingsPage.jsx';
 
 const router = createBrowserRouter([
@@ -61,7 +60,6 @@ const router = createBrowserRouter([
               { path: 'attribute-management', element: <AttributeManagementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
-              { path: 'vouchers/generate', element: <VoucherGenerationPage /> },
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
               // ลบบรรทัดด้านล่างนี้ออกจาก MainLayout
               // { path: 'vouchers/batches/:id', element: <VoucherPrintPage /> },

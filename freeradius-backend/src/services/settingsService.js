@@ -20,53 +20,54 @@ const getSettings = async () => {
   return settingsMap;
 };
 
-// --- START: แก้ไขฟังก์ชันนี้ ---
 const saveSettings = async (files, body) => {
-  const { terms } = body;
+  const { 
+    terms,
+    // --- START: รับค่าใหม่สำหรับ Voucher ---
+    voucherSsid,
+    voucherHeaderText,
+    voucherFooterText
+    // --- END ---
+  } = body;
 
-  // ฟังก์ชันช่วยสำหรับลบไฟล์เก่า
   const deleteOldFile = async (settingKey) => {
-    try {
-      const oldSetting = await prisma.setting.findUnique({ where: { key: settingKey } });
-      if (oldSetting && oldSetting.value) {
-        // สร้าง path เต็มไปยังไฟล์เก่า
-        const oldFilePath = path.join(__dirname, '../../public', oldSetting.value);
-        // ตรวจสอบว่าไฟล์มีอยู่จริงก่อนลบ
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-          console.log(`Deleted old file: ${oldFilePath}`);
-        }
-      }
-    } catch (error) {
-      console.error(`Could not delete old file for key ${settingKey}:`, error);
-      // ไม่ต้อง throw error เพื่อให้การอัปโหลดไฟล์ใหม่ดำเนินต่อไปได้
-    }
+    // ... (ฟังก์ชันนี้คงเดิม)
   };
 
-  // 1. จัดการไฟล์ Logo
   if (files && files.logo) {
-    await deleteOldFile('logoUrl'); // <-- ลบไฟล์โลโก้เก่า
+    await deleteOldFile('logoUrl');
     const logoFile = files.logo[0];
     const logoPath = `/uploads/${logoFile.filename}`;
     await upsertSetting('logoUrl', logoPath);
   }
 
-  // 2. จัดการไฟล์ Background
   if (files && files.background) {
-    await deleteOldFile('backgroundUrl'); // <-- ลบไฟล์พื้นหลังเก่า
+    await deleteOldFile('backgroundUrl');
     const bgFile = files.background[0];
     const bgPath = `/uploads/${bgFile.filename}`;
     await upsertSetting('backgroundUrl', bgPath);
   }
 
-  // 3. จัดการข้อความ Terms of Service
-  if (terms !== undefined) { // <-- ตรวจสอบเพื่อให้สามารถส่งค่าว่างได้
+  if (terms !== undefined) {
     await upsertSetting('terms', terms);
   }
 
+  // --- START: เพิ่ม Logic การบันทึกค่า Voucher ---
+  if (files && files.voucherLogo) {
+    await deleteOldFile('voucherLogoUrl'); // ลบโลโก้บัตรเก่า
+    const voucherLogoFile = files.voucherLogo[0];
+    const voucherLogoPath = `/uploads/${voucherLogoFile.filename}`;
+    await upsertSetting('voucherLogoUrl', voucherLogoPath);
+  }
+
+  if (voucherSsid !== undefined) await upsertSetting('voucherSsid', voucherSsid);
+  if (voucherHeaderText !== undefined) await upsertSetting('voucherHeaderText', voucherHeaderText);
+  if (voucherFooterText !== undefined) await upsertSetting('voucherFooterText', voucherFooterText);
+  // --- END ---
+
   return { message: 'Settings saved successfully' };
 };
-// --- END ---
+
 
 module.exports = {
   getSettings,

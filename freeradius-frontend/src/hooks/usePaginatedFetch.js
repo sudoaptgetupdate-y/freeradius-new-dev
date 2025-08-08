@@ -63,8 +63,8 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
                 const newTotalPages = Math.ceil(newTotalItems / pagination.itemsPerPage) || 1;
                 setPagination(prev => ({ ...prev, totalItems: newTotalItems, totalPages: newTotalPages }));
             } else {
-                const items = responseData.users || responseData.organizations || responseData.history || responseData.admins || [];
-                const total = responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || responseData.totalAdmins || 0;
+                const items = responseData.users || responseData.organizations || responseData.history || responseData.admins || responseData.batches || [];
+                const total = responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || responseData.totalAdmins || responseData.totalBatches || 0;
                 setData(items);
                 setPagination(prev => ({
                     ...prev,

@@ -49,7 +49,7 @@ const generateVouchers = async (req, res, next) => {
 
 const getBatches = async (req, res, next) => {
     try {
-        const batches = await voucherService.getVoucherBatches();
+        const batches = await voucherService.getVoucherBatches(req.query); // ส่ง query ไปยัง service
         res.status(200).json({ success: true, data: batches });
     } catch (error) {
         next(error);

@@ -14,31 +14,34 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// ตั้งค่า Multer สำหรับเก็บไฟล์
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
   },
-  // --- START: แก้ไขส่วนนี้ ---
-  // เปลี่ยนจากการสร้างชื่อไฟล์แบบสุ่ม เป็นการใช้ชื่อไฟล์แบบคงที่
   filename: function (req, file, cb) {
-    // file.fieldname จะเป็น 'logo' หรือ 'background'
-    // path.extname(file.originalname) จะเป็นนามสกุลไฟล์ เช่น '.png', '.jpg'
+    // --- START: เพิ่ม Logic การตั้งชื่อไฟล์ ---
+    // file.fieldname จะเป็น 'logo', 'background', หรือ 'voucherLogo'
+    // เราจะตั้งชื่อไฟล์ตาม fieldname เพื่อป้องกันการเขียนทับกัน
     const newFilename = file.fieldname + path.extname(file.originalname);
     cb(null, newFilename);
+    // --- END ---
   }
-  // --- END ---
 });
 
 const upload = multer({ storage: storage });
 
-// --- (ส่วน Routes คงเดิม) ---
 router.get('/', getAppSettings);
 router.post(
   '/',
   protect,
   authorize('superadmin'),
-  upload.fields([{ name: 'logo', maxCount: 1 }, { name: 'background', maxCount: 1 }]),
+  // --- START: เพิ่ม field 'voucherLogo' ---
+  upload.fields([
+    { name: 'logo', maxCount: 1 }, 
+    { name: 'background', maxCount: 1 },
+    { name: 'voucherLogo', maxCount: 1 } // <-- เพิ่ม field สำหรับโลโก้บัตร
+  ]),
+  // --- END ---
   updateAppSettings
 );
 

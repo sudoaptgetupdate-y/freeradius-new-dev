@@ -120,7 +120,6 @@ export default function MainLayout() {
                         </p>
                         <div className="space-y-1">
                              <NavItem to="/users" icon={<Users size={18} />} text="All Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                             <NavItem to="/vouchers/generate" icon={<PlusSquare size={18} />} text="Generate Vouchers" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                              <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text="Voucher Batches" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                         </div>
                     </div>

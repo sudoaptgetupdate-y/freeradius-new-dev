@@ -95,9 +95,9 @@ const deleteOrganization = async (orgId) => {
     throw new Error('Organization not found.');
   }
 
-  // 2. ตรวจสอบชื่อองค์กร ถ้าเป็น "Register" ให้โยน Error ทันที
-  if (organizationToDelete.name === 'Register') {
-    throw new Error('The "Register" organization is critical for the system and cannot be deleted.');
+  //ตรวจสอบชื่อองค์กร ถ้าเป็น "Register" หรือ "Voucher" ให้โยน Error ทันที
+  if (organizationToDelete.name === 'Register' || organizationToDelete.name === 'Voucher') {
+    throw new Error(`The "${organizationToDelete.name}" organization is critical for the system and cannot be deleted.`);
   }
 
   // 3. ตรวจสอบว่ามี User สังกัดองค์กรนี้หรือไม่ (Logic เดิม)

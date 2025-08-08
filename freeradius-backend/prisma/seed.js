@@ -9,6 +9,7 @@ async function main() {
   const ADMIN_PASSWORD = "admin";
   const DEFAULT_PROFILE_NAME = "default-profile";
   const REGISTER_ORG_NAME = "Register";
+  const VOUCHER_ORG_NAME = "Voucher";
 
   console.log('Start seeding ...');
 
@@ -73,6 +74,18 @@ async function main() {
       },
   });
   console.log(`Organization '${REGISTER_ORG_NAME}' is ready.`);
+
+  console.log(`Seeding organization: ${VOUCHER_ORG_NAME}`);
+  await prisma.organization.upsert({
+      where: { name: VOUCHER_ORG_NAME },
+      update: {},
+      create: {
+          name: VOUCHER_ORG_NAME,
+          login_identifier_type: 'manual', // ผู้ใช้บัตรเป็นแบบ manual username
+          radiusProfileId: defaultProfile.id, // ใช้โปรไฟล์เริ่มต้นเดียวกัน
+      },
+  });
+  console.log(`Organization '${VOUCHER_ORG_NAME}' is ready.`);
   
   // --- 4. Seed Default Radius Attributes ---
   console.log('Seeding default RADIUS attributes...');

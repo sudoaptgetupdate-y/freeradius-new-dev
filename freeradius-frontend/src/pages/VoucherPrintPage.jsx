@@ -26,7 +26,6 @@ const VoucherCard = ({ logoUrl, ssid, headerText, footerText, user }) => (
 // PrintableView Component
 const PrintableView = React.forwardRef((props, ref) => {
     const { batch, settings } = props;
-    
     if (!batch) return null;
 
     return (
@@ -35,16 +34,17 @@ const PrintableView = React.forwardRef((props, ref) => {
                 <VoucherCard
                     key={index}
                     user={user}
-                    logoUrl={settings?.logoUrl}
+                    // --- START: อัปเดตการดึงค่า settings ---
+                    logoUrl={settings?.voucherLogoUrl || settings?.logoUrl} // <-- ถ้าไม่มีโลโก้บัตร ให้ใช้โลโก้หลัก
                     ssid={settings?.voucherSsid || 'Free-WiFi'}
                     headerText={settings?.voucherHeaderText || 'WiFi Voucher'}
                     footerText={settings?.voucherFooterText || 'Enjoy your connection!'}
+                    // --- END ---
                 />
             ))}
         </div>
     );
 });
-
 PrintableView.displayName = 'PrintableView';
 
 export default function VoucherPrintPage() {
