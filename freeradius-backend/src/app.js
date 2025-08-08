@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const path = require('path'); 
+const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
 const nasRoutes = require('./routes/nasRoutes');
@@ -18,17 +18,14 @@ const onlineUserRoutes = require('./routes/onlineUserRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const registerRoutes = require('./routes/registerRoutes');
 const attributeDefinitionRoutes = require('./routes/attributeDefinitionRoutes');
-const settingsRoutes = require('./routes/settingsRoutes'); 
+const settingsRoutes = require('./routes/settingsRoutes');
 const voucherRoutes = require('./routes/voucherRoutes');
 
 const app = express();
-// ... middlewares ...
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// 👈 ทำให้ Client สามารถเข้าถึงไฟล์ในโฟลเดอร์ public ได้
-// เช่น /uploads/logo-12345.png
 app.use(express.static(path.join(__dirname, '../public')));
 
 // --- Routes ---
@@ -37,14 +34,15 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/register', registerRoutes);
-app.use('/api/settings', settingsRoutes); 
-
+app.use('/api/settings', settingsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/nas', nasRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/organizations', organizationRoutes);
-app.use('/api/profiles', profileRoutes);
+// --- START: แก้ไขส่วนนี้ ---
+app.use('/api/radius-profiles', profileRoutes); // เปลี่ยนจาก /api/profiles
+// --- END ---
 app.use('/api/attributes', attributeRoutes);
 app.use('/api/status', statusRoutes);
 app.use('/api/attribute-definitions', attributeDefinitionRoutes);

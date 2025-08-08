@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProfilesPage() {
     const token = useAuthStore((state) => state.token);
-    const { data: profiles, isLoading, refreshData } = usePaginatedFetch("/profiles");
+    const { data: profiles, isLoading, refreshData, searchTerm, handleSearchChange } = usePaginatedFetch("/radius-profiles");
 
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [detailedProfile, setDetailedProfile] = useState(null);

@@ -16,7 +16,9 @@ import OrganizationsPage from './pages/OrganizationsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import UserDetailPage from './pages/UserDetailPage.jsx';
 import NasPage from './pages/NasPage.jsx';
-import ProfilesPage from './pages/ProfilesPage.jsx';
+// --- START: แก้ไขชื่อไฟล์ที่ Import ให้ถูกต้อง ---
+import RadiusProfilesPages from './pages/RadiusProfilesPages.jsx';
+// --- END ---
 import OnlineUsersPage from './pages/OnlineUsersPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
@@ -39,11 +41,7 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
-          // --- START: การแก้ไข ---
-          // ย้าย Route ของหน้า Print มาไว้นอก MainLayout
-          // เพื่อให้ไม่โดนผลกระทบจาก CSS ของ Layout หลัก
           { path: 'vouchers/batches/:id', element: <VoucherPrintPage /> },
-          // --- END ---
           {
             element: <MainLayout />,
             children: [
@@ -54,16 +52,16 @@ const router = createBrowserRouter([
               { path: 'history', element: <HistoryPage /> },
               { path: 'nas', element: <NasPage /> },
               { path: 'online-users', element: <OnlineUsersPage /> },
-              { path: 'profiles', element: <ProfilesPage /> },
               { path: 'admins', element: <AdminsPage /> },
-              { path: 'profile', element: <AdminProfilePage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
-              // ลบบรรทัดด้านล่างนี้ออกจาก MainLayout
-              // { path: 'vouchers/batches/:id', element: <VoucherPrintPage /> },
               { path: 'vouchers/settings', element: <VoucherSettingsPage /> },
+              { path: 'account-settings', element: <AdminProfilePage /> },
+              // --- START: แก้ไขชื่อ Component ที่ใช้ ---
+              { path: 'radius-profiles', element: <RadiusProfilesPages /> },
+              // --- END ---
             ]
           }
         ]

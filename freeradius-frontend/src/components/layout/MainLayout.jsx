@@ -8,7 +8,7 @@ import {
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, PlusSquare, History as HistoryIcon, Wrench
-} from "lucide-react"; // <-- เพิ่ม Icons
+} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -20,8 +20,6 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
-
-// ... (ส่วนอื่นๆ ของ Component คงเดิม) ...
 
 const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     <NavLink
@@ -46,7 +44,6 @@ const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     </NavLink>
 );
 
-
 export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -55,7 +52,6 @@ export default function MainLayout() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // ... (ส่วน logic อื่นๆ ของ Component คงเดิม) ...
     const handleIdle = useCallback(() => {
         toast.warning("Logged out due to inactivity", {
             description: "You have been automatically logged out for security purposes.",
@@ -83,10 +79,14 @@ export default function MainLayout() {
         }
     };
 
-
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
-            {/* ... (ส่วน Mobile Menu Overlay คงเดิม) ... */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-20 md:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                ></div>
+            )}
 
             <aside className={cn(
                 "bg-white border-r flex-shrink-0 transition-all duration-300 ease-in-out",
@@ -94,8 +94,7 @@ export default function MainLayout() {
                 isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full",
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
-                {/* ... (ส่วน Header ของ Sidebar คงเดิม) ... */}
-                 <div className="p-4 border-b flex items-center gap-3 h-[65px]">
+                <div className="p-4 border-b flex items-center gap-3 h-[65px]">
                     <div className="bg-primary p-2 rounded-lg">
                         <Server className="text-primary-foreground" size={24} />
                     </div>
@@ -106,14 +105,11 @@ export default function MainLayout() {
                         Freeradius UI
                     </h1>
                 </div>
-
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
-                    {/* Main Navigation */}
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/online-users" icon={<Wifi size={18} />} text="Online Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/history" icon={<History size={18} />} text="History" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     
-                    {/* Users Section */}
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                            USERS
@@ -124,19 +120,17 @@ export default function MainLayout() {
                         </div>
                     </div>
                     
-                    {/* Configuration Section */}
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                            CONFIGURATION
                         </p>
                          <div className="space-y-1">
                             <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/profiles" icon={<Settings size={18} />} text="Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/radius-profiles" icon={<Settings size={18} />} text="Radius Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>
 
-                    {/* System Section for SuperAdmin */}
                     {(isSuperAdmin) && (
                          <div className="pt-2">
                             <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
@@ -154,7 +148,6 @@ export default function MainLayout() {
                 </nav>
             </aside>
 
-            {/* ... (ส่วนที่เหลือของ MainLayout คงเดิม) ... */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b flex justify-between items-center px-4 h-[65px] flex-shrink-0">
                     <div className="flex items-center">
@@ -181,9 +174,9 @@ export default function MainLayout() {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                                <DropdownMenuItem onClick={() => navigate('/account-settings')}>
                                     <UserIcon className="mr-2 h-4 w-4" />
-                                    <span>Profile</span>
+                                    <span>Account Settings</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
