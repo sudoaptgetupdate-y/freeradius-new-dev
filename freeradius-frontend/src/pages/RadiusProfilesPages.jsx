@@ -1,4 +1,4 @@
-// src/pages/ProfilesPage.jsx
+// src/pages/RadiusProfilesPages.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
@@ -17,22 +17,23 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function ProfilesPage() {
+export default function RadiusProfilesPage() {
     const token = useAuthStore((state) => state.token);
+    
     const { data: profiles, isLoading, refreshData, searchTerm, handleSearchChange } = usePaginatedFetch("/radius-profiles");
 
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [detailedProfile, setDetailedProfile] = useState(null);
     const [isAttrLoading, setIsAttrLoading] = useState(false);
-    const [profileSearchTerm, setProfileSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState('reply');
 
     const filteredProfiles = useMemo(() => {
-        if (!profileSearchTerm) return profiles;
+        if (!searchTerm) return profiles;
         return profiles.filter(p => 
-            p.name.toLowerCase().includes(profileSearchTerm.toLowerCase())
+            p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
         );
-    }, [profiles, profileSearchTerm]);
+    }, [profiles, searchTerm]);
 
     const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
     const [isAttrDialogOpen, setIsAttrDialogOpen] = useState(false);
@@ -41,17 +42,19 @@ export default function ProfilesPage() {
     const [attrDialogData, setAttrDialogData] = useState({ type: '', name: '' });
 
     useEffect(() => {
+        setDetailedProfile(null);
         if (!selectedProfile) {
-            setDetailedProfile(null);
             return;
         }
         
         const fetchDetailedProfile = async () => {
             setIsAttrLoading(true);
             try {
-                const response = await axiosInstance.get(`/profiles/${selectedProfile.id}`, {
+                // --- START: แก้ไข URL ในการดึงข้อมูล ---
+                const response = await axiosInstance.get(`/radius-profiles/${selectedProfile.id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                // --- END ---
                 setDetailedProfile(response.data.data);
             } catch (error) {
                 toast.error("Failed to fetch profile attributes.");
@@ -80,23 +83,25 @@ export default function ProfilesPage() {
 
     const confirmDeleteProfile = async () => {
         if (!profileToDelete) return;
-        try {
-            await axiosInstance.delete(`/profiles/${profileToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Profile '${profileToDelete.name}' deleted successfully!`);
-            if (selectedProfile?.id === profileToDelete.id) {
-                setSelectedProfile(null);
+        toast.promise(
+            axiosInstance.delete(`/radius-profiles/${profileToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: 'Deleting profile...',
+                success: () => {
+                    if (selectedProfile?.id === profileToDelete.id) {
+                        setSelectedProfile(null);
+                    }
+                    refreshData();
+                    return `Profile '${profileToDelete.name}' deleted successfully!`;
+                },
+                error: (err) => err.response?.data?.message || "Failed to delete profile.",
+                finally: () => setProfileToDelete(null)
             }
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete profile.");
-        } finally {
-            setProfileToDelete(null);
-        }
+        );
     };
     
     const openAttributeDialog = (type) => {
+        if (!selectedProfile) return;
         setActiveTab(type);
         setAttrDialogData({ type: type, name: selectedProfile.name });
         setIsAttrDialogOpen(true);
@@ -104,23 +109,29 @@ export default function ProfilesPage() {
 
     const refreshAttributes = () => {
         if (selectedProfile) {
-            const currentSelected = { ...selectedProfile };
-            setSelectedProfile(null);
-            setTimeout(() => setSelectedProfile(currentSelected), 0);
+            const currentSelectedId = selectedProfile.id;
+            refreshData().then(() => {
+                // This logic needs to be re-evaluated as usePaginatedFetch does not return the new data directly
+                // For now, we just trigger a re-fetch of the detailed profile
+                const tempProfile = { ...selectedProfile };
+                setSelectedProfile(null); // Force re-fetch
+                setTimeout(() => setSelectedProfile(tempProfile), 0);
+            });
         }
     }
 
     const handleDeleteAttribute = async (attributeId, type) => {
-        try {
-            setActiveTab(type);
-            await axiosInstance.delete(`/attributes/${type}/${attributeId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("Attribute deleted successfully!");
-            refreshAttributes();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete attribute.");
-        }
+        toast.promise(
+            axiosInstance.delete(`/attributes/${type}/${attributeId}`, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: 'Deleting attribute...',
+                success: () => {
+                    refreshAttributes();
+                    return "Attribute deleted successfully!";
+                },
+                error: (err) => err.response?.data?.message || "Failed to delete attribute."
+            }
+        );
     };
 
     return (
@@ -138,8 +149,8 @@ export default function ProfilesPage() {
                         <div className="pt-4">
                             <Input 
                                 placeholder="Search profiles..."
-                                value={profileSearchTerm}
-                                onChange={(e) => setProfileSearchTerm(e.target.value)}
+                                value={searchTerm}
+                                onChange={(e) => handleSearchChange(e.target.value)}
                             />
                         </div>
                     </CardHeader>
@@ -202,7 +213,7 @@ export default function ProfilesPage() {
                                 </TabsList>
                                 <TabsContent value="reply" className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
-                                        <h3 className="font-semibold">Reply Attributes</h3>
+                                        <h3 className="font-semibold">Reply Attributes ({detailedProfile.replyAttributes.length})</h3>
                                         <Button variant="outline" size="sm" onClick={() => openAttributeDialog('reply')}>
                                             <PlusCircle className="h-4 w-4 mr-2" /> Add Reply
                                         </Button>
@@ -213,7 +224,7 @@ export default function ProfilesPage() {
                                 </TabsContent>
                                 <TabsContent value="check" className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
-                                        <h3 className="font-semibold">Check Attributes</h3>
+                                        <h3 className="font-semibold">Check Attributes ({detailedProfile.checkAttributes.length})</h3>
                                         <Button variant="outline" size="sm" onClick={() => openAttributeDialog('check')}>
                                             <PlusCircle className="h-4 w-4 mr-2" /> Add Check
                                         </Button>
