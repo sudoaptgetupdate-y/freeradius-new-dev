@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle, Upload } from "lucide-react";
+import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle, Upload, ArrowUpDown } from "lucide-react";
 import UserFormDialog from "@/components/dialogs/UserFormDialog";
 import UserMoveDialog from "@/components/dialogs/UserMoveDialog";
 import UserImportDialog from "@/components/dialogs/UserImportDialog";
@@ -21,6 +21,29 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { format } from 'date-fns';
+
+// Component สำหรับหัวตารางที่เรียงลำดับได้
+const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
+    const isSorted = sortConfig.key === columnKey;
+    const direction = isSorted ? sortConfig.direction : 'desc';
+
+    const handleClick = () => {
+        setSortConfig({
+            key: columnKey,
+            direction: isSorted && direction === 'desc' ? 'asc' : 'desc',
+        });
+    };
+
+    return (
+        <TableHead>
+            <Button variant="ghost" onClick={handleClick} className="px-2">
+                {children}
+                <ArrowUpDown className={`ml-2 h-4 w-4 ${isSorted ? '' : 'text-muted-foreground'}`} />
+            </Button>
+        </TableHead>
+    );
+};
 
 export default function UsersPage() {
     const token = useAuthStore((state) => state.token);
@@ -28,6 +51,7 @@ export default function UsersPage() {
 
     const [organizations, setOrganizations] = useState([]);
     const [orgFilter, setOrgFilter] = useState("");
+    const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
 
     const {
         data: users,
@@ -41,7 +65,11 @@ export default function UsersPage() {
     } = usePaginatedFetch(
         "/users",
         5,
-        { organizationId: orgFilter }
+        { 
+            organizationId: orgFilter,
+            sortBy: sortConfig.key,
+            sortOrder: sortConfig.direction,
+        }
     );
 
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -49,6 +77,9 @@ export default function UsersPage() {
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
     const [userToToggle, setUserToToggle] = useState(null);
     const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     const isBulkActionsEnabled = !!orgFilter;
 
@@ -72,19 +103,13 @@ export default function UsersPage() {
     };
 
     const handleSelectAll = (checked) => {
-        if (checked) {
-            setSelectedUsers(users);
-        } else {
-            setSelectedUsers([]);
-        }
+        setSelectedUsers(checked ? users : []);
     };
 
     const handleSelectSingle = (checked, user) => {
-        if (checked) {
-            setSelectedUsers(prev => [...prev, user]);
-        } else {
-            setSelectedUsers(prev => prev.filter(u => u.id !== user.id));
-        }
+        setSelectedUsers(prev => 
+            checked ? [...prev, user] : prev.filter(u => u.id !== user.id)
+        );
     };
 
     const onActionSuccess = () => {
@@ -93,38 +118,40 @@ export default function UsersPage() {
     };
 
     const confirmBulkDelete = async () => {
-        try {
-            const usernamesToDelete = selectedUsers.map(u => u.username);
-            await axiosInstance.post('/users/bulk-delete', { usernames: usernamesToDelete }, {
+        if (selectedUsers.length === 0) return;
+        toast.promise(
+            axiosInstance.post('/users/bulk-delete', { usernames: selectedUsers.map(u => u.username) }, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`${selectedUsers.length} user(s) deleted successfully!`);
-            onActionSuccess();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete users.");
-        } finally {
-            setIsBulkDeleteDialogOpen(false);
-        }
+            }),
+            {
+                loading: 'Deleting users...',
+                success: (res) => {
+                    onActionSuccess();
+                    return `${res.data.data.deletedCount} user(s) deleted successfully!`;
+                },
+                error: (err) => err.response?.data?.message || "Failed to delete users.",
+                finally: () => setIsBulkDeleteDialogOpen(false),
+            }
+        );
     };
 
     const confirmToggleStatus = async () => {
         if (!userToToggle) return;
-        try {
-            await axiosInstance.put(`/users/${userToToggle.username}/status`, {}, {
+        toast.promise(
+            axiosInstance.put(`/users/${userToToggle.username}/status`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`User '${userToToggle.username}' status has been updated.`);
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to update user status.");
-        } finally {
-            setUserToToggle(null);
-        }
+            }),
+            {
+                loading: 'Updating status...',
+                success: (res) => {
+                    refreshData();
+                    return `User '${userToToggle.username}' status updated.`;
+                },
+                error: (err) => err.response?.data?.message || "Failed to update status.",
+                finally: () => setUserToToggle(null),
+            }
+        );
     };
-
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingUser, setEditingUser] = useState(null);
-    const [userToDelete, setUserToDelete] = useState(null);
 
     const handleAddNew = () => {
         setEditingUser(null);
@@ -142,17 +169,20 @@ export default function UsersPage() {
 
     const confirmDelete = async () => {
         if (!userToDelete) return;
-        try {
-            await axiosInstance.delete(`/users/${userToDelete.username}`, {
+        toast.promise(
+            axiosInstance.delete(`/users/${userToDelete.username}`, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`User '${userToDelete.username}' deleted successfully!`);
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete user.");
-        } finally {
-            setUserToDelete(null);
-        }
+            }),
+            {
+                loading: 'Deleting user...',
+                success: () => {
+                    refreshData();
+                    return `User '${userToDelete.username}' deleted successfully!`;
+                },
+                error: (err) => err.response?.data?.message || "Failed to delete user.",
+                finally: () => setUserToDelete(null),
+            }
+        );
     };
     
     const handleViewDetails = (username) => {
@@ -234,17 +264,18 @@ export default function UsersPage() {
                                             />
                                         </TableHead>
                                     )}
-                                    <TableHead>Full Name</TableHead>
-                                    <TableHead>Username</TableHead>
+                                    <SortableHeader columnKey="full_name" sortConfig={sortConfig} setSortConfig={setSortConfig}>Full Name</SortableHeader>
+                                    <SortableHeader columnKey="username" sortConfig={sortConfig} setSortConfig={setSortConfig}>Username</SortableHeader>
                                     <TableHead>Organization</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <SortableHeader columnKey="createdAt" sortConfig={sortConfig} setSortConfig={setSortConfig}>Created At</SortableHeader>
                                     <TableHead className="text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     Array.from({ length: pagination.itemsPerPage }).map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 6 : 5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 7 : 6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                     ))
                                 ) : users.length > 0 ? (
                                     users.map((user) => (
@@ -265,6 +296,7 @@ export default function UsersPage() {
                                                     {user.status === 'active' ? 'Active' : 'Disabled'}
                                                 </Badge>
                                             </TableCell>
+                                            <TableCell>{format(new Date(user.createdAt), 'PPpp')}</TableCell>
                                             <TableCell className="text-center">
                                                 <div className="inline-flex items-center justify-center flex-wrap gap-1">
                                                     <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
@@ -289,35 +321,33 @@ export default function UsersPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={isBulkActionsEnabled ? 6 : 5} className="h-24 text-center">No users found.</TableCell>
+                                        <TableCell colSpan={isBulkActionsEnabled ? 7 : 6} className="h-24 text-center">No users found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
                         </Table>
                     </div>
                 </CardContent>
-                <CardFooter>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 w-full">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Label htmlFor="rows-per-page">Rows per page:</Label>
-                            <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                                <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
-                                Previous
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
-                                Next
-                            </Button>
-                        </div>
+                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                            <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
+                            Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
+                            Next
+                        </Button>
                     </div>
                 </CardFooter>
             </Card>
@@ -341,7 +371,7 @@ export default function UsersPage() {
             <AlertDialog open={!!userToDelete} onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the user: <strong>{userToDelete?.username}</strong>. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmDelete}>Confirm</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </>

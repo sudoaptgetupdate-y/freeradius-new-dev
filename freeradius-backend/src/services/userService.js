@@ -109,7 +109,7 @@ const createUserAndSync = async (userData, adminId) => {
 // --- (ฟังก์ชันอื่นๆ ที่เหลือให้คงไว้เหมือนเดิม) ---
 
 const getAllUsers = async (filters) => {
-  const { searchTerm, organizationId, page = 1, pageSize = 10 } = filters;
+  const { searchTerm, organizationId, page = 1, pageSize = 10, sortBy = 'createdAt', sortOrder = 'desc' } = filters;
 
   const whereClause = {};
   if (searchTerm) {
@@ -125,6 +125,14 @@ const getAllUsers = async (filters) => {
   const skip = (page - 1) * pageSize;
   const take = parseInt(pageSize);
 
+  const orderBy = {};
+  // Allow sorting only by specific, safe fields
+  if (['username', 'full_name', 'createdAt'].includes(sortBy)) {
+      orderBy[sortBy] = sortOrder === 'asc' ? 'asc' : 'desc';
+  } else {
+      orderBy['createdAt'] = 'desc'; // Default sort
+  }
+
   const [users, totalUsers] = await prisma.$transaction([
     prisma.user.findMany({
       where: whereClause,
@@ -139,6 +147,7 @@ const getAllUsers = async (filters) => {
         student_id: true,
         email: true,
         phoneNumber: true,
+        createdAt: true, // <-- เพิ่ม field นี้เข้ามาใน select
         organization: {
           select: {
             name: true,
@@ -154,9 +163,7 @@ const getAllUsers = async (filters) => {
       },
       skip: skip,
       take: take,
-      orderBy: {
-        username: 'asc',
-      },
+      orderBy: orderBy, // <-- ใช้ object การเรียงลำดับที่สร้างขึ้น
     }),
     prisma.user.count({ where: whereClause }),
   ]);

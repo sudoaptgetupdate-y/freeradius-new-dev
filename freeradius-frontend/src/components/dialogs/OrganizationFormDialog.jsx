@@ -26,23 +26,33 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     const response = await axiosInstance.get('/profiles', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
-                    setProfiles(response.data.data);
+                    const fetchedProfiles = response.data.data;
+                    setProfiles(fetchedProfiles);
+
+                    // --- START: แก้ไขส่วนนี้ ---
+                    if (org) { // Edit mode
+                        setFormData({
+                            name: org.name || '',
+                            radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
+                            login_identifier_type: org.login_identifier_type || 'manual'
+                        });
+                    } else { // Add mode
+                        // Find the default profile
+                        const defaultProfile = fetchedProfiles.find(p => p.name === 'default-profile');
+                        setFormData({
+                            name: '',
+                            // If default profile is found, set its ID as the default value
+                            radiusProfileId: defaultProfile ? String(defaultProfile.id) : '',
+                            login_identifier_type: 'manual'
+                        });
+                    }
+                    // --- END ---
+
                 } catch (error) {
                     toast.error("Failed to load Radius Profiles.");
                 }
             };
             fetchProfiles();
-
-            if (org) {
-                setFormData({
-                    name: org.name || '',
-                    // แปลง ID ให้เป็น String เพื่อให้ Select Component ทำงานถูกต้อง
-                    radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
-                    login_identifier_type: org.login_identifier_type || 'manual'
-                });
-            } else {
-                setFormData({ name: '', radiusProfileId: '', login_identifier_type: 'manual' });
-            }
         }
     }, [org, isOpen, token]);
 
