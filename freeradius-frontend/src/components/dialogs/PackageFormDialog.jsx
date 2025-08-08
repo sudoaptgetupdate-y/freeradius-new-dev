@@ -23,9 +23,10 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!pkg;
 
-    // Fetch Radius Profiles using SWR
+    // --- START: แก้ไข API Endpoint ---
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
-    const { data: profiles, error: profilesError } = useSWR('/profiles', fetcher);
+    const { data: profiles, error: profilesError } = useSWR('/radius-profiles', fetcher);
+    // --- END ---
 
     useEffect(() => {
         if (isOpen) {
@@ -66,7 +67,7 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
         toast.promise(axiosInstance[method](url, payload, { headers: { Authorization: `Bearer ${token}` } }), {
             loading: `Saving package...`,
             success: () => {
-                onSave(); // Refresh data in the main page
+                onSave();
                 setIsOpen(false);
                 return `Package ${isEditMode ? 'updated' : 'created'} successfully!`;
             },

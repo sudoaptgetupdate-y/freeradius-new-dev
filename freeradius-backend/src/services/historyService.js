@@ -1,6 +1,15 @@
 // src/services/historyService.js
 const prisma = require('../prisma');
 
+// ฟังก์ชันสำหรับปรับแก้เวลา
+const adjustToLocalTime = (utcDate) => {
+    if (!utcDate) return null;
+    // Prisma อ่านเวลา Local จาก DB (ที่ไม่มี Timezone) แต่เข้าใจผิดว่าเป็น UTC
+    // เราจึงต้องลบ 7 ชั่วโมงกลับเพื่อให้เป็นค่า UTC ที่ถูกต้อง
+    // จากนั้น Frontend (ซึ่งอยู่ในโซน UTC+7) จะบวก 7 ชั่วโมงกลับมาแสดงผลได้ถูกต้อง
+    return new Date(utcDate.getTime() - (7 * 60 * 60 * 1000));
+};
+
 const getAccountingHistory = async (filters) => {
   const { 
     page = 1, 
@@ -9,8 +18,8 @@ const getAccountingHistory = async (filters) => {
     organizationId,
     startDate, 
     endDate,
-    sortBy = 'acctstarttime', // Default sort
-    sortOrder = 'desc'       // Default order
+    sortBy = 'acctstarttime',
+    sortOrder = 'desc'
   } = filters;
 
   const skip = (parseInt(page) - 1) * parseInt(pageSize);
@@ -26,9 +35,8 @@ const getAccountingHistory = async (filters) => {
     whereClause.acctstarttime = { gte: start, lte: end };
   }
   
-  let usersInOrg = [];
   if (organizationId) {
-    usersInOrg = await prisma.user.findMany({
+    const usersInOrg = await prisma.user.findMany({
       where: { organizationId: parseInt(organizationId) },
       select: { username: true },
     });
@@ -58,7 +66,6 @@ const getAccountingHistory = async (filters) => {
     }
   }
 
-  // --- START: ปรับปรุง Logic การเรียงข้อมูล ---
   let orderBy = {};
   const order = sortOrder === 'asc' ? 'asc' : 'desc';
 
@@ -81,7 +88,6 @@ const getAccountingHistory = async (filters) => {
     default:
         orderBy = { acctstarttime: 'desc' };
   }
-  // --- END ---
   
   const [history, totalRecords] = await prisma.$transaction([
     prisma.radacct.findMany({
@@ -105,10 +111,12 @@ const getAccountingHistory = async (filters) => {
     radacctid: rec.radacctid.toString(),
     acctinputoctets: rec.acctinputoctets ? rec.acctinputoctets.toString() : '0',
     acctoutputoctets: rec.acctoutputoctets ? rec.acctoutputoctets.toString() : '0',
-    full_name: userMap.get(rec.username) || 'N/A'
+    full_name: userMap.get(rec.username) || 'N/A',
+    acctstarttime: adjustToLocalTime(rec.acctstarttime),
+    acctstoptime: adjustToLocalTime(rec.acctstoptime),
+    acctupdatetime: adjustToLocalTime(rec.acctupdatetime)
   }));
 
-  // Post-query sorting for Total Data
   if (sortBy === 'totaldata') {
     combinedData.sort((a, b) => {
         const totalA = BigInt(a.acctinputoctets) + BigInt(a.acctoutputoctets);

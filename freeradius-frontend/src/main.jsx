@@ -16,9 +16,7 @@ import OrganizationsPage from './pages/OrganizationsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import UserDetailPage from './pages/UserDetailPage.jsx';
 import NasPage from './pages/NasPage.jsx';
-// --- START: แก้ไขชื่อไฟล์ที่ Import ให้ถูกต้อง ---
-import RadiusProfilesPages from './pages/RadiusProfilesPages.jsx';
-// --- END ---
+import RadiusProfilesPage from './pages/RadiusProfilesPage.jsx';
 import OnlineUsersPage from './pages/OnlineUsersPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
@@ -59,9 +57,7 @@ const router = createBrowserRouter([
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
               { path: 'vouchers/settings', element: <VoucherSettingsPage /> },
               { path: 'account-settings', element: <AdminProfilePage /> },
-              // --- START: แก้ไขชื่อ Component ที่ใช้ ---
-              { path: 'radius-profiles', element: <RadiusProfilesPages /> },
-              // --- END ---
+              { path: 'radius-profiles', element: <RadiusProfilesPage /> },
             ]
           }
         ]

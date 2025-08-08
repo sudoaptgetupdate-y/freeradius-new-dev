@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Textarea for description
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
@@ -34,12 +34,12 @@ export default function ProfileFormDialog({ isOpen, setIsOpen, profile, onSave }
         e.preventDefault();
         setIsLoading(true);
 
-        // API endpoint สำหรับ Profile ยังไม่มี เราจะสร้างในขั้นตอนต่อไป
-        const url = isEditMode ? `/profiles/${profile.id}` : '/profiles';
+        // --- START: แก้ไข URL ---
+        const url = isEditMode ? `/radius-profiles/${profile.id}` : '/radius-profiles';
+        // --- END ---
         const method = isEditMode ? 'put' : 'post';
 
         try {
-            // โค้ดส่วนนี้จะยังไม่ทำงานจนกว่าเราจะสร้าง API
             await axiosInstance[method](url, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });

@@ -296,7 +296,7 @@ export default function UsersPage() {
                                                     {user.status === 'active' ? 'Active' : 'Disabled'}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>{format(new Date(user.createdAt), 'PPpp')}</TableCell>
+                                            <TableCell>{format(new Date(user.createdAt), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
                                             <TableCell className="text-center">
                                                 <div className="inline-flex items-center justify-center flex-wrap gap-1">
                                                     <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>

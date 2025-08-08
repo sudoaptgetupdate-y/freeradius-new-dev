@@ -3,7 +3,13 @@ const prisma = require('../prisma');
 const { getFreeradiusStatus } = require('./statusService');
 const { startOfHour, subHours, startOfDay, subDays, startOfWeek, subWeeks, startOfMonth, subMonths, format } = require('date-fns');
 
+const adjustToLocalTime = (utcDate) => {
+    if (!utcDate) return null;
+    return new Date(utcDate.getTime() - (7 * 60 * 60 * 1000));
+};
+
 const getOnlineUsersGraph = async (period = 'day') => {
+    // This function does not deal with specific timestamps, so it remains unchanged.
     const now = new Date();
     let timeBuckets = [];
     let labelFormat;
@@ -83,9 +89,11 @@ const getDashboardData = async () => {
         select: { username: true, full_name: true }
     });
     const userMap = new Map(usersData.map(u => [u.username, u.full_name]));
+
     const enrichedRecentLogins = recentLogins.map(l => ({
         ...l,
-        full_name: userMap.get(l.username) || 'N/A'
+        full_name: userMap.get(l.username) || 'N/A',
+        acctstarttime: adjustToLocalTime(l.acctstarttime),
     }));
 
 

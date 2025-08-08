@@ -12,7 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Wifi, ZapOff, ArrowUpDown } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { formatDistanceToNow } from 'date-fns';
+// --- START: เพิ่ม format จาก date-fns ---
+import { formatDistanceToNow, format } from 'date-fns';
+// --- END ---
 
 // --- Helper Functions (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
@@ -187,7 +189,9 @@ export default function OnlineUsersPage() {
                                             <TableRow key={user.radacctid}>
                                                 <TableCell className="font-medium">{user.full_name}<br/><span className="text-xs text-muted-foreground">{user.username}</span></TableCell>
                                                 <TableCell className="font-mono">{user.framedipaddress}</TableCell>
-                                                <TableCell>{new Date(user.acctstarttime).toLocaleString()}</TableCell>
+                                                {/* --- START: แก้ไขการแสดงผลเวลา --- */}
+                                                <TableCell>{format(new Date(user.acctstarttime), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                                                {/* --- END --- */}
                                                 <TableCell>{calculateDuration(user.acctstarttime)}</TableCell>
                                                 <TableCell className="font-mono">{formatMacAddress(user.callingstationid)}</TableCell>
                                                 <TableCell>{formatBytes(dataUp)}</TableCell>

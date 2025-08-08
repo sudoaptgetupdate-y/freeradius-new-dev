@@ -1,14 +1,19 @@
 // src/services/onlineUserService.js
 const prisma = require('../prisma');
 
+const adjustToLocalTime = (utcDate) => {
+    if (!utcDate) return null;
+    return new Date(utcDate.getTime() - (7 * 60 * 60 * 1000));
+};
+
 const getOnlineUsers = async (filters = {}) => {
   const { 
     page = 1, 
     pageSize = 15, 
     searchTerm, 
     organizationId,
-    sortBy = 'logintime', // Default sort
-    sortOrder = 'desc'    // Default order
+    sortBy = 'logintime',
+    sortOrder = 'desc'
   } = filters;
 
   const skip = (parseInt(page) - 1) * parseInt(pageSize);
@@ -42,7 +47,6 @@ const getOnlineUsers = async (filters = {}) => {
     };
   }
 
-  // --- START: ปรับปรุง Logic การเรียงข้อมูล ---
   let orderBy = {};
   const order = sortOrder === 'asc' ? 'asc' : 'desc';
 
@@ -51,8 +55,6 @@ const getOnlineUsers = async (filters = {}) => {
         orderBy = { acctstarttime: order };
         break;
     case 'duration':
-        // เรียง Duration มากไปน้อย คือเรียง Login Time มากไปน้อย (มาล่าสุด)
-        // เรียง Duration น้อยไปมาก คือเรียง Login Time น้อยไปมาก (มานานแล้ว)
         orderBy = { acctstarttime: order };
         break;
     case 'dataup':
@@ -64,7 +66,6 @@ const getOnlineUsers = async (filters = {}) => {
     default:
         orderBy = { acctstarttime: 'desc' };
   }
-  // --- END ---
 
   const [onlineSessions, totalRecords] = await prisma.$transaction([
     prisma.radacct.findMany({
@@ -101,9 +102,9 @@ const getOnlineUsers = async (filters = {}) => {
     acctinputoctets: session.acctinputoctets ? session.acctinputoctets.toString() : '0',
     acctoutputoctets: session.acctoutputoctets ? session.acctoutputoctets.toString() : '0',
     full_name: userMap.get(session.username) || 'N/A',
+    acctstarttime: adjustToLocalTime(session.acctstarttime),
   }));
 
-  // Post-query sorting for Total Data
   if (sortBy === 'totaldata') {
     combinedData.sort((a, b) => {
         const totalA = BigInt(a.acctinputoctets) + BigInt(a.acctoutputoctets);

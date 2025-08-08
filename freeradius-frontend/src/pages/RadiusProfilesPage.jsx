@@ -1,4 +1,4 @@
-// src/pages/RadiusProfilesPages.jsx
+// src/pages/RadiusProfilesPage.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
@@ -20,13 +20,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function RadiusProfilesPage() {
     const token = useAuthStore((state) => state.token);
     
-    const { data: profiles, isLoading, refreshData, searchTerm, handleSearchChange } = usePaginatedFetch("/radius-profiles");
+    const { 
+        data: profiles, 
+        isLoading, 
+        refreshData, 
+        searchTerm, 
+        handleSearchChange 
+    } = usePaginatedFetch("/radius-profiles");
 
     const [selectedProfile, setSelectedProfile] = useState(null);
     const [detailedProfile, setDetailedProfile] = useState(null);
     const [isAttrLoading, setIsAttrLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('reply');
 
+    const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+    const [isAttrDialogOpen, setIsAttrDialogOpen] = useState(false);
+    const [editingProfile, setEditingProfile] = useState(null);
+    const [profileToDelete, setProfileToDelete] = useState(null);
+    const [attrDialogData, setAttrDialogData] = useState({ type: '', name: '' });
+
+    // The usePaginatedFetch hook handles filtering on the backend via searchTerm,
+    // so client-side filtering with useMemo is no longer needed if the backend supports it.
+    // If the backend doesn't filter, this useMemo is still correct.
     const filteredProfiles = useMemo(() => {
         if (!searchTerm) return profiles;
         return profiles.filter(p => 
@@ -35,11 +50,6 @@ export default function RadiusProfilesPage() {
         );
     }, [profiles, searchTerm]);
 
-    const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
-    const [isAttrDialogOpen, setIsAttrDialogOpen] = useState(false);
-    const [editingProfile, setEditingProfile] = useState(null);
-    const [profileToDelete, setProfileToDelete] = useState(null);
-    const [attrDialogData, setAttrDialogData] = useState({ type: '', name: '' });
 
     useEffect(() => {
         setDetailedProfile(null);
@@ -50,11 +60,9 @@ export default function RadiusProfilesPage() {
         const fetchDetailedProfile = async () => {
             setIsAttrLoading(true);
             try {
-                // --- START: แก้ไข URL ในการดึงข้อมูล ---
                 const response = await axiosInstance.get(`/radius-profiles/${selectedProfile.id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                // --- END ---
                 setDetailedProfile(response.data.data);
             } catch (error) {
                 toast.error("Failed to fetch profile attributes.");
@@ -109,14 +117,9 @@ export default function RadiusProfilesPage() {
 
     const refreshAttributes = () => {
         if (selectedProfile) {
-            const currentSelectedId = selectedProfile.id;
-            refreshData().then(() => {
-                // This logic needs to be re-evaluated as usePaginatedFetch does not return the new data directly
-                // For now, we just trigger a re-fetch of the detailed profile
-                const tempProfile = { ...selectedProfile };
-                setSelectedProfile(null); // Force re-fetch
-                setTimeout(() => setSelectedProfile(tempProfile), 0);
-            });
+            const tempProfile = { ...selectedProfile };
+            setSelectedProfile(null); 
+            setTimeout(() => setSelectedProfile(tempProfile), 50); // Force re-trigger of useEffect
         }
     }
 
@@ -157,7 +160,7 @@ export default function RadiusProfilesPage() {
                     <CardContent className="max-h-[60vh] overflow-y-auto">
                         {isLoading && <p className="text-center text-muted-foreground py-4">Loading profiles...</p>}
                         <div className="space-y-2">
-                           {filteredProfiles.map(profile => (
+                           {profiles.map(profile => (
                                 <div 
                                     key={profile.id}
                                     className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedProfile?.id === profile.id ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-accent'}`}
@@ -177,7 +180,7 @@ export default function RadiusProfilesPage() {
                                     <p className="text-xs text-muted-foreground mt-1">{profile.description || 'No description'}</p>
                                 </div>
                            ))}
-                           {!isLoading && filteredProfiles.length === 0 && (
+                           {!isLoading && profiles.length === 0 && (
                                 <p className="text-center text-muted-foreground py-4">No profiles found.</p>
                            )}
                         </div>

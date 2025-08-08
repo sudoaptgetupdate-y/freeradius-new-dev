@@ -23,7 +23,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
         if (isOpen) {
             const fetchProfiles = async () => {
                 try {
-                    const response = await axiosInstance.get('/profiles', {
+                    const response = await axiosInstance.get('/radius-profiles', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     const fetchedProfiles = response.data.data;

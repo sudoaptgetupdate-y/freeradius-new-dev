@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { format, formatDistanceStrict } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 
-// --- Helper Functions (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -169,14 +168,16 @@ export default function HistoryPage() {
                                         <TableRow key={rec.radacctid}>
                                             <TableCell className="font-medium">{rec.full_name}<br/><span className="text-xs text-muted-foreground">{rec.username}</span></TableCell>
                                             <TableCell className="font-mono">{rec.framedipaddress}</TableCell>
-                                            <TableCell>{rec.acctstarttime ? new Date(rec.acctstarttime).toLocaleString() : 'N/A'}</TableCell>
+                                            {/* --- START: แก้ไขส่วนนี้ --- */}
+                                            <TableCell>{rec.acctstarttime ? format(new Date(rec.acctstarttime), 'dd/MM/yyyy HH:mm:ss') : 'N/A'}</TableCell>
                                             <TableCell>
                                                 {rec.acctstoptime ? (
-                                                    new Date(rec.acctstoptime).toLocaleString()
+                                                    format(new Date(rec.acctstoptime), 'dd/MM/yyyy HH:mm:ss')
                                                 ) : (
                                                     <Badge variant="success" className="w-auto">Still Online</Badge>
                                                 )}
                                             </TableCell>
+                                            {/* --- END --- */}
                                             <TableCell>{calculateDuration(rec.acctstarttime, rec.acctstoptime)}</TableCell>
                                             <TableCell className="font-mono">{formatMacAddress(rec.callingstationid)}</TableCell>
                                             <TableCell>{formatBytes(dataUp)}</TableCell>

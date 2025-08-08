@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Users, Building, Server, Wifi, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle } from 'lucide-react'; // 1. Import icons ใหม่
+import { Users, Building, Server, Wifi, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import OnlineUsersChartCard from '@/components/ui/OnlineUsersChartCard';
 import {
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 
-// --- Helper Function (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -52,7 +51,6 @@ const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor }) => (
     </Card>
 );
 
-// --- START: แก้ไข StatusCard Component ---
 const StatusCard = ({ status, onRestart, isSuperAdmin }) => {
     const getStatusInfo = () => {
         switch (status) {
@@ -88,7 +86,6 @@ const StatusCard = ({ status, onRestart, isSuperAdmin }) => {
         </Card>
     );
 };
-// --- END: สิ้นสุดการแก้ไข ---
 
 const RecentActivityTable = ({ title, description, data, columns, viewAllLink, viewAllText }) => {
     const navigate = useNavigate();
@@ -200,7 +197,9 @@ export default function DashboardPage() {
     const recentLoginsColumns = [
         { key: 'user', header: 'User', render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
         { key: 'ip', header: 'IP Address', render: (row) => row.framedipaddress, className: "font-mono" },
-        { key: 'time', header: 'Time', render: (row) => format(new Date(row.acctstarttime), 'PP pp'), className: "text-right" },
+        // --- START: แก้ไขส่วนนี้ ---
+        { key: 'time', header: 'Time', render: (row) => format(new Date(row.acctstarttime), 'dd/MM/yyyy HH:mm'), className: "text-right" },
+        // --- END ---
     ];
     
     const topUsersColumns = [
