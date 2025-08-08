@@ -11,7 +11,7 @@ import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 
 const initialSettings = {
-    voucherLogoUrl: '',
+    // ลบ voucherLogoUrl ออก
     voucherSsid: 'Free-WiFi',
     voucherHeaderText: 'WiFi Voucher',
     voucherFooterText: 'Enjoy your connection!'
@@ -20,8 +20,8 @@ const initialSettings = {
 export default function VoucherSettingsPage() {
     const token = useAuthStore((state) => state.token);
     const [settings, setSettings] = useState(initialSettings);
-    const [logoFile, setLogoFile] = useState(null);
-    const [logoPreview, setLogoPreview] = useState('');
+    // ลบ State ที่เกี่ยวกับ logo ทั้งหมด
+    const [logoPreview, setLogoPreview] = useState(''); // เก็บไว้เพื่อ Preview เท่านั้น
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -34,26 +34,17 @@ export default function VoucherSettingsPage() {
                   voucherHeaderText: fetchedSettings.voucherHeaderText || initialSettings.voucherHeaderText,
                   voucherFooterText: fetchedSettings.voucherFooterText || initialSettings.voucherFooterText,
               });
-              setLogoPreview(fetchedSettings.voucherLogoUrl || '');
+              // ดึง logoUrl หลักมาแสดงเป็น Preview แทน
+              setLogoPreview(fetchedSettings.voucherLogoUrl || fetchedSettings.logoUrl || '');
           })
           .catch(() => toast.error("Could not load settings."))
           .finally(() => setIsLoading(false));
     }, []);
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setLogoFile(file);
-            setLogoPreview(URL.createObjectURL(file));
-        }
-    };
-
     const handleSave = async () => {
         setIsLoading(true);
         const formData = new FormData();
-        if (logoFile) {
-            formData.append('voucherLogo', logoFile);
-        }
+        // ไม่ต้อง append logo file อีกต่อไป
         formData.append('voucherSsid', settings.voucherSsid);
         formData.append('voucherHeaderText', settings.voucherHeaderText);
         formData.append('voucherFooterText', settings.voucherFooterText);
@@ -61,6 +52,8 @@ export default function VoucherSettingsPage() {
         toast.promise(
             axiosInstance.post('/settings', formData, {
                 headers: {
+                    // ไม่ต้องส่ง 'Content-Type': 'multipart/form-data' แล้วก็ได้
+                    // แต่คงไว้ก่อนได้เผื่ออนาคต
                     'Content-Type': 'multipart/form-data',
                     Authorization: `Bearer ${token}`
                 }
@@ -82,11 +75,7 @@ export default function VoucherSettingsPage() {
                     <CardDescription>Customize the appearance of printed vouchers.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div>
-                        <Label htmlFor="voucherLogo">Voucher Logo</Label>
-                        <Input id="voucherLogo" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} />
-                        <p className="text-sm text-muted-foreground pt-1">If no logo is uploaded, the main site logo will be used.</p>
-                    </div>
+                    {/* --- ลบส่วน Input file ของ logo ออกไป --- */}
                      <div>
                         <Label htmlFor="voucherSsid">WiFi Name (SSID)</Label>
                         <Input id="voucherSsid" value={settings.voucherSsid} onChange={(e) => setSettings({...settings, voucherSsid: e.target.value})} />
@@ -109,7 +98,11 @@ export default function VoucherSettingsPage() {
                 <CardHeader><CardTitle>Live Preview</CardTitle></CardHeader>
                 <CardContent>
                     <div className="p-4 border-2 border-dashed rounded-lg text-center">
-                        {logoPreview && <img src={logoPreview} alt="logo preview" className="mx-auto h-12 mb-2"/>}
+                        {logoPreview ? (
+                             <img src={logoPreview} alt="logo preview" className="mx-auto h-12 mb-2"/>
+                        ) : (
+                            <p className="text-sm text-muted-foreground mb-2">(No Logo Set)</p>
+                        )}
                         <h3 className="font-bold">{settings.voucherHeaderText}</h3>
                         <p className="text-sm">SSID: {settings.voucherSsid}</p>
                         <div className="my-4 p-2 bg-gray-100 rounded">

@@ -18,6 +18,11 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
     });
     const [profiles, setProfiles] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const isEditMode = !!org;
+
+    // --- START: เพิ่ม Logic ตรวจสอบองค์กรที่ถูกป้องกัน ---
+    const isProtectedOrg = isEditMode && (org.name === 'Register' || org.name === 'Voucher');
+    // --- END ---
 
     useEffect(() => {
         if (isOpen) {
@@ -29,7 +34,6 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     const fetchedProfiles = response.data.data;
                     setProfiles(fetchedProfiles);
 
-                    // --- START: แก้ไขส่วนนี้ ---
                     if (org) { // Edit mode
                         setFormData({
                             name: org.name || '',
@@ -37,17 +41,13 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                             login_identifier_type: org.login_identifier_type || 'manual'
                         });
                     } else { // Add mode
-                        // Find the default profile
                         const defaultProfile = fetchedProfiles.find(p => p.name === 'default-profile');
                         setFormData({
                             name: '',
-                            // If default profile is found, set its ID as the default value
                             radiusProfileId: defaultProfile ? String(defaultProfile.id) : '',
                             login_identifier_type: 'manual'
                         });
                     }
-                    // --- END ---
-
                 } catch (error) {
                     toast.error("Failed to load Radius Profiles.");
                 }
@@ -95,7 +95,19 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Organization Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., Corporate HQ" required />
+                        <Input 
+                            id="name" 
+                            value={formData.name} 
+                            onChange={handleInputChange} 
+                            placeholder="e.g., Corporate HQ" 
+                            required 
+                            disabled={isProtectedOrg} // <-- ปิดการใช้งาน Input นี้
+                        />
+                        {isProtectedOrg && (
+                            <p className="text-xs text-muted-foreground pt-1">
+                                The name of this critical organization cannot be changed.
+                            </p>
+                        )}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="radiusProfileId">Radius Profile</Label>
@@ -119,6 +131,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                         <Select
                             value={formData.login_identifier_type}
                             onValueChange={(value) => handleSelectChange('login_identifier_type', value)}
+                            disabled={isProtectedOrg} // <-- ปิดการใช้งาน Select นี้
                         >
                             <SelectTrigger id="login_identifier_type">
                                 <SelectValue />
@@ -130,6 +143,11 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                                 <SelectItem value="student_id">Student ID</SelectItem>
                             </SelectContent>
                         </Select>
+                        {isProtectedOrg && (
+                            <p className="text-xs text-muted-foreground pt-1">
+                                The login type for this critical organization must be 'manual'.
+                            </p>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>

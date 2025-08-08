@@ -33,25 +33,25 @@ const updateOrg = async (req, res, next) => {
     const updatedOrg = await organizationService.updateOrganization(req.params.id, req.body);
     res.status(200).json({ success: true, data: updatedOrg });
   } catch (error) {
-    next(error);
+    // ส่งข้อผิดพลาดกลับไปให้ Frontend โดยตรง
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-// --- START: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
 const deleteOrg = async (req, res, next) => {
     try {
         await organizationService.deleteOrganization(req.params.id);
         res.status(200).json({ success: true, message: 'Organization deleted successfully'});
     } catch (error) {
+        // ส่งข้อผิดพลาดกลับไปให้ Frontend โดยตรง
         res.status(400).json({ success: false, message: error.message });
     }
 };
-// --- END: ฟังก์ชันที่เพิ่มเข้ามาใหม่ ---
 
 module.exports = {
   createNewOrganization,
   getAllOrgs,
   getOrgById,
   updateOrg,
-  deleteOrg, // <-- Export ฟังก์ชันใหม่
+  deleteOrg,
 };

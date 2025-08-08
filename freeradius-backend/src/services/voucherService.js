@@ -1,12 +1,11 @@
 // src/services/voucherService.js
 const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
-const { addDays, format } = require('date-fns');
+const { addDays, format } = require('date-fns'); // <-- ตรวจสอบว่ามีบรรทัดนี้
 
 const VOUCHER_ORG_NAME = "Voucher";
 
 function generatePassword(length = 6) {    
-    // ... (ฟังก์ชันนี้คงเดิม)
     const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
     let result = '';
     for (let i = 0; i < length; i++) {
@@ -15,7 +14,6 @@ function generatePassword(length = 6) {
     return result;
 }
 
-// ... (ฟังก์ชัน create, get, update, delete package และอื่นๆ คงเดิม) ...
 const createVoucherPackage = async (packageData) => {
     return prisma.VoucherPackage.create({ data: packageData });
 };
@@ -39,7 +37,6 @@ const getVoucherBatches = async (filters = {}) => {
     const { page = 1, pageSize = 10, searchTerm, packageId, adminId, startDate, endDate } = filters;
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
     const take = parseInt(pageSize);
-
     const whereClause = {};
 
     if (searchTerm) {
@@ -85,12 +82,21 @@ const getVoucherBatchById = async (id) => {
     const batch = await prisma.VoucherBatch.findUnique({
         where: { id: parseInt(id) },
     });
-    if (batch) {
-        batch.usersJson = JSON.parse(batch.usersJson);
-    }
-    return batch;
-};
 
+    if (!batch) return null;
+
+    const voucherPackage = await prisma.VoucherPackage.findUnique({
+        where: { name: batch.packageName },
+    });
+
+    const durationDays = voucherPackage ? voucherPackage.durationDays : 0;
+
+    return {
+        ...batch,
+        usersJson: JSON.parse(batch.usersJson),
+        durationDays: durationDays,
+    };
+};
 
 const generateVouchers = async (options, adminId) => {
     const { quantity, packageId, usernamePrefix, passwordType } = options;
@@ -113,12 +119,10 @@ const generateVouchers = async (options, adminId) => {
         });
     }
     
-    // --- START: แก้ไขส่วนนี้ ---
-    const numQuantity = parseInt(quantity, 10); // แปลง quantity ให้เป็นตัวเลข
-    // --- END ---
+    const numQuantity = parseInt(quantity, 10);
 
     const usersToCreate = [];
-    for (let i = 0; i < numQuantity; i++) { // <-- ใช้ตัวแปรที่แปลงค่าแล้ว
+    for (let i = 0; i < numQuantity; i++) {
         const username = `${usernamePrefix}${generatePassword(6)}`;
         const password = generatePassword(6);
         usersToCreate.push({ username, password });
@@ -127,7 +131,6 @@ const generateVouchers = async (options, adminId) => {
     const saltRounds = 10;
 
     await prisma.$transaction(async (tx) => {
-        // ... (ส่วน Transaction สำหรับสร้าง user ใน radcheck, radusergroup คงเดิม) ...
         for (const user of usersToCreate) {
             const hashedPassword = await bcrypt.hash(user.password, saltRounds);
             await tx.user.create({
@@ -175,7 +178,7 @@ const generateVouchers = async (options, adminId) => {
     const newBatch = await prisma.VoucherBatch.create({
         data: {
             batchIdentifier,
-            quantity: numQuantity, // <-- ใช้ตัวแปรที่แปลงค่าแล้ว
+            quantity: numQuantity,
             packageName: voucherPackage.name,
             usernamePrefix,
             passwordType,

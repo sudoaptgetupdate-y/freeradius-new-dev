@@ -22,7 +22,10 @@ export default function UserMoveDialog({ isOpen, setIsOpen, selectedUsers, onMov
                     const response = await axiosInstance.get('/organizations', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
-                    setAllOrganizations(response.data.data);
+                    // --- START: แก้ไขส่วนนี้ ---
+                    // ดึง Array ที่อยู่ใน key "organizations" ออกมา
+                    setAllOrganizations(response.data.data.organizations);
+                    // --- END ---
                 } catch (error) {
                     toast.error("Failed to load organizations.");
                 }
@@ -33,7 +36,7 @@ export default function UserMoveDialog({ isOpen, setIsOpen, selectedUsers, onMov
 
     // กรองรายชื่อองค์กรให้แสดงเฉพาะ Type เดียวกันกับผู้ใช้ที่ถูกเลือกคนแรก
     const compatibleOrgs = useMemo(() => {
-        if (selectedUsers.length === 0 || allOrganizations.length === 0) {
+        if (selectedUsers.length === 0 || !Array.isArray(allOrganizations) || allOrganizations.length === 0) {
             return [];
         }
         const firstUserOrgType = selectedUsers[0].organization.login_identifier_type;
