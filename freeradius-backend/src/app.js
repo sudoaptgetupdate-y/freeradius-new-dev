@@ -2,7 +2,7 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const path = require('path'); // 👈 เพิ่มเข้ามา
+const path = require('path'); 
 
 const authRoutes = require('./routes/authRoutes');
 const nasRoutes = require('./routes/nasRoutes');
@@ -18,7 +18,8 @@ const onlineUserRoutes = require('./routes/onlineUserRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const registerRoutes = require('./routes/registerRoutes');
 const attributeDefinitionRoutes = require('./routes/attributeDefinitionRoutes');
-const settingsRoutes = require('./routes/settingsRoutes'); // 👈 เพิ่มเข้ามา
+const settingsRoutes = require('./routes/settingsRoutes'); 
+const voucherRoutes = require('./routes/voucherRoutes');
 
 const app = express();
 // ... middlewares ...
@@ -36,7 +37,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/register', registerRoutes);
-app.use('/api/settings', settingsRoutes); // 👈 เพิ่มเข้ามา
+app.use('/api/settings', settingsRoutes); 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/nas', nasRoutes);
@@ -50,6 +51,7 @@ app.use('/api/attribute-definitions', attributeDefinitionRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/online-users', onlineUserRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/vouchers', voucherRoutes);
 
 // --- Error Handler Middleware ---
 app.use(errorHandler);

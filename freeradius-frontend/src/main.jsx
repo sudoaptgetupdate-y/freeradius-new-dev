@@ -24,6 +24,11 @@ import AdminProfilePage from './pages/AdminProfilePage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
 import CustomizationPage from './pages/CustomizationPage.jsx';
+import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
+import VoucherGenerationPage from './pages/VoucherGenerationPage.jsx';
+import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
+import VoucherPrintPage from './pages/VoucherPrintPage.jsx'; // <--- ตรวจสอบว่า import ถูกต้อง
+import VoucherSettingsPage from './pages/VoucherSettingsPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +40,11 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
+          // --- START: การแก้ไข ---
+          // ย้าย Route ของหน้า Print มาไว้นอก MainLayout
+          // เพื่อให้ไม่โดนผลกระทบจาก CSS ของ Layout หลัก
+          { path: 'vouchers/batches/:id', element: <VoucherPrintPage /> },
+          // --- END ---
           {
             element: <MainLayout />,
             children: [
@@ -50,6 +60,12 @@ const router = createBrowserRouter([
               { path: 'profile', element: <AdminProfilePage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
+              { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
+              { path: 'vouchers/generate', element: <VoucherGenerationPage /> },
+              { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
+              // ลบบรรทัดด้านล่างนี้ออกจาก MainLayout
+              // { path: 'vouchers/batches/:id', element: <VoucherPrintPage /> },
+              { path: 'vouchers/settings', element: <VoucherSettingsPage /> },
             ]
           }
         ]

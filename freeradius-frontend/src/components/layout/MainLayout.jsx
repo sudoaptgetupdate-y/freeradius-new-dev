@@ -4,12 +4,11 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-// --- START: แก้ไขส่วนนี้ (เพิ่ม ListChecks) ---
 import { 
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
-    Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette
-} from "lucide-react";
-// --- END: สิ้นสุดการแก้ไข ---
+    Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
+    Ticket, PlusSquare, History as HistoryIcon, Wrench
+} from "lucide-react"; // <-- เพิ่ม Icons
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -22,20 +21,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 
-const Footer = () => {
-    const currentYear = new Date().getFullYear();
-    return (
-        <footer className="bg-white border-t mt-auto flex-shrink-0">
-            <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-center items-center text-sm text-muted-foreground text-center">
-                    <p>
-                        &copy; {currentYear} Inventory Management System by the Engineering Team of NTPLC, Nakhon Si Thammarat. All rights reserved.
-                    </p>
-                </div>
-            </div>
-        </footer>
-    );
-};
+// ... (ส่วนอื่นๆ ของ Component คงเดิม) ...
 
 const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     <NavLink
@@ -60,6 +46,7 @@ const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     </NavLink>
 );
 
+
 export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -68,6 +55,7 @@ export default function MainLayout() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // ... (ส่วน logic อื่นๆ ของ Component คงเดิม) ...
     const handleIdle = useCallback(() => {
         toast.warning("Logged out due to inactivity", {
             description: "You have been automatically logged out for security purposes.",
@@ -95,14 +83,10 @@ export default function MainLayout() {
         }
     };
 
+
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/60 z-20 md:hidden"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                ></div>
-            )}
+            {/* ... (ส่วน Mobile Menu Overlay คงเดิม) ... */}
 
             <aside className={cn(
                 "bg-white border-r flex-shrink-0 transition-all duration-300 ease-in-out",
@@ -110,7 +94,8 @@ export default function MainLayout() {
                 isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full",
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
-                <div className="p-4 border-b flex items-center gap-3 h-[65px]">
+                {/* ... (ส่วน Header ของ Sidebar คงเดิม) ... */}
+                 <div className="p-4 border-b flex items-center gap-3 h-[65px]">
                     <div className="bg-primary p-2 rounded-lg">
                         <Server className="text-primary-foreground" size={24} />
                     </div>
@@ -121,23 +106,48 @@ export default function MainLayout() {
                         Freeradius UI
                     </h1>
                 </div>
+
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
+                    {/* Main Navigation */}
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/online-users" icon={<Wifi size={18} />} text="Online Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/history" icon={<History size={18} />} text="History" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    <NavItem to="/users" icon={<Users size={18} />} text="Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    <NavItem to="/profiles" icon={<Settings size={18} />} text="Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     
+                    {/* Users Section */}
+                    <div className="pt-2">
+                        <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                           USERS
+                        </p>
+                        <div className="space-y-1">
+                             <NavItem to="/users" icon={<Users size={18} />} text="All Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                             <NavItem to="/vouchers/generate" icon={<PlusSquare size={18} />} text="Generate Vouchers" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                             <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text="Voucher Batches" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                        </div>
+                    </div>
+                    
+                    {/* Configuration Section */}
+                    <div className="pt-2">
+                        <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                           CONFIGURATION
+                        </p>
+                         <div className="space-y-1">
+                            <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/profiles" icon={<Settings size={18} />} text="Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                         </div>
+                    </div>
+
+                    {/* System Section for SuperAdmin */}
                     {(isSuperAdmin) && (
                          <div className="pt-2">
                             <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                                System
+                                SYSTEM
                             </p>
                             <div className="space-y-1">
                                 <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text="Attributes" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text="Voucher Packages" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/vouchers/settings" icon={<Wrench size={18} />} text="Voucher Settings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             </div>
                         </div>
@@ -145,6 +155,7 @@ export default function MainLayout() {
                 </nav>
             </aside>
 
+            {/* ... (ส่วนที่เหลือของ MainLayout คงเดิม) ... */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b flex justify-between items-center px-4 h-[65px] flex-shrink-0">
                     <div className="flex items-center">
@@ -199,8 +210,6 @@ export default function MainLayout() {
                         </motion.div>
                     </AnimatePresence>
                 </main>
-                
-                <Footer />
             </div>
         </div>
     );
