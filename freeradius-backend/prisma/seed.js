@@ -86,18 +86,25 @@ async function main() {
 
   // --- 4. Seed Default Settings ---
   console.log('Seeding default settings...');
-  const existingTerms = await prisma.setting.findUnique({ where: { key: 'terms' } });
-  if (!existingTerms) {
-      console.log('- Creating default Terms of Service...');
-      await prisma.setting.create({
-          data: {
-              key: 'terms',
-              value: DEFAULT_TERMS_OF_SERVICE,
-          },
-      });
-      console.log('✅ Default Terms of Service created.');
-  } else {
-      console.log('👍 Default Terms of Service already exist.');
+  const settingsToSeed = [
+      { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
+      { key: 'logoUrl', value: '/uploads/logo.png' },
+      { key: 'backgroundUrl', value: '/uploads/background.jpg' }
+  ];
+
+  for (const setting of settingsToSeed) {
+      const existingSetting = await prisma.setting.findUnique({ where: { key: setting.key } });
+      if (!existingSetting) {
+          await prisma.setting.create({
+              data: {
+                  key: setting.key,
+                  value: setting.value,
+              },
+          });
+          console.log(`✅ Default setting for '${setting.key}' created.`);
+      } else {
+          console.log(`👍 Default setting for '${setting.key}' already exists.`);
+      }
   }
 
   // --- 5. Seed Default Radius Attributes ---

@@ -20,6 +20,7 @@ const registerRoutes = require('./routes/registerRoutes');
 const attributeDefinitionRoutes = require('./routes/attributeDefinitionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const voucherRoutes = require('./routes/voucherRoutes');
+const externalAuthRoutes = require('./routes/externalAuthRoutes');
 
 const app = express();
 app.use(cors());
@@ -40,14 +41,13 @@ app.use('/api/nas', nasRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/organizations', organizationRoutes);
-// --- START: แก้ไขส่วนนี้ ---
-app.use('/api/radius-profiles', profileRoutes); // เปลี่ยนจาก /api/profiles
-// --- END ---
+app.use('/api/radius-profiles', profileRoutes);
 app.use('/api/attributes', attributeRoutes);
 app.use('/api/status', statusRoutes);
 app.use('/api/attribute-definitions', attributeDefinitionRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/online-users', onlineUserRoutes);
+app.use('/api/external-auth', externalAuthRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/vouchers', voucherRoutes);
 

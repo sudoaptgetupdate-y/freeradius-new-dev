@@ -28,6 +28,7 @@ import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
 import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import VoucherSettingsPage from './pages/VoucherSettingsPage.jsx';
+import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
     children: [
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'user-login', element: <ExternalLoginPage /> },
       {
         element: <ProtectedRoute />,
         children: [
