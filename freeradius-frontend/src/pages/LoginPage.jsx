@@ -1,14 +1,14 @@
 // src/pages/LoginPage.jsx
 import { useState } from 'react';
-import { useNavigate, Navigate, Link } from 'react-router-dom'; // 1. เพิ่ม Link
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'; // 2. เพิ่ม CardFooter
+import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { Separator } from '@/components/ui/separator'; // 3. เพิ่ม Separator
+import { Separator } from '@/components/ui/separator'; 
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -40,39 +40,35 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <Card className="w-full max-w-sm">
-                <CardHeader>
+        <>
+            <CardContent className="pt-0"> {/* เพิ่ม pt-0 เพื่อให้ชิดกับ Header */}
+                <div className="text-center mb-6"> {/* เพิ่ม Div ครอบ Title และ Description */}
                     <CardTitle>Freeradius UI</CardTitle>
                     <CardDescription>Please log in to continue.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
-                            <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus/>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Logging in...' : 'Log In'}
-                        </Button>
-                    </form>
-                </CardContent>
-                {/* --- START: เพิ่มส่วนนี้ --- */}
-                <CardFooter className="flex-col items-center gap-4">
-                    <Separator />
-                    <p className="text-sm text-muted-foreground">
-                        Don't have an account?{' '}
-                        <Link to="/register" className="underline underline-offset-4 hover:text-primary">
-                            Register here
-                        </Link>
-                    </p>
-                </CardFooter>
-                {/* --- END: สิ้นสุดส่วนที่เพิ่ม --- */}
-            </Card>
-        </div>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? 'Logging in...' : 'Log In'}
+                    </Button>
+                </form>
+            </CardContent>
+            <CardFooter className="flex-col items-center gap-4">
+                <Separator />
+                <p className="text-sm text-muted-foreground">
+                    Don't have an account?{' '}
+                    <Link to="/register" className="underline underline-offset-4 hover:text-primary">
+                        Register here
+                    </Link>
+                </p>
+            </CardFooter>
+        </>
     );
 }

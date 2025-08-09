@@ -10,7 +10,9 @@ import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
 
 // Import pages
+import AuthLayout from './pages/AuthLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import OrganizationsPage from './pages/OrganizationsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
@@ -21,23 +23,27 @@ import OnlineUsersPage from './pages/OnlineUsersPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
 import AdminProfilePage from './pages/AdminProfilePage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
 import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
 import CustomizationPage from './pages/CustomizationPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
 import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
-import SettingsPage from './pages/SettingsPage.jsx';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
     children: [
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'user-login', element: <ExternalLoginPage /> },
+      {
+        element: <AuthLayout />,
+        children: [
+          { path: 'login', element: <LoginPage /> },
+          { path: 'register', element: <RegisterPage /> },
+          { path: 'user-login', element: <ExternalLoginPage /> }
+        ]
+      },
       {
         element: <ProtectedRoute />,
         children: [

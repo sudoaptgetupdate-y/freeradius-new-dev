@@ -3,16 +3,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import { ArrowLeft, Building } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -32,28 +31,24 @@ export default function RegisterPage() {
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [botCheck, setBotCheck] = useState({ num1: 0, num2: 0, answer: '' });
-
-    // --- START: แก้ไขส่วนนี้ ---
-    // 1. สร้าง State สำหรับเก็บข้อมูลการตั้งค่าทั้งหมดใน Object เดียว
-    const [settings, setSettings] = useState({
-        logoUrl: '',
-        backgroundUrl: '',
-        terms: 'Loading terms...' // ข้อความเริ่มต้น
-    });
+    
+    const [settings, setSettings] = useState(null);
+    const [isPageLoading, setIsPageLoading] = useState(true);
 
     useEffect(() => {
         generateBotCheck();
-        // 2. ดึงข้อมูลการตั้งค่าทั้งหมดจาก API เมื่อหน้าเว็บโหลด
         axiosInstance.get('/settings')
           .then(response => {
-            // 3. อัปเดต State ด้วยข้อมูลที่ได้จาก Backend
             setSettings(response.data.data);
           })
           .catch(() => {
-            toast.error("Could not load registration page settings.");
+            toast.error("Could not load page settings.");
+            setSettings({ registrationEnabled: 'true' });
+          })
+          .finally(() => {
+            setIsPageLoading(false);
           });
     }, []);
-    // --- END ---
 
     const generateBotCheck = () => {
         setBotCheck({
@@ -88,7 +83,7 @@ export default function RegisterPage() {
                 description: "Please wait for an administrator to approve your account.",
                 duration: 5000,
             });
-            navigate('/login');
+            navigate('/user-login');
         } catch (error) {
             toast.error("Registration Failed", {
                 description: error.response?.data?.message || "An unexpected error occurred.",
@@ -98,104 +93,107 @@ export default function RegisterPage() {
             setIsLoading(false);
         }
     };
-
-    const pageStyle = settings.backgroundUrl ? {
-        backgroundImage: `url(${settings.backgroundUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-    } : {
-        backgroundColor: 'hsl(220 14.3% 95.9%)'
-    };
+    
+    if (isPageLoading) {
+        return <div className="flex items-center justify-center p-8">Loading...</div>;
+    }
 
     return (
-        <div className="flex items-center justify-center min-h-screen p-4 transition-all" style={pageStyle}>
-            <Card className="w-full max-w-md shadow-lg bg-white/90 backdrop-blur-sm">
-                <CardHeader className="text-center">
-                    <div className="mx-auto mb-4">
-                        {settings.logoUrl ? (
-                           <img src={settings.logoUrl} alt="Company Logo" className="h-20 object-contain" />
-                        ) : (
-                           <div className="bg-slate-100 p-3 rounded-full w-fit">
-                               <Building className="h-10 w-10 text-primary" />
-                           </div>
-                        )}
-                    </div>
-                    <CardTitle className="text-2xl">Create Your Account</CardTitle>
-                    <CardDescription>Fill out the form to get started.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Form fields... (คงเดิม) */}
-                        <div className="space-y-2">
-                            <Label htmlFor="fullName">Full Name</Label>
-                            <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <>
+            <div className="text-center mb-6 px-6">
+                {settings.registrationEnabled === 'true' ? (
+                    <>
+                        <CardTitle className="text-2xl">Create Your Account</CardTitle>
+                        <CardDescription>Fill out the form to get started.</CardDescription>
+                    </>
+                ) : (
+                    <>
+                        <CardTitle className="text-2xl">Registration Disabled</CardTitle>
+                        <CardDescription>Self-registration is currently unavailable.</CardDescription>
+                    </>
+                )}
+            </div>
+            
+            {settings.registrationEnabled === 'true' ? (
+                <>
+                    <CardContent>
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="e.g., user@example.com" required />
+                                <Label htmlFor="fullName">Full Name</Label>
+                                <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="e.g., John Doe" required />
                             </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="phoneNumber">Phone Number</Label>
-                                <Input id="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} placeholder="e.g., 0812345678" required />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="username">Username</Label>
-                                <Input id="username" value={formData.username} onChange={handleInputChange} placeholder="e.g., johndoe" required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Create a strong password" required />
-                            </div>
-                        </div>
-                        <div className="space-y-2 pt-2">
-                            <Label htmlFor="botCheck">Security Question: What is {botCheck.num1} + {botCheck.num2}?</Label>
-                            <Input id="botCheck" type="number" value={botCheck.answer} onChange={(e) => setBotCheck({...botCheck, answer: e.target.value})} required />
-                        </div>
-                        
-                        <Dialog>
-                            <div className="items-top flex space-x-2 pt-2">
-                                <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
-                                <div className="grid gap-1.5 leading-none">
-                                    <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        I agree to the
-                                        <DialogTrigger asChild>
-                                             <Button variant="link" className="p-1 h-auto">Terms and Conditions</Button>
-                                        </DialogTrigger>
-                                    </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email Address</Label>
+                                    <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="e.g., user@example.com" required />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                                    <Input id="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} placeholder="e.g., 0812345678" required />
                                 </div>
                             </div>
-                             <DialogContent className="sm:max-w-[625px]">
-                                <DialogHeader>
-                                  <DialogTitle>Terms of Service and Privacy Policy</DialogTitle>
-                                </DialogHeader>
-                                {/* --- START: แก้ไขส่วนนี้ --- */}
-                                {/* 4. แสดงข้อความ Terms จาก State ที่ถูกต้อง */}
-                                <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">
-                                   {settings.terms}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="username">Username</Label>
+                                    <Input id="username" value={formData.username} onChange={handleInputChange} placeholder="e.g., johndoe" required />
                                 </div>
-                                {/* --- END --- */}
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button type="button">Close</Button>
-                                    </DialogClose>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                        
-                        <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
-                            {isLoading ? 'Registering...' : 'Create Account'}
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Create a strong password" required />
+                                </div>
+                            </div>
+                            <div className="space-y-2 pt-2">
+                                <Label htmlFor="botCheck">Security Question: What is {botCheck.num1} + {botCheck.num2}?</Label>
+                                <Input id="botCheck" type="number" value={botCheck.answer} onChange={(e) => setBotCheck({...botCheck, answer: e.target.value})} required />
+                            </div>
+                            <Dialog>
+                                <div className="items-top flex space-x-2 pt-2">
+                                    <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
+                                    <div className="grid gap-1.5 leading-none">
+                                        <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                            I agree to the
+                                            <DialogTrigger asChild>
+                                                 <Button variant="link" className="p-1 h-auto">Terms and Conditions</Button>
+                                            </DialogTrigger>
+                                        </label>
+                                    </div>
+                                </div>
+                                 <DialogContent className="sm:max-w-[625px]">
+                                    <DialogHeader>
+                                      <DialogTitle>Terms of Service and Privacy Policy</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">
+                                       {settings.terms}
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild><Button type="button">Close</Button></DialogClose>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                            <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
+                                {isLoading ? 'Registering...' : 'Create Account'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                    <CardFooter>
+                        <Button variant="link" asChild className="w-full text-muted-foreground">
+                           <Link to="/user-login"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Login</Link>
                         </Button>
-                    </form>
-                </CardContent>
-                 <CardFooter>
-                    <Button variant="link" asChild className="w-full text-muted-foreground">
-                       <Link to="/login"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Login</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                    </CardFooter>
+                </>
+            ) : (
+                <>
+                    <CardContent className="text-center">
+                        <Info className="mx-auto h-12 w-12 text-blue-500 mb-4" />
+                        <p className="text-muted-foreground">Please contact an administrator for assistance.</p>
+                    </CardContent>
+                    <CardFooter>
+                        <Button asChild className="w-full">
+                           <Link to="/user-login"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Login</Link>
+                        </Button>
+                    </CardFooter>
+                </>
+            )}
+        </>
     );
 }
