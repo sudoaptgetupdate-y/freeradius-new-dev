@@ -17,14 +17,17 @@ export default function VoucherGenerationDialog({ isOpen, setIsOpen, onGeneratio
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     const { data: packages, error: packagesError } = useSWR('/vouchers/packages', fetcher);
 
+    // --- START: แก้ไขค่าเริ่มต้นใน State นี้ ---
     const [formData, setFormData] = useState({
         quantity: 10,
         packageId: '',
-        usernamePrefix: 'card-',
+        usernamePrefix: 'nt', // <--- แก้ไข Username Prefix
         passwordType: 'alnum',
-        usernameLength: 6,
-        passwordLength: 6,
+        usernameLength: 2,      // <--- แก้ไขความยาว Username
+        passwordLength: 4,      // <--- แก้ไขความยาว Password
     });
+    // --- END ---
+
     const [isLoading, setIsLoading] = useState(false);
 
     const handleInputChange = (e) => {
@@ -89,7 +92,7 @@ export default function VoucherGenerationDialog({ isOpen, setIsOpen, onGeneratio
                             </div>
                             <div>
                                 <Label htmlFor="usernameLength">Username Length (random part)</Label>
-                                <Input id="usernameLength" type="number" value={formData.usernameLength} onChange={handleInputChange} required min="4" max="16"/>
+                                <Input id="usernameLength" type="number" value={formData.usernameLength} onChange={handleInputChange} required min="2" max="16"/>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -105,7 +108,7 @@ export default function VoucherGenerationDialog({ isOpen, setIsOpen, onGeneratio
                             </div>
                             <div>
                                 <Label htmlFor="passwordLength">Password Length</Label>
-                                <Input id="passwordLength" type="number" value={formData.passwordLength} onChange={handleInputChange} required min="4" max="16"/>
+                                <Input id="passwordLength" type="number" value={formData.passwordLength} onChange={handleInputChange} required min="2" max="16"/>
                             </div>
                         </div>
                     </div>

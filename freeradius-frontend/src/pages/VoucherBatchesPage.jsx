@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { History, Printer, PlusCircle } from 'lucide-react';
+import { History, Printer, PlusCircle, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import VoucherGenerationDialog from '@/components/dialogs/VoucherGenerationDialog';
+import VoucherSettingsDialog from '@/components/dialogs/VoucherSettingsDialog';
 
 export default function VoucherBatchesPage() {
     const token = useAuthStore((state) => state.token);
@@ -28,6 +29,7 @@ export default function VoucherBatchesPage() {
     const [packages, setPackages] = useState([]);
     const [admins, setAdmins] = useState([]);
     const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+    const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
     const {
         data: batches,
@@ -64,14 +66,22 @@ export default function VoucherBatchesPage() {
         <>
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><History className="h-6 w-6" />Voucher Batches</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <History className="h-6 w-6" />
+                                Voucher Batches
+                            </CardTitle>
                             <CardDescription>History of all generated voucher batches.</CardDescription>
                         </div>
-                        <Button onClick={() => setIsGenerateDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New Batch
-                        </Button>
+                        <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+                            <Button variant="outline" size="sm" onClick={() => setIsSettingsDialogOpen(true)}>
+                                <Settings className="mr-2 h-4 w-4" /> Voucher Settings
+                            </Button>
+                            <Button size="sm" onClick={() => setIsGenerateDialogOpen(true)}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Batch
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -160,6 +170,14 @@ export default function VoucherBatchesPage() {
                     isOpen={isGenerateDialogOpen}
                     setIsOpen={setIsGenerateDialogOpen}
                     onGenerationSuccess={refreshData}
+                />
+            )}
+            
+            {/* --- เพิ่มการเรียกใช้ Dialog Settings --- */}
+            {isSettingsDialogOpen && (
+                <VoucherSettingsDialog
+                    isOpen={isSettingsDialogOpen}
+                    setIsOpen={setIsSettingsDialogOpen}
                 />
             )}
         </>

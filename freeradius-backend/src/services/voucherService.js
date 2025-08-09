@@ -5,8 +5,12 @@ const { addDays, format } = require('date-fns'); // <-- ตรวจสอบว
 
 const VOUCHER_ORG_NAME = "Voucher";
 
-function generatePassword(length = 6) {    
-    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+function generateRandomString(length, type = 'alnum') {
+    let chars = 'abcdefghjkmnpqrstuvwxyz23456789'; // ค่าเริ่มต้นเป็น Alphanumeric
+    if (type === 'numeric') {
+        chars = '0123456789'; // ถ้า type เป็น numeric ให้ใช้แค่ตัวเลข
+    }
+    
     let result = '';
     for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -99,7 +103,15 @@ const getVoucherBatchById = async (id) => {
 };
 
 const generateVouchers = async (options, adminId) => {
-    const { quantity, packageId, usernamePrefix, passwordType } = options;
+    // 1. รับค่า length และ type เพิ่ม
+    const { 
+        quantity, 
+        packageId, 
+        usernamePrefix, 
+        passwordType, 
+        usernameLength, 
+        passwordLength 
+    } = options;
 
     const voucherPackage = await prisma.VoucherPackage.findUnique({
         where: { id: parseInt(packageId) },
@@ -123,14 +135,18 @@ const generateVouchers = async (options, adminId) => {
 
     const usersToCreate = [];
     for (let i = 0; i < numQuantity; i++) {
-        const username = `${usernamePrefix}${generatePassword(6)}`;
-        const password = generatePassword(6);
+        // 2. ใช้ฟังก์ชันใหม่และค่าที่รับมาในการสร้าง user/pass
+        const usernameRandomPart = generateRandomString(parseInt(usernameLength), 'alnum');
+        const password = generateRandomString(parseInt(passwordLength), passwordType);
+        
+        const username = `${usernamePrefix}${usernameRandomPart}`;
         usersToCreate.push({ username, password });
     }
     
     const saltRounds = 10;
 
     await prisma.$transaction(async (tx) => {
+        // ... (ส่วน Transaction สำหรับสร้าง user ใน radcheck, radusergroup คงเดิม) ...
         for (const user of usersToCreate) {
             const hashedPassword = await bcrypt.hash(user.password, saltRounds);
             await tx.user.create({
@@ -142,7 +158,6 @@ const generateVouchers = async (options, adminId) => {
                     status: 'active',
                 },
             });
-
             await tx.radcheck.create({
                 data: {
                     username: user.username,
@@ -151,11 +166,9 @@ const generateVouchers = async (options, adminId) => {
                     value: hashedPassword,
                 },
             });
-            
             const expirationDate = addDays(new Date(), voucherPackage.durationDays);
             const formattedExpiration = format(expirationDate, 'dd MMM yyyy HH:mm:ss');
-
-             await tx.radcheck.create({
+            await tx.radcheck.create({
                 data: {
                     username: user.username,
                     attribute: 'Expiration',
@@ -163,7 +176,6 @@ const generateVouchers = async (options, adminId) => {
                     value: formattedExpiration,
                 },
             });
-
             await tx.radusergroup.create({
                 data: {
                     username: user.username,

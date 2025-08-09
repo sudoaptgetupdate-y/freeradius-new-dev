@@ -51,6 +51,7 @@ export default function UsersPage() {
 
     const [organizations, setOrganizations] = useState([]);
     const [orgFilter, setOrgFilter] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
 
     const {
@@ -69,6 +70,7 @@ export default function UsersPage() {
             organizationId: orgFilter,
             sortBy: sortConfig.key,
             sortOrder: sortConfig.direction,
+            status: statusFilter,
         }
     );
 
@@ -224,15 +226,15 @@ export default function UsersPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex-shrink-0 flex flex-col sm:flex-row gap-4 mb-4">
+                    <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <Input
                             placeholder="Search by username or full name..."
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
-                            className="flex-grow"
+                            className="lg:col-span-1"
                         />
-                        <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
-                            <SelectTrigger className="w-full sm:w-[250px]">
+                        <Select onValueChange={(value) => setOrgFilter(value === "all" ? "" : value)} value={orgFilter || "all"}>
+                            <SelectTrigger>
                                 <SelectValue placeholder="Filter by organization..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -242,6 +244,18 @@ export default function UsersPage() {
                                         {org.name}
                                     </SelectItem>
                                 ))}
+                            </SelectContent>
+                        </Select>
+                        
+                        {/* 3. เพิ่ม Dropdown สำหรับ Status Filter */}
+                        <Select onValueChange={setStatusFilter} value={statusFilter}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filter by status..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                                <SelectItem value="disabled">Disabled</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

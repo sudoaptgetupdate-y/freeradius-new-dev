@@ -27,7 +27,6 @@ import CustomizationPage from './pages/CustomizationPage.jsx';
 import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
 import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
-import VoucherSettingsPage from './pages/VoucherSettingsPage.jsx';
 import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
 
 const router = createBrowserRouter([
@@ -57,7 +56,6 @@ const router = createBrowserRouter([
               { path: 'customization', element: <CustomizationPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
-              { path: 'vouchers/settings', element: <VoucherSettingsPage /> },
               { path: 'account-settings', element: <AdminProfilePage /> },
               { path: 'radius-profiles', element: <RadiusProfilesPage /> },
             ]

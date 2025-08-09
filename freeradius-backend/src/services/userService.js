@@ -207,8 +207,11 @@ const importUsersFromCSV = (filePath) => {
 
 
 const getAllUsers = async (filters) => {
-  const { searchTerm, organizationId, page = 1, pageSize = 10, sortBy = 'createdAt', sortOrder = 'desc' } = filters;
+  // 1. เพิ่ม status เข้าไปใน destructuring
+  const { searchTerm, organizationId, page = 1, pageSize = 10, sortBy = 'createdAt', sortOrder = 'desc', status } = filters;
+  
   const whereClause = {};
+
   if (searchTerm) {
     whereClause.OR = [
       { username: { contains: searchTerm } },
@@ -217,6 +220,12 @@ const getAllUsers = async (filters) => {
   }
   if (organizationId) {
     whereClause.organizationId = parseInt(organizationId);
+  }
+
+  // --- START: เพิ่มเงื่อนไขการกรอง status ---
+  // 2. เพิ่มเงื่อนไข: ถ้า status ถูกส่งมาและไม่ใช่ 'all' ให้เพิ่มเข้าไปใน whereClause
+  if (status && status !== 'all') {
+    whereClause.status = status;
   }
   const skip = (page - 1) * pageSize;
   const take = parseInt(pageSize);
