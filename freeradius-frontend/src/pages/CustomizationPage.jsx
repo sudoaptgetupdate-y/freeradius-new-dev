@@ -1,13 +1,12 @@
 // src/pages/CustomizationPage.jsx
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Palette, Save, Eye, UserPlus } from 'lucide-react';
+import { Palette, Save, Eye } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -19,20 +18,16 @@ export default function CustomizationPage() {
     const [background, setBackground] = useState(null);
     const [backgroundPreview, setBackgroundPreview] = useState('');
     const [terms, setTerms] = useState('');
-    const [registrationEnabled, setRegistrationEnabled] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
-    const [initialSettings, setInitialSettings] = useState({});
 
     useEffect(() => {
         setIsLoading(true);
         axiosInstance.get('/settings')
           .then(response => {
               const settings = response.data.data;
-              setInitialSettings(settings); 
               setTerms(settings.terms || "");
               setLogoPreview(settings.logoUrl || '');
               setBackgroundPreview(settings.backgroundUrl || '');
-              setRegistrationEnabled(settings.registrationEnabled === 'true');
           })
           .catch(() => toast.error("ไม่สามารถโหลดข้อมูลการตั้งค่าได้"))
           .finally(() => setIsLoading(false));
@@ -43,9 +38,7 @@ export default function CustomizationPage() {
         if (file) {
             setFile(file);
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreview(reader.result);
-            };
+            reader.onloadend = () => { setPreview(reader.result); };
             reader.readAsDataURL(file);
         }
     };
@@ -53,34 +46,18 @@ export default function CustomizationPage() {
     const handleSave = async () => {
         setIsLoading(true);
         const formData = new FormData();
-
         if (logo) formData.append('logo', logo);
         if (background) formData.append('background', background);
-        if (terms !== initialSettings.terms) formData.append('terms', terms);
-        if (registrationEnabled !== (initialSettings.registrationEnabled === 'true')) {
-            formData.append('registrationEnabled', String(registrationEnabled));
-        }
+        formData.append('terms', terms);
         
-        if ([...formData.entries()].length === 0) {
-            toast.info("No changes to save.");
-            setIsLoading(false);
-            return;
-        }
-
         toast.promise(
             axiosInstance.post('/settings', formData, { 
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             }),
             {
                 loading: 'Saving settings...',
-                success: (res) => {
-                    const newSettings = { ...initialSettings, terms, registrationEnabled: String(registrationEnabled), logoUrl: logoPreview, backgroundUrl: backgroundPreview };
-                    setInitialSettings(newSettings);
-                    setLogo(null);
-                    setBackground(null);
-                    return "บันทึกการตั้งค่าสำเร็จ!";
-                },
-                error: (err) => err.response?.data?.message || "ไม่สามารถบันทึกการตั้งค่าได้",
+                success: 'Appearance settings saved successfully!',
+                error: (err) => err.response?.data?.message || "Failed to save settings.",
                 finally: () => setIsLoading(false)
             }
         );
@@ -88,16 +65,13 @@ export default function CustomizationPage() {
 
     return (
         <div className="space-y-6">
-            {/* --- START: นำโค้ดส่วนที่หายไปกลับมา --- */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Palette className="h-6 w-6" />
-                        Appearance Customization
-                    </CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Palette className="h-6 w-6" />Appearance Customization</CardTitle>
                     <CardDescription>ปรับแต่ง Logo, Background, และข้อความสำหรับหน้าลงทะเบียน</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
+                    {/* ... ส่วนของ Logo, Background, Terms คงเดิม ... */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         <div className="space-y-2">
                             <Label htmlFor="logo-upload">Company Logo</Label>
@@ -109,19 +83,12 @@ export default function CustomizationPage() {
                                 <div className="p-4 border rounded-md bg-muted/50 text-center relative group">
                                     <Label className="text-muted-foreground">Logo Preview</Label>
                                     <img src={logoPreview} alt="Logo Preview" className="mx-auto mt-2 max-h-24 object-contain" />
-                                     <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Eye className="mr-2 h-4 w-4" /> View Full
-                                        </Button>
-                                    </DialogTrigger>
+                                     <DialogTrigger asChild><Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="mr-2 h-4 w-4" /> View Full</Button></DialogTrigger>
                                 </div>
-                                <DialogContent className="max-w-md p-2">
-                                    <img src={logoPreview} alt="Full logo preview" className="w-full h-auto rounded-md" />
-                                </DialogContent>
+                                <DialogContent className="max-w-md p-2"><img src={logoPreview} alt="Full logo preview" className="w-full h-auto rounded-md" /></DialogContent>
                             </Dialog>
                         )}
                     </div>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                         <div className="space-y-2">
                             <Label htmlFor="background-upload">Register Page Background</Label>
@@ -133,64 +100,24 @@ export default function CustomizationPage() {
                                 <div className="p-4 border rounded-md bg-muted/50 text-center relative group">
                                     <Label className="text-muted-foreground">Background Preview</Label>
                                     <img src={backgroundPreview} alt="Background Preview" className="mx-auto mt-2 max-h-32 w-full object-cover rounded-md" />
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Eye className="mr-2 h-4 w-4" /> View Full Image
-                                        </Button>
-                                    </DialogTrigger>
+                                    <DialogTrigger asChild><Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="mr-2 h-4 w-4" /> View Full Image</Button></DialogTrigger>
                                 </div>
-                                <DialogContent className="max-w-4xl p-2">
-                                    <img src={backgroundPreview} alt="Full background preview" className="w-full h-auto rounded-md" />
-                                </DialogContent>
+                                <DialogContent className="max-w-4xl p-2"><img src={backgroundPreview} alt="Full background preview" className="w-full h-auto rounded-md" /></DialogContent>
                             </Dialog>
                         )}
                     </div>
-                    
                     <div className="space-y-2">
                         <Label htmlFor="terms-text">Terms of Service & Privacy Policy</Label>
-                        <Textarea
-                            id="terms-text"
-                            value={terms}
-                            onChange={(e) => setTerms(e.target.value)}
-                            rows={15}
-                            placeholder="ใส่ข้อความ Terms of Service และ Privacy Policy ทั้งหมดที่นี่..."
-                        />
+                        <Textarea id="terms-text" value={terms} onChange={(e) => setTerms(e.target.value)} rows={15} placeholder="ใส่ข้อความ Terms of Service และ Privacy Policy ทั้งหมดที่นี่..." />
                     </div>
                 </CardContent>
+                 <div className="flex justify-end p-6">
+                    <Button onClick={handleSave} disabled={isLoading}>
+                        <Save className="mr-2 h-4 w-4" />
+                        {isLoading ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                </div>
             </Card>
-            {/* --- END --- */}
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <UserPlus className="h-6 w-6" />
-                        System Settings
-                    </CardTitle>
-                    <CardDescription>Manage system-wide functionalities.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                            <Label htmlFor="registration-switch" className="text-base">User Self-Registration</Label>
-                            <p className="text-sm text-muted-foreground">
-                                Allow users to register for an account themselves.
-                            </p>
-                        </div>
-                        <Switch
-                            id="registration-switch"
-                            checked={registrationEnabled}
-                            onCheckedChange={setRegistrationEnabled}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="flex justify-end pt-4">
-                <Button onClick={handleSave} disabled={isLoading}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {isLoading ? 'Saving...' : 'Save All Changes'}
-                </Button>
-            </div>
         </div>
     );
 }

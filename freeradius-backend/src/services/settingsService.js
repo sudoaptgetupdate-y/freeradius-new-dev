@@ -27,7 +27,8 @@ const saveSettings = async (files, body) => {
     voucherSsid,
     voucherHeaderText,
     voucherFooterText,
-    registrationEnabled // 👈 เพิ่มตัวแปรนี้เพื่อรับค่าจาก body
+    registrationEnabled,
+    externalLoginEnabled 
   } = body;
   // --- END ---
 
@@ -63,7 +64,10 @@ const saveSettings = async (files, body) => {
   if (registrationEnabled !== undefined) {
     await upsertSetting('registrationEnabled', registrationEnabled);
   }
-  // --- END ---
+  
+  if (externalLoginEnabled !== undefined) {
+    await upsertSetting('externalLoginEnabled', externalLoginEnabled);
+  }
 
   if (voucherSsid !== undefined) await upsertSetting('voucherSsid', voucherSsid);
   if (voucherHeaderText !== undefined) await upsertSetting('voucherHeaderText', voucherHeaderText);

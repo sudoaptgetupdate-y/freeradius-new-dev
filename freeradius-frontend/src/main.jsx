@@ -28,6 +28,7 @@ import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
 import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
+import SettingsPage from './pages/SettingsPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
               { path: 'admins', element: <AdminsPage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
+              { path: 'settings', element: <SettingsPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
               { path: 'account-settings', element: <AdminProfilePage /> },

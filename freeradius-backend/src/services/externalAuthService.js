@@ -3,6 +3,14 @@ const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 
 const loginUser = async (loginData) => {
+    const loginSetting = await prisma.setting.findUnique({
+      where: { key: 'externalLoginEnabled' }
+    });
+
+    if (loginSetting?.value !== 'true') {
+      throw new Error('Login is currently disabled by the administrator.');
+    }
+    
     const { username, password } = loginData;
 
     if (!username || !password) {

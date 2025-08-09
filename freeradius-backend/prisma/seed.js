@@ -90,7 +90,8 @@ async function main() {
       { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
       { key: 'logoUrl', value: '/uploads/logo.png' },
       { key: 'backgroundUrl', value: '/uploads/background.jpg' },
-      { key: 'registrationEnabled', value: 'false' }
+      { key: 'registrationEnabled', value: 'false' },
+      { key: 'externalLoginEnabled', value: 'false' }
   ];
 
   for (const setting of settingsToSeed) {
