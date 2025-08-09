@@ -16,6 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge"; // <-- 1. Import Badge
 
 export default function OrganizationsPage() {
     const token = useAuthStore((state) => state.token);
@@ -28,7 +29,7 @@ export default function OrganizationsPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    } = usePaginatedFetch("/organizations", 5); // <--- 1. เปลี่ยนค่า Default เป็น 5
+    } = usePaginatedFetch("/organizations", 10);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
@@ -95,6 +96,9 @@ export default function OrganizationsPage() {
                                     <TableHead>Name</TableHead>
                                     <TableHead>Login Type</TableHead>
                                     <TableHead>Radius Profile</TableHead>
+                                    {/* --- START: 2. เพิ่มคอลัมน์ใหม่ --- */}
+                                    <TableHead>Advertisement</TableHead>
+                                    {/* --- END --- */}
                                     <TableHead className="text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -102,7 +106,7 @@ export default function OrganizationsPage() {
                                 {isLoading ? (
                                     [...Array(pagination.itemsPerPage)].map((_, i) => (
                                         <TableRow key={i}>
-                                            <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            <TableCell colSpan={5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
                                         </TableRow>
                                     ))
                                 ) : organizations.length > 0 ? (
@@ -111,6 +115,15 @@ export default function OrganizationsPage() {
                                             <TableCell className="font-medium">{org.name}</TableCell>
                                             <TableCell>{org.login_identifier_type}</TableCell>
                                             <TableCell>{org.radiusProfile?.name || 'N/A'}</TableCell>
+                                            {/* --- START: 3. แสดงข้อมูลโฆษณาที่ผูกอยู่ --- */}
+                                            <TableCell>
+                                                {org.advertisement ? (
+                                                    <Badge variant="default">{org.advertisement.name}</Badge>
+                                                ) : (
+                                                    <Badge variant="secondary">Disabled</Badge>
+                                                )}
+                                            </TableCell>
+                                            {/* --- END --- */}
                                             <TableCell className="text-center space-x-2">
                                                 <Button variant="outline" size="sm" onClick={() => handleEdit(org)}>
                                                     <Edit className="h-4 w-4 mr-2" /> Edit
@@ -123,7 +136,7 @@ export default function OrganizationsPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">No organizations found.</TableCell>
+                                        <TableCell colSpan={5} className="h-24 text-center">No organizations found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -136,8 +149,7 @@ export default function OrganizationsPage() {
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {/* --- 2. เปลี่ยนตัวเลือก --- */}
-                                {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                                {[10, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -175,7 +187,7 @@ export default function OrganizationsPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete}>Confirm</AlertDialogAction>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

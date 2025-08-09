@@ -19,10 +19,17 @@ const loginUser = async (loginData) => {
 
     const user = await prisma.user.findUnique({
         where: { username },
+        include: {
+          organization: {
+            include: {
+              advertisement: true
+            }
+          }
+        }
     });
 
     if (!user) {
-        throw new Error('Invalid credentials.'); // ใช้ข้อความกลางๆ เพื่อความปลอดภัย
+        throw new Error('Invalid credentials.');
     }
 
     if (user.status !== 'active') {
@@ -34,9 +41,11 @@ const loginUser = async (loginData) => {
     if (!isPasswordMatch) {
         throw new Error('Invalid credentials.');
     }
-
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    
+    const advertisement = user.organization.advertisement;
+    const { password: _, organization, ...userWithoutPassword } = user;
+    
+    return { user: userWithoutPassword, advertisement: advertisement };
 };
 
 module.exports = {

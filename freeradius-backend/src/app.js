@@ -21,6 +21,7 @@ const attributeDefinitionRoutes = require('./routes/attributeDefinitionRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const voucherRoutes = require('./routes/voucherRoutes');
 const externalAuthRoutes = require('./routes/externalAuthRoutes');
+const advertisementRoutes = require('./routes/advertisementRoutes'); 
 
 const app = express();
 app.use(cors());
@@ -50,6 +51,7 @@ app.use('/api/online-users', onlineUserRoutes);
 app.use('/api/external-auth', externalAuthRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/vouchers', voucherRoutes);
+app.use('/api/advertisements', advertisementRoutes);
 
 // --- Error Handler Middleware ---
 app.use(errorHandler);

@@ -8,61 +8,60 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import useSWR from 'swr'; // <-- 1. Import SWR
 
 export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave }) {
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState({
         name: '',
         radiusProfileId: '',
-        login_identifier_type: 'manual'
+        login_identifier_type: 'manual',
+        advertisementId: '', // <-- 2. เพิ่ม state สำหรับเก็บ ID โฆษณา
     });
-    const [profiles, setProfiles] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!org;
 
-    // --- START: เพิ่ม Logic ตรวจสอบองค์กรที่ถูกป้องกัน ---
-    const isProtectedOrg = isEditMode && (org.name === 'Register' || org.name === 'Voucher');
+    // --- START: 3. ดึงข้อมูล Profiles และ Advertisements ด้วย SWR ---
+    const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
+    const { data: profiles, error: profilesError } = useSWR('/radius-profiles', fetcher);
+    const { data: advertisements, error: adsError } = useSWR('/advertisements', fetcher);
     // --- END ---
+
+    const isProtectedOrg = isEditMode && (org.name === 'Register' || org.name === 'Voucher');
 
     useEffect(() => {
         if (isOpen) {
-            const fetchProfiles = async () => {
-                try {
-                    const response = await axiosInstance.get('/radius-profiles', {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    const fetchedProfiles = response.data.data;
-                    setProfiles(fetchedProfiles);
-
-                    if (org) { // Edit mode
-                        setFormData({
-                            name: org.name || '',
-                            radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
-                            login_identifier_type: org.login_identifier_type || 'manual'
-                        });
-                    } else { // Add mode
-                        const defaultProfile = fetchedProfiles.find(p => p.name === 'default-profile');
-                        setFormData({
-                            name: '',
-                            radiusProfileId: defaultProfile ? String(defaultProfile.id) : '',
-                            login_identifier_type: 'manual'
-                        });
-                    }
-                } catch (error) {
-                    toast.error("Failed to load Radius Profiles.");
-                }
-            };
-            fetchProfiles();
+            if (org) {
+                setFormData({
+                    name: org.name || '',
+                    radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
+                    login_identifier_type: org.login_identifier_type || 'manual',
+                    advertisementId: org.advertisementId ? String(org.advertisementId) : '', // <-- 4. Set ค่าเริ่มต้น
+                });
+            } else {
+                setFormData({
+                    name: '',
+                    radiusProfileId: '',
+                    login_identifier_type: 'manual',
+                    advertisementId: '',
+                });
+            }
         }
-    }, [org, isOpen, token]);
+    }, [org, isOpen]);
 
+    if (profilesError || adsError) {
+        toast.error("Failed to load required data for the form.");
+        setIsOpen(false);
+    }
+    
     const handleInputChange = (e) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
 
     const handleSelectChange = (id, value) => {
-        setFormData(prev => ({ ...prev, [id]: value }));
+        // --- 5. แก้ไขให้รองรับการเลือก "None" ---
+        setFormData(prev => ({ ...prev, [id]: value === 'null' ? null : value }));
     };
 
     const handleSubmit = async (e) => {
@@ -72,18 +71,19 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
         const url = org ? `/organizations/${org.id}` : '/organizations';
         const method = org ? 'put' : 'post';
 
-        try {
-            await axiosInstance[method](url, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Organization ${org ? 'updated' : 'created'} successfully!`);
-            onSave();
-            setIsOpen(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred.");
-        } finally {
-            setIsLoading(false);
-        }
+        toast.promise(
+            axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: 'Saving organization...',
+                success: () => {
+                    onSave();
+                    setIsOpen(false);
+                    return `Organization ${org ? 'updated' : 'created'} successfully!`;
+                },
+                error: (err) => err.response?.data?.message || "An error occurred.",
+                finally: () => setIsLoading(false)
+            }
+        );
     };
 
     return (
@@ -93,6 +93,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     <DialogTitle>{org ? 'Edit Organization' : 'Add New Organization'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+                    {/* ... (ส่วนของ Name, Radius Profile, Login Type ไม่เปลี่ยนแปลง) ... */}
                     <div className="space-y-2">
                         <Label htmlFor="name">Organization Name</Label>
                         <Input 
@@ -101,9 +102,9 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                             onChange={handleInputChange} 
                             placeholder="e.g., Corporate HQ" 
                             required 
-                            disabled={isProtectedOrg} // <-- ปิดการใช้งาน Input นี้
+                            disabled={isProtectedOrg}
                         />
-                        {isProtectedOrg && (
+                         {isProtectedOrg && (
                             <p className="text-xs text-muted-foreground pt-1">
                                 The name of this critical organization cannot be changed.
                             </p>
@@ -116,11 +117,11 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                             onValueChange={(value) => handleSelectChange('radiusProfileId', value)}
                             required
                         >
-                            <SelectTrigger id="radiusProfileId">
-                                <SelectValue placeholder="Select a profile..." />
+                            <SelectTrigger id="radiusProfileId" disabled={!profiles}>
+                                <SelectValue placeholder={!profiles ? "Loading..." : "Select a profile..."} />
                             </SelectTrigger>
                             <SelectContent>
-                                {profiles.map(p => (
+                                {profiles?.map(p => (
                                     <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -128,10 +129,10 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="login_identifier_type">Login Identifier Type</Label>
-                        <Select
+                         <Select
                             value={formData.login_identifier_type}
                             onValueChange={(value) => handleSelectChange('login_identifier_type', value)}
-                            disabled={isProtectedOrg} // <-- ปิดการใช้งาน Select นี้
+                            disabled={isProtectedOrg}
                         >
                             <SelectTrigger id="login_identifier_type">
                                 <SelectValue />
@@ -149,6 +150,27 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                             </p>
                         )}
                     </div>
+
+                    {/* --- START: 6. เพิ่ม Dropdown สำหรับเลือกโฆษณา --- */}
+                    <div className="space-y-2">
+                        <Label htmlFor="advertisementId">Advertisement Campaign</Label>
+                        <Select
+                            value={formData.advertisementId === null ? 'null' : formData.advertisementId}
+                            onValueChange={(value) => handleSelectChange('advertisementId', value)}
+                        >
+                            <SelectTrigger id="advertisementId" disabled={!advertisements}>
+                                <SelectValue placeholder={!advertisements ? "Loading..." : "Select a campaign..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="null">None (Disable Ads)</SelectItem>
+                                {advertisements?.map(ad => (
+                                    <SelectItem key={ad.id} value={ad.id.toString()}>{ad.name} ({ad.type})</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {/* --- END --- */}
+
                     <DialogFooter>
                         <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
                         <Button type="submit" disabled={isLoading}>

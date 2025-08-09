@@ -128,6 +128,7 @@ export default function MainLayout() {
                             <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/radius-profiles" icon={<Settings size={18} />} text="Radius Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/advertisements" icon={<Palette size={18} />} text="Advertisements" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>

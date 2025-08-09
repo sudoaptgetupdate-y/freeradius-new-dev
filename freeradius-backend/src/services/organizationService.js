@@ -24,7 +24,6 @@ const getAllOrganizations = async (filters = {}) => {
   if (searchTerm) {
     whereClause.name = {
       contains: searchTerm,
-      mode: 'insensitive',
     };
   }
   
@@ -40,6 +39,12 @@ const getAllOrganizations = async (filters = {}) => {
           login_identifier_type: true,
           radiusProfileId: true,
           radiusProfile: {
+              select: {
+                  name: true
+              }
+          },
+          advertisementId: true, 
+          advertisement: {      
               select: {
                   name: true
               }
@@ -80,29 +85,33 @@ const updateOrganization = async (orgId, updateData) => {
   if (!existingOrg) {
     throw new Error('Organization not found.');
   }
-
+  
   const isProtectedOrg = existingOrg.name === 'Register' || existingOrg.name === 'Voucher';
   
   if (isProtectedOrg) {
-    // 1. ป้องกันการเปลี่ยนชื่อ
     if (updateData.name && updateData.name !== existingOrg.name) {
       throw new Error(`The name of the "${existingOrg.name}" organization cannot be changed.`);
     }
-
-    // 2. ป้องกันการเปลี่ยน Login Identifier Type
     if (updateData.login_identifier_type && updateData.login_identifier_type !== 'manual') {
       throw new Error(`The Login Identifier Type for the "${existingOrg.name}" organization must always be 'manual'.`);
     }
   }
-  
-  // แปลง radiusProfileId เป็น Int ก่อนบันทึก (ถ้ามี)
-  if (updateData.radiusProfileId) {
-    updateData.radiusProfileId = parseInt(updateData.radiusProfileId, 10);
+
+  const dataToUpdate = { ...updateData };
+
+  if (dataToUpdate.radiusProfileId) {
+    dataToUpdate.radiusProfileId = parseInt(dataToUpdate.radiusProfileId, 10);
   }
 
+  if (dataToUpdate.advertisementId === '' || dataToUpdate.advertisementId === 'null' || dataToUpdate.advertisementId === null) {
+    dataToUpdate.advertisementId = null;
+  } else if (dataToUpdate.advertisementId) {
+    dataToUpdate.advertisementId = parseInt(dataToUpdate.advertisementId, 10);
+  }
+  
   return prisma.organization.update({
     where: { id: organizationId },
-    data: updateData,
+    data: dataToUpdate,
   });
 };
 

@@ -1,6 +1,6 @@
 // src/pages/ExternalLoginPage.jsx
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // <-- 1. Import useNavigate
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import { CheckCircle, Info } from 'lucide-react'; // 👈 1. เพิ่มไอคอน Info
+import { CheckCircle, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,22 +20,20 @@ import {
 } from "@/components/ui/dialog";
 
 export default function ExternalLoginPage() {
+    const navigate = useNavigate(); // <-- 2. เรียกใช้ useNavigate
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [loginSuccess, setLoginSuccess] = useState(false);
-    
-    // --- START: แก้ไข State ---
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
-    // --- END ---
 
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => setSettings(response.data.data))
           .catch(() => {
               toast.error("Could not load page settings.");
-              setSettings({ externalLoginEnabled: 'true', terms: '' }); // fallback
+              setSettings({ externalLoginEnabled: 'true', terms: '' });
           })
           .finally(() => setIsPageLoading(false));
     }, []);
@@ -52,11 +50,21 @@ export default function ExternalLoginPage() {
         }
         setIsLoading(true);
         try {
-            await axiosInstance.post('/external-auth/login', formData);
-            toast.success("Login Successful!", {
-                description: "You can now access the internet.",
-            });
-            setLoginSuccess(true);
+            const response = await axiosInstance.post('/external-auth/login', formData);
+            const { advertisement } = response.data.data;
+
+            // --- START: 3. แก้ไข Logic ตรงนี้ ---
+            if (advertisement && advertisement.status === 'active') {
+                // ถ้ามีโฆษณา ให้ redirect ไปหน้า Ad Landing
+                navigate('/ad-landing', { state: { ad: advertisement }, replace: true });
+            } else {
+                // ถ้าไม่มีโฆษณา แสดงหน้าสำเร็จแบบเดิม
+                toast.success("Login Successful!", {
+                    description: "You can now access the internet.",
+                });
+                setLoginSuccess(true);
+            }
+            // --- END ---
         } catch (error) {
             toast.error("Login Failed", {
                 description: error.response?.data?.message || "Please check your credentials.",
@@ -66,7 +74,6 @@ export default function ExternalLoginPage() {
         }
     };
     
-    // --- เพิ่มส่วนจัดการ Loading ---
     if (isPageLoading) {
         return <div className="flex items-center justify-center p-8">Loading...</div>;
     }

@@ -26,10 +26,12 @@ import AdminProfilePage from './pages/AdminProfilePage.jsx';
 import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
 import CustomizationPage from './pages/CustomizationPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import AdvertisementPage from './pages/AdvertisementPage.jsx';
 import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
 import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
+import AdLandingPage from './pages/AdLandingPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -43,6 +45,10 @@ const router = createBrowserRouter([
           { path: 'register', element: <RegisterPage /> },
           { path: 'user-login', element: <ExternalLoginPage /> }
         ]
+      },
+      {
+        path: '/ad-landing',
+        element: <AdLandingPage />,
       },
       {
         element: <ProtectedRoute />,
@@ -60,6 +66,7 @@ const router = createBrowserRouter([
               { path: 'online-users', element: <OnlineUsersPage /> },
               { path: 'admins', element: <AdminsPage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
+                            { path: 'advertisements', element: <AdvertisementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
               { path: 'settings', element: <SettingsPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
