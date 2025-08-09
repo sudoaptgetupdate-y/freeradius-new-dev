@@ -21,17 +21,24 @@ const getSettings = async () => {
 };
 
 const saveSettings = async (files, body) => {
+  // --- START: แก้ไขส่วนนี้ ---
   const { 
     terms,
-    // --- START: รับค่าใหม่สำหรับ Voucher ---
     voucherSsid,
     voucherHeaderText,
-    voucherFooterText
-    // --- END ---
+    voucherFooterText,
+    registrationEnabled // 👈 เพิ่มตัวแปรนี้เพื่อรับค่าจาก body
   } = body;
+  // --- END ---
 
   const deleteOldFile = async (settingKey) => {
-    // ... (ฟังก์ชันนี้คงเดิม)
+    const oldSetting = await prisma.setting.findUnique({ where: { key: settingKey } });
+    if (oldSetting && oldSetting.value) {
+      const oldFilePath = path.join(__dirname, '../../public', oldSetting.value);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
   };
 
   if (files && files.logo) {
@@ -52,18 +59,15 @@ const saveSettings = async (files, body) => {
     await upsertSetting('terms', terms);
   }
 
-  // --- START: เพิ่ม Logic การบันทึกค่า Voucher ---
-  if (files && files.voucherLogo) {
-    await deleteOldFile('voucherLogoUrl'); // ลบโลโก้บัตรเก่า
-    const voucherLogoFile = files.voucherLogo[0];
-    const voucherLogoPath = `/uploads/${voucherLogoFile.filename}`;
-    await upsertSetting('voucherLogoUrl', voucherLogoPath);
+  // --- START: เพิ่ม Logic การบันทึกค่า ---
+  if (registrationEnabled !== undefined) {
+    await upsertSetting('registrationEnabled', registrationEnabled);
   }
+  // --- END ---
 
   if (voucherSsid !== undefined) await upsertSetting('voucherSsid', voucherSsid);
   if (voucherHeaderText !== undefined) await upsertSetting('voucherHeaderText', voucherHeaderText);
   if (voucherFooterText !== undefined) await upsertSetting('voucherFooterText', voucherFooterText);
-  // --- END ---
 
   return { message: 'Settings saved successfully' };
 };

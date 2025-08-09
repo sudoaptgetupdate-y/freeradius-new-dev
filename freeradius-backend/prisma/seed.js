@@ -89,7 +89,8 @@ async function main() {
   const settingsToSeed = [
       { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
       { key: 'logoUrl', value: '/uploads/logo.png' },
-      { key: 'backgroundUrl', value: '/uploads/background.jpg' }
+      { key: 'backgroundUrl', value: '/uploads/background.jpg' },
+      { key: 'registrationEnabled', value: 'false' }
   ];
 
   for (const setting of settingsToSeed) {

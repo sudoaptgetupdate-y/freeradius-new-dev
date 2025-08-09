@@ -3,7 +3,14 @@ const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 
 const selfRegisterUser = async (userData) => {
-  // --- START: แก้ไขส่วนนี้ ---
+  // --- โค้ดตรวจสอบสถานะ ---
+  const registrationSetting = await prisma.setting.findUnique({
+    where: { key: 'registrationEnabled' }
+  });
+  // ถ้าค่าเป็น 'false' ให้โยน Error ทันที
+  if (registrationSetting?.value !== 'true') {
+    throw new Error('User self-registration is currently disabled by the administrator.');
+  }
   // 1. รับค่า email และ phoneNumber เข้ามาแทน nationalId
   const { fullName, username, email, phoneNumber, password } = userData;
 

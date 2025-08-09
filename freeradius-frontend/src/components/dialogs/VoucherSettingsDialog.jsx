@@ -42,14 +42,21 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
     }, [isOpen, token]);
 
     const handleSave = async () => {
-        setIsLoading(true);
-        const formData = new FormData();
-        formData.append('voucherSsid', settings.voucherSsid);
-        formData.append('voucherHeaderText', settings.voucherHeaderText);
-        formData.append('voucherFooterText', settings.voucherFooterText);
+    setIsLoading(true);
+    // --- START: แก้ไขส่วนนี้ ---
+    // เปลี่ยนไปใช้ FormData เพื่อให้เข้ากันได้กับ Backend ที่ใช้ multer
+    const formData = new FormData();
+    formData.append('voucherSsid', settings.voucherSsid);
+    formData.append('voucherHeaderText', settings.voucherHeaderText);
+    formData.append('voucherFooterText', settings.voucherFooterText);
 
-        toast.promise(
-            axiosInstance.post('/settings', formData, { headers: { Authorization: `Bearer ${token}` }}),
+    toast.promise(
+        axiosInstance.post('/settings', formData, { 
+            headers: { 
+                'Content-Type': 'multipart/form-data', // ระบุ Content-Type ให้ถูกต้อง
+                Authorization: `Bearer ${token}` 
+            }
+        }),
             {
                 loading: 'Saving settings...',
                 success: () => {
