@@ -60,15 +60,6 @@ export default function LoginPage() {
                     </Button>
                 </form>
             </CardContent>
-            <CardFooter className="flex-col items-center gap-4">
-                <Separator />
-                <p className="text-sm text-muted-foreground">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="underline underline-offset-4 hover:text-primary">
-                        Register here
-                    </Link>
-                </p>
-            </CardFooter>
         </>
     );
 }
