@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Info } from 'lucide-react'; // 👈 1. เพิ่มไอคอน Info
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle, // 👈 เพิ่ม DialogTitle ที่ขาดไป
+  DialogTitle,
   DialogTrigger,
   DialogFooter,
   DialogClose,
@@ -24,12 +24,20 @@ export default function ExternalLoginPage() {
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [loginSuccess, setLoginSuccess] = useState(false);
-    const [settings, setSettings] = useState({ terms: 'Loading terms...' });
+    
+    // --- START: แก้ไข State ---
+    const [settings, setSettings] = useState(null);
+    const [isPageLoading, setIsPageLoading] = useState(true);
+    // --- END ---
 
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => setSettings(response.data.data))
-          .catch(() => toast.error("Could not load page settings."));
+          .catch(() => {
+              toast.error("Could not load page settings.");
+              setSettings({ externalLoginEnabled: 'true', terms: '' }); // fallback
+          })
+          .finally(() => setIsPageLoading(false));
     }, []);
 
     const handleInputChange = (e) => {
@@ -57,21 +65,39 @@ export default function ExternalLoginPage() {
             setIsLoading(false);
         }
     };
+    
+    // --- เพิ่มส่วนจัดการ Loading ---
+    if (isPageLoading) {
+        return <div className="flex items-center justify-center p-8">Loading...</div>;
+    }
 
     return (
         <>
             <div className="text-center mb-6 px-6">
-                <CardTitle className="text-2xl">User Login</CardTitle>
-                <CardDescription>Please enter your credentials to access the network.</CardDescription>
+                {/* --- START: เพิ่มเงื่อนไขการแสดงผล --- */}
+                {settings.externalLoginEnabled === 'true' && !loginSuccess ? (
+                    <>
+                        <CardTitle className="text-2xl">User Login</CardTitle>
+                        <CardDescription>Please enter your credentials to access the network.</CardDescription>
+                    </>
+                ) : !loginSuccess ? (
+                    <>
+                        <CardTitle className="text-2xl">Login Disabled</CardTitle>
+                        <CardDescription>Login is currently unavailable.</CardDescription>
+                    </>
+                ) : (
+                    <CardTitle className="text-2xl">Login Successful</CardTitle>
+                )}
+                {/* --- END --- */}
             </div>
             
             {loginSuccess ? (
                 <CardContent className="text-center p-8">
                     <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold">Login Successful</h3>
-                    <p className="text-muted-foreground mt-2">You are now connected to the internet. You can close this page.</p>
+                    <p className="text-muted-foreground mt-2">You are now connected. You can close this page.</p>
                 </CardContent>
-            ) : (
+            ) : settings.externalLoginEnabled === 'true' ? (
                 <>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,32 +109,22 @@ export default function ExternalLoginPage() {
                                 <Label htmlFor="password">Password</Label>
                                 <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required />
                             </div>
-                            
                             <Dialog>
                                 <div className="items-top flex space-x-2 pt-2">
                                     <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
                                     <div className="grid gap-1.5 leading-none">
                                         <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                             I agree to the
-                                            <DialogTrigger asChild>
-                                                 <Button variant="link" className="p-1 h-auto">Terms and Conditions</Button>
-                                            </DialogTrigger>
+                                            <DialogTrigger asChild><Button variant="link" className="p-1 h-auto">Terms and Conditions</Button></DialogTrigger>
                                         </label>
                                     </div>
                                 </div>
-                                 <DialogContent className="sm:max-w-[625px]">
-                                    <DialogHeader>
-                                      <DialogTitle>Terms of Service and Privacy Policy</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">
-                                       {settings.terms}
-                                    </div>
-                                    <DialogFooter>
-                                        <DialogClose asChild><Button type="button">Close</Button></DialogClose>
-                                    </DialogFooter>
+                                <DialogContent className="sm:max-w-[625px]">
+                                    <DialogHeader><DialogTitle>Terms of Service and Privacy Policy</DialogTitle></DialogHeader>
+                                    <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">{settings.terms}</div>
+                                    <DialogFooter><DialogClose asChild><Button type="button">Close</Button></DialogClose></DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                            
                             <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
                                 {isLoading ? 'Logging in...' : 'Login'}
                             </Button>
@@ -117,6 +133,18 @@ export default function ExternalLoginPage() {
                     <CardFooter>
                         <Button variant="link" asChild className="w-full text-muted-foreground text-xs">
                            <Link to="/register">Don't have an account? Register here</Link>
+                        </Button>
+                    </CardFooter>
+                </>
+            ) : (
+                <>
+                    <CardContent className="text-center">
+                        <Info className="mx-auto h-12 w-12 text-blue-500 mb-4" />
+                        <p className="text-muted-foreground">Please contact an administrator for assistance.</p>
+                    </CardContent>
+                    <CardFooter>
+                         <Button asChild className="w-full">
+                           <Link to="/register">Go to Registration</Link>
                         </Button>
                     </CardFooter>
                 </>
