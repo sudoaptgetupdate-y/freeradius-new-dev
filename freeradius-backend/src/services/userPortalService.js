@@ -1,0 +1,105 @@
+// src/services/userPortalService.js
+const prisma = require('../prisma');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { kickUserSession } = require('./kickService'); // <-- 1. Import kickService
+
+const login = async (username, password) => {
+    if (!username || !password) {
+        throw new Error('Please provide username and password');
+    }
+    const user = await prisma.user.findUnique({ where: { username } });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        throw new Error('Incorrect username or password');
+    }
+    if (user.status !== 'active') {
+        throw new Error('Your account is currently disabled. Please contact an administrator.');
+    }
+    const token = jwt.sign(
+      { id: user.id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+    const { password: _, ...userWithoutPassword } = user;
+    return { token, user: userWithoutPassword };
+};
+
+// --- START: 2. เพิ่มฟังก์ชันใหม่ทั้งหมด ---
+
+const getMyProfile = async (userId) => {
+    return prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            username: true,
+            full_name: true,
+            email: true,
+            phoneNumber: true,
+            organization: { select: { name: true } }
+        }
+    });
+};
+
+const updateMyProfile = async (userId, data) => {
+    const { full_name, email, phoneNumber } = data;
+    return prisma.user.update({
+        where: { id: userId },
+        data: { full_name, email, phoneNumber }
+    });
+};
+
+const changeMyPassword = async (userId, oldPassword, newPassword) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error("User not found.");
+
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) throw new Error("Old password is not correct.");
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    return prisma.$transaction([
+        prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedNewPassword }
+        }),
+        prisma.radcheck.update({
+            where: { username_attribute: { username: user.username, attribute: 'Crypt-Password' } },
+            data: { value: hashedNewPassword }
+        })
+    ]);
+};
+
+const clearMySessions = async (username) => {
+    const onlineSessions = await prisma.radacct.findMany({
+        where: {
+            username: username,
+            acctstoptime: null
+        }
+    });
+
+    if (onlineSessions.length === 0) {
+        return { cleared: 0, message: "No active sessions found to clear." };
+    }
+
+    let clearedCount = 0;
+    for (const session of onlineSessions) {
+        try {
+            await kickUserSession({
+                username: session.username,
+                nasipaddress: session.nasipaddress,
+                acctsessionid: session.acctsessionid
+            });
+            clearedCount++;
+        } catch (error) {
+            console.error(`Failed to kick session ${session.acctsessionid} for user ${username}:`, error.message);
+        }
+    }
+    return { cleared: clearedCount, message: `${clearedCount} active session(s) cleared successfully.` };
+};
+
+module.exports = {
+    login,
+    getMyProfile,
+    updateMyProfile,
+    changeMyPassword,
+    clearMySessions,
+};

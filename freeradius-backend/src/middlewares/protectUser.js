@@ -1,8 +1,8 @@
-// src/middlewares/authMiddleware.js
+// src/middlewares/protectUser.js
 const jwt = require('jsonwebtoken');
 const prisma = require('../prisma'); // <-- แก้ไขจาก '../config/prisma'
 
-const protect = async (req, res, next) => {
+const protectUser = async (req, res, next) => {
   let token;
 
   if (
@@ -12,13 +12,13 @@ const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      req.admin = await prisma.administrator.findUnique({
+
+      req.user = await prisma.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, username: true, role: true },
+        select: { id: true, username: true, organizationId: true },
       });
 
-      if (!req.admin) {
+      if (!req.user) {
          return res.status(401).json({ message: 'The user belonging to this token does no longer exist.' });
       }
 
@@ -33,4 +33,4 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+module.exports = { protectUser };

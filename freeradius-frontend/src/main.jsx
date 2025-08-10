@@ -8,6 +8,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 // Import components
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
+import ProtectedRouteUser from './components/auth/ProtectedRouteUser.jsx';
 
 // Import pages
 import AuthLayout from './pages/AuthLayout.jsx';
@@ -24,14 +25,16 @@ import HistoryPage from './pages/HistoryPage.jsx';
 import AdminsPage from './pages/AdminsPage.jsx';
 import AdminProfilePage from './pages/AdminProfilePage.jsx';
 import AttributeManagementPage from './pages/AttributeManagementPage.jsx';
+import AdvertisementPage from './pages/AdvertisementPage.jsx';
 import CustomizationPage from './pages/CustomizationPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
-import AdvertisementPage from './pages/AdvertisementPage.jsx';
 import VoucherPackagesPage from './pages/VoucherPackagesPage.jsx';
 import VoucherBatchesPage from './pages/VoucherBatchesPage.jsx';
 import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
 import AdLandingPage from './pages/AdLandingPage.jsx';
+import UserPortalLoginPage from './pages/UserPortalLoginPage.jsx';
+import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx'; // <-- ผมเพิ่ม Import ที่ขาดไปให้แล้ว
 
 const router = createBrowserRouter([
   {
@@ -43,13 +46,15 @@ const router = createBrowserRouter([
         children: [
           { path: 'login', element: <LoginPage /> },
           { path: 'register', element: <RegisterPage /> },
-          { path: 'user-login', element: <ExternalLoginPage /> }
+          { path: 'user-login', element: <ExternalLoginPage /> },
+          { path: 'portal/login', element: <UserPortalLoginPage /> },
         ]
       },
       {
         path: '/ad-landing',
         element: <AdLandingPage />,
       },
+      // --- Admin Routes ---
       {
         element: <ProtectedRoute />,
         children: [
@@ -66,7 +71,7 @@ const router = createBrowserRouter([
               { path: 'online-users', element: <OnlineUsersPage /> },
               { path: 'admins', element: <AdminsPage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
-                            { path: 'advertisements', element: <AdvertisementPage /> },
+              { path: 'advertisements', element: <AdvertisementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
               { path: 'settings', element: <SettingsPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
@@ -76,6 +81,14 @@ const router = createBrowserRouter([
             ]
           }
         ]
+      },
+      // --- User Portal Routes ---
+      {
+          path: 'portal',
+          element: <ProtectedRouteUser />,
+          children: [
+              { path: 'dashboard', element: <UserPortalDashboardPage /> },
+          ]
       },
       { index: true, element: <Navigate to="/dashboard" replace /> },
     ]

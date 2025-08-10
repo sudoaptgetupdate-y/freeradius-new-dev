@@ -1,6 +1,7 @@
 // src/api/axiosInstance.js
 import axios from 'axios';
 import useAuthStore from '@/store/authStore';
+import useUserAuthStore from '@/store/userAuthStore';
 
 const axiosInstance = axios.create({
   baseURL: '/api',
@@ -9,24 +10,30 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // ดึงข้อมูล request เดิมที่ทำให้เกิด error
     const originalRequest = error.config;
 
-    // --- START: แก้ไขเงื่อนไขตรงนี้ ---
-    // ตรวจสอบว่ามี response, status เป็น 401, และ URL ที่เรียกไม่ใช่หน้า login
+    // เงื่อนไขที่สำคัญที่สุด:
+    // 1. Error ต้องเป็น 401 Unauthorized
+    // 2. originalRequest ต้องมี Authorization header อยู่แล้ว (หมายความว่าเราพยายามใช้ token ที่อาจจะหมดอายุ)
+    // 3. token ใน store ของ "Admin" ต้องมีค่าอยู่ (ยืนยันว่านี่คือ session ของ Admin จริงๆ)
     if (
-      error.response &&
-      error.response.status === 401 &&
-      originalRequest.url !== '/auth/login' &&
-      originalRequest.url !== '/external-auth/login'
+      error.response?.status === 401 &&
+      originalRequest.headers['Authorization'] &&
+      useAuthStore.getState().token
     ) {
-      console.error("Unauthorized session! Logging out.");
+      console.error("Admin session expired or invalid! Logging out admin.");
+      
+      // ทำการ Logout ทั้งสอง Store เพื่อความปลอดภัย
       useAuthStore.getState().logout();
-      window.location.href = '/login'; // Redirect ไปหน้า login ของ admin
-    }
-    // --- END ---
+      if (useUserAuthStore.getState().token) {
+        useUserAuthStore.getState().logout();
+      }
 
-    // สำหรับ Error อื่นๆ หรือ Error 401 ที่มาจากหน้า Login, ให้ส่งต่อไปให้หน้า component จัดการเอง
+      // ส่งกลับไปหน้า login หลักของ admin
+      window.location.href = '/login';
+    }
+
+    // สำหรับ Error อื่นๆ ทั้งหมด (รวมถึง login fail ของ user portal) ให้ส่งต่อไปตามปกติ
     return Promise.reject(error);
   }
 );
