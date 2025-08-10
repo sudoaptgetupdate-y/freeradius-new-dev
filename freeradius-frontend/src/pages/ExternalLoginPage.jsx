@@ -1,6 +1,6 @@
 // src/pages/ExternalLoginPage.jsx
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // <-- 1. Import useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import { CheckCircle, Info } from 'lucide-react';
+import { CheckCircle, Info, HelpCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,9 +18,10 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Separator } from '@/components/ui/separator';
 
 export default function ExternalLoginPage() {
-    const navigate = useNavigate(); // <-- 2. เรียกใช้ useNavigate
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -53,18 +54,14 @@ export default function ExternalLoginPage() {
             const response = await axiosInstance.post('/external-auth/login', formData);
             const { advertisement } = response.data.data;
 
-            // --- START: 3. แก้ไข Logic ตรงนี้ ---
             if (advertisement && advertisement.status === 'active') {
-                // ถ้ามีโฆษณา ให้ redirect ไปหน้า Ad Landing
                 navigate('/ad-landing', { state: { ad: advertisement }, replace: true });
             } else {
-                // ถ้าไม่มีโฆษณา แสดงหน้าสำเร็จแบบเดิม
                 toast.success("Login Successful!", {
                     description: "You can now access the internet.",
                 });
                 setLoginSuccess(true);
             }
-            // --- END ---
         } catch (error) {
             toast.error("Login Failed", {
                 description: error.response?.data?.message || "Please check your credentials.",
@@ -81,21 +78,19 @@ export default function ExternalLoginPage() {
     return (
         <>
             <div className="text-center mb-6 px-6">
-                {/* --- START: เพิ่มเงื่อนไขการแสดงผล --- */}
                 {settings.externalLoginEnabled === 'true' && !loginSuccess ? (
                     <>
                         <CardTitle className="text-2xl">User Login</CardTitle>
                         <CardDescription>Please enter your credentials to access the network.</CardDescription>
                     </>
                 ) : !loginSuccess ? (
-                    <>
+                     <>
                         <CardTitle className="text-2xl">Login Disabled</CardTitle>
                         <CardDescription>Login is currently unavailable.</CardDescription>
                     </>
                 ) : (
                     <CardTitle className="text-2xl">Login Successful</CardTitle>
                 )}
-                {/* --- END --- */}
             </div>
             
             {loginSuccess ? (
@@ -117,14 +112,20 @@ export default function ExternalLoginPage() {
                                 <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required />
                             </div>
                             <Dialog>
-                                <div className="items-top flex space-x-2 pt-2">
-                                    <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
-                                    <div className="grid gap-1.5 leading-none">
-                                        <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                            I agree to the
-                                            <DialogTrigger asChild><Button variant="link" className="p-1 h-auto">Terms and Conditions</Button></DialogTrigger>
-                                        </label>
+                                <div className="space-y-2 pt-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
+                                        <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
+                                            I have read and agree to the terms
+                                        </Label>
                                     </div>
+                                    <p className="text-xs text-muted-foreground pl-6">
+                                        You must agree to our
+                                        <DialogTrigger asChild>
+                                            <Button variant="link" className="p-1 h-auto text-xs">Terms and Conditions</Button>
+                                        </DialogTrigger>
+                                        to continue.
+                                    </p>
                                 </div>
                                 <DialogContent className="sm:max-w-[625px]">
                                     <DialogHeader><DialogTitle>Terms of Service and Privacy Policy</DialogTitle></DialogHeader>
@@ -137,10 +138,20 @@ export default function ExternalLoginPage() {
                             </Button>
                         </form>
                     </CardContent>
-                    <CardFooter>
-                        <Button variant="link" asChild className="w-full text-muted-foreground text-xs">
-                           <Link to="/register">Don't have an account? Register here</Link>
-                        </Button>
+                    
+                    <CardFooter className="flex flex-col gap-4 pt-4">
+                        <Separator />
+                        <div className="w-full flex justify-between items-center text-xs">
+                           <Button variant="link" asChild className="p-0 h-auto text-muted-foreground">
+                               <Link to="/register">Don't have an account?</Link>
+                           </Button>
+                           <Button variant="link" asChild className="p-0 h-auto text-muted-foreground">
+                               <Link to="/portal/login">
+                                   <HelpCircle className="mr-1 h-3 w-3" />
+                                   Account Management
+                               </Link>
+                           </Button>
+                        </div>
                     </CardFooter>
                 </>
             ) : (
