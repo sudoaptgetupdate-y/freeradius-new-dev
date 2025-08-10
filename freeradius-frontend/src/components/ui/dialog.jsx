@@ -1,3 +1,5 @@
+// src/components/ui/dialog.jsx
+
 "use client"
 
 import * as React from "react"
@@ -82,6 +84,7 @@ const DialogDescription = React.forwardRef(({ className, ...props }, ref) => (
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
+// --- 👇 เพิ่มส่วน export นี้เข้าไปที่ท้ายไฟล์ ---
 export {
   Dialog,
   DialogPortal,
@@ -94,3 +97,4 @@ export {
   DialogTitle,
   DialogDescription,
 }
+// --- 👆 สิ้นสุดส่วนที่แก้ไข ---

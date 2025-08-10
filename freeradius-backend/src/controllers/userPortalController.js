@@ -35,9 +35,11 @@ const updateProfile = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
     try {
         const { oldPassword, newPassword } = req.body;
+        // req.user.id มาจาก middleware protectUser
         await userPortalService.changeMyPassword(req.user.id, oldPassword, newPassword);
         res.status(200).json({ success: true, message: "Password changed successfully." });
     } catch (error) {
+        // ส่งต่อ error ไปให้ errorHandler จัดการ (ซึ่งจะส่ง status 400 กลับไปถ้ามีปัญหา)
         next(error);
     }
 };

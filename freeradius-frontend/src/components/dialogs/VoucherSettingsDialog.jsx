@@ -20,8 +20,10 @@ const initialSettings = {
 export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
     const token = useAuthStore((state) => state.token);
     const [settings, setSettings] = useState(initialSettings);
-    const [logoPreview, setLogoPreview] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    
+    const [voucherLogo, setVoucherLogo] = useState(null);
+    const [voucherLogoPreview, setVoucherLogoPreview] = useState('');
 
     useEffect(() => {
         if (isOpen) {
@@ -34,29 +36,41 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
                       voucherHeaderText: fetchedSettings.voucherHeaderText || initialSettings.voucherHeaderText,
                       voucherFooterText: fetchedSettings.voucherFooterText || initialSettings.voucherFooterText,
                   });
-                  setLogoPreview(fetchedSettings.logoUrl || '');
+                  setVoucherLogoPreview(fetchedSettings.voucherLogoUrl || fetchedSettings.logoUrl || '');
               })
               .catch(() => toast.error("Could not load settings."))
               .finally(() => setIsLoading(false));
         }
     }, [isOpen, token]);
 
-    const handleSave = async () => {
-    setIsLoading(true);
-    // --- START: แก้ไขส่วนนี้ ---
-    // เปลี่ยนไปใช้ FormData เพื่อให้เข้ากันได้กับ Backend ที่ใช้ multer
-    const formData = new FormData();
-    formData.append('voucherSsid', settings.voucherSsid);
-    formData.append('voucherHeaderText', settings.voucherHeaderText);
-    formData.append('voucherFooterText', settings.voucherFooterText);
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setVoucherLogo(file);
+            const reader = new FileReader();
+            reader.onloadend = () => { setVoucherLogoPreview(reader.result); };
+            reader.readAsDataURL(file);
+        }
+    };
 
-    toast.promise(
-        axiosInstance.post('/settings', formData, { 
-            headers: { 
-                'Content-Type': 'multipart/form-data', // ระบุ Content-Type ให้ถูกต้อง
-                Authorization: `Bearer ${token}` 
-            }
-        }),
+    const handleSave = async () => {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('voucherSsid', settings.voucherSsid);
+        formData.append('voucherHeaderText', settings.voucherHeaderText);
+        formData.append('voucherFooterText', settings.voucherFooterText);
+        
+        if (voucherLogo) {
+            formData.append('voucherLogo', voucherLogo);
+        }
+
+        toast.promise(
+            axiosInstance.post('/settings', formData, { 
+                headers: { 
+                    'Content-Type': 'multipart/form-data',
+                    Authorization: `Bearer ${token}` 
+                }
+            }),
             {
                 loading: 'Saving settings...',
                 success: () => {
@@ -75,9 +89,14 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
                 <div>
                     <DialogHeader>
                         <DialogTitle>Voucher Customization</DialogTitle>
-                        <DialogDescription>Customize the appearance of printed vouchers. This uses the main logo from Customization settings.</DialogDescription>
+                        <DialogDescription>Customize the appearance of printed vouchers.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+                        <div>
+                            <Label htmlFor="voucherLogo">Voucher Logo (Optional)</Label>
+                            <Input id="voucherLogo" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} />
+                            <p className="text-xs text-muted-foreground pt-1">If empty, the main logo from Customization will be used.</p>
+                        </div>
                         <div>
                             <Label htmlFor="voucherSsid">WiFi Name (SSID)</Label>
                             <Input id="voucherSsid" value={settings.voucherSsid} onChange={(e) => setSettings({...settings, voucherSsid: e.target.value})} />
@@ -104,8 +123,8 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
                         <CardHeader><CardTitle>Live Preview</CardTitle></CardHeader>
                         <CardContent>
                             <div className="p-4 border-2 border-dashed rounded-lg text-center">
-                                {logoPreview ? (
-                                    <img src={logoPreview} alt="logo preview" className="mx-auto h-12 mb-2"/>
+                                {voucherLogoPreview ? (
+                                    <img src={voucherLogoPreview} alt="logo preview" className="mx-auto h-12 mb-2"/>
                                 ) : (
                                     <p className="text-sm text-muted-foreground mb-2">(No Logo Set)</p>
                                 )}

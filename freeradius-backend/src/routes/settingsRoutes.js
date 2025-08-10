@@ -18,14 +18,14 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
   },
+  // --- 👇 แก้ไขฟังก์ชัน filename ตรงนี้ ---
   filename: function (req, file, cb) {
-    // --- START: เพิ่ม Logic การตั้งชื่อไฟล์ ---
-    // file.fieldname จะเป็น 'logo', 'background', หรือ 'voucherLogo'
-    // เราจะตั้งชื่อไฟล์ตาม fieldname เพื่อป้องกันการเขียนทับกัน
-    const newFilename = file.fieldname + path.extname(file.originalname);
+    // สร้างชื่อไฟล์ใหม่ที่ไม่ซ้ำกันโดยใช้ timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const newFilename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
     cb(null, newFilename);
-    // --- END ---
   }
+  // --- 👆 สิ้นสุดส่วนที่แก้ไข ---
 });
 
 const upload = multer({ storage: storage });
@@ -35,13 +35,11 @@ router.post(
   '/',
   protect,
   authorize('superadmin'),
-  // --- START: เพิ่ม field 'voucherLogo' ---
   upload.fields([
     { name: 'logo', maxCount: 1 }, 
     { name: 'background', maxCount: 1 },
-    { name: 'voucherLogo', maxCount: 1 } // <-- เพิ่ม field สำหรับโลโก้บัตร
+    { name: 'voucherLogo', maxCount: 1 }
   ]),
-  // --- END ---
   updateAppSettings
 );
 

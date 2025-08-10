@@ -21,7 +21,6 @@ const getSettings = async () => {
 };
 
 const saveSettings = async (files, body) => {
-  // --- START: แก้ไขส่วนนี้ ---
   const { 
     terms,
     voucherSsid,
@@ -30,7 +29,6 @@ const saveSettings = async (files, body) => {
     registrationEnabled,
     externalLoginEnabled 
   } = body;
-  // --- END ---
 
   const deleteOldFile = async (settingKey) => {
     const oldSetting = await prisma.setting.findUnique({ where: { key: settingKey } });
@@ -56,11 +54,17 @@ const saveSettings = async (files, body) => {
     await upsertSetting('backgroundUrl', bgPath);
   }
 
+  if (files && files.voucherLogo) {
+    await deleteOldFile('voucherLogoUrl');
+    const voucherLogoFile = files.voucherLogo[0];
+    const voucherLogoPath = `/uploads/${voucherLogoFile.filename}`;
+    await upsertSetting('voucherLogoUrl', voucherLogoPath);
+  }
+
   if (terms !== undefined) {
     await upsertSetting('terms', terms);
   }
 
-  // --- START: เพิ่ม Logic การบันทึกค่า ---
   if (registrationEnabled !== undefined) {
     await upsertSetting('registrationEnabled', registrationEnabled);
   }
@@ -75,7 +79,6 @@ const saveSettings = async (files, body) => {
 
   return { message: 'Settings saved successfully' };
 };
-
 
 module.exports = {
   getSettings,

@@ -51,18 +51,27 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("User not found.");
 
+    // 1. ตรวจสอบรหัสผ่านเก่า
     const isMatch = await bcrypt.compare(oldPassword, user.password);
-    if (!isMatch) throw new Error("Old password is not correct.");
+    if (!isMatch) throw new Error("Your old password is not correct.");
 
+    // 2. เข้ารหัสผ่านใหม่
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
+    // 3. อัปเดตข้อมูลใน Transaction เดียวกัน
     return prisma.$transaction([
         prisma.user.update({
             where: { id: userId },
             data: { password: hashedNewPassword }
         }),
         prisma.radcheck.update({
-            where: { username_attribute: { username: user.username, attribute: 'Crypt-Password' } },
+            where: { 
+                // ใช้ unique identifier ที่เราสร้างไว้ใน schema
+                username_attribute: { 
+                    username: user.username, 
+                    attribute: 'Crypt-Password' 
+                } 
+            },
             data: { value: hashedNewPassword }
         })
     ]);
