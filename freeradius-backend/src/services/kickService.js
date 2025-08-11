@@ -11,6 +11,8 @@ const executeCommand = (command, args, stdinData) => {
 
   return new Promise((resolve) => {
     const child = execFile(command, args, (error, stdout, stderr) => {
+      // ไม่ว่าคำสั่งจะสำเร็จหรือไม่ ให้ resolve ค่ากลับไปเสมอ
+      // เพื่อให้ฟังก์ชันหลักทำงานต่อได้ (จัดการ stale session)
       if (error) {
         resolve(stderr || error.message);
         return;

@@ -2,7 +2,7 @@
 const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { kickUserSession } = require('./kickService'); // <-- Import kickService
+const { kickUserSession } = require('./kickService');
 
 const login = async (username, password) => {
     if (!username || !password) {
@@ -130,21 +130,20 @@ const clearMySessions = async (username) => {
         return { cleared: 0, message: "No active sessions found to clear." };
     }
 
-    let clearedCount = 0;
+    let successCount = 0;
     for (const session of onlineSessions) {
-        try {
-            await kickUserSession({
-                username: session.username,
-                nasipaddress: session.nasipaddress,
-                acctsessionid: session.acctsessionid,
-                framedipaddress: session.framedipaddress,
-            });
-            clearedCount++;
-        } catch (error) {
-            console.error(`Failed to kick session ${session.acctsessionid} for user ${username}:`, error.message);
+        // ไม่ต้องใช้ try...catch แล้ว เพราะ kickUserSession จะไม่ throw error
+        const result = await kickUserSession({
+            username: session.username,
+            nasipaddress: session.nasipaddress,
+            acctsessionid: session.acctsessionid,
+            framedipaddress: session.framedipaddress,
+        });
+        if (result.success) {
+            successCount++;
         }
     }
-    return { cleared: clearedCount, message: `${clearedCount} active session(s) cleared successfully.` };
+    return { cleared: onlineSessions.length, message: `Successfully disconnected ${onlineSessions.length} session(s).` };
 };
 
 module.exports = {

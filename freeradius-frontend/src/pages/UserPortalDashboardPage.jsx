@@ -1,5 +1,6 @@
 // src/pages/UserPortalDashboardPage.jsx
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,9 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 
-// ... (Component ย่อย และ Helper Functions เหมือนเดิม) ...
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -241,7 +240,7 @@ const InfoRow = ({ icon: Icon, label, value }) => (
 
 export default function UserPortalDashboardPage() {
     const { token, logout, setUser, user: initialProfile } = useUserAuthStore();
-    const navigate = useNavigate(); // 2. เรียกใช้ useNavigate
+    const navigate = useNavigate();
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     
     const { data: profile, error, mutate } = useSWR('/portal/me', fetcher, {
@@ -257,28 +256,22 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    // --- START: แก้ไขฟังก์ชันนี้ใหม่ทั้งหมด ---
     const handleLogout = async () => {
         const toastId = toast.loading("Logging out...");
         try {
             const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success(response.data.message || "You have been logged out successfully.", {
-                id: toastId,
-            });
+            toast.success(response.data.message || "You have been logged out successfully.", { id: toastId });
         } catch (error) {
-            console.error("Logout API call failed:", error);
-            toast.error("Logout completed, but failed to clear remote session.", {
-                id: toastId,
-            });
+            console.error("Remote session clear failed, but logging out locally.", error);
+            toast.warning("Could not clear remote session, but you have been logged out locally.", { id: toastId });
         } finally {
-            // ไม่ว่าจะสำเร็จหรือล้มเหลว ให้เคลียร์ token และ redirect เสมอ
+            // ทำการ logout และ redirect เสมอ
             logout();
             navigate('/portal/logged-out', { replace: true });
         }
     };
-    // --- END ---
 
     const handleClearOtherSessions = () => {
         toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
