@@ -40,7 +40,7 @@ export default function LoggedOutPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground">
-                            Redirecting to Google in {countdown} seconds...
+                            Redirecting to Login agian {countdown} seconds...
                         </p>
                     </CardContent>
                 </Card>

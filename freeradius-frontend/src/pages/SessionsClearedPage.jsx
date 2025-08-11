@@ -11,7 +11,7 @@ export default function SessionsClearedPage() {
 
     useEffect(() => {
         if (countdown <= 0) {
-            window.location.href = 'https://www.google.com';
+            window.location.href = 'http://neverssl.com';
             return;
         }
         const timerId = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -35,7 +35,7 @@ export default function SessionsClearedPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            This page will redirect to Google in {countdown} seconds.
+                            This page will redirect to Login agian {countdown} seconds.
                         </p>
                         <Button asChild className="w-full">
                             <Link to="/portal/dashboard">Back to Dashboard</Link>

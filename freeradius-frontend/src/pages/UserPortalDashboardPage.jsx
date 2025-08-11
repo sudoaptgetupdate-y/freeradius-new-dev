@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 
+// ... (Component ย่อย และ Helper Functions ทั้งหมดเหมือนเดิม) ...
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -256,16 +257,10 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    const handleLogout = () => {
-        // 1. ย้ายไปหน้า logged-out ทันที เพื่อหลีกเลี่ยง Race Condition
+    const handleLogout = async () => {
         navigate('/portal/logged-out', { replace: true });
-
-        // 2. ทำการเคลียร์ข้อมูลเบื้องหลัง
         setTimeout(() => {
-            // 2.1 เคลียร์ Token ในเครื่อง
             logout();
-            
-            // 2.2 ส่งคำสั่งเคลียร์ Session ที่ Backend (Fire and Forget)
             axiosInstance.post('/portal/me/clear-sessions', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             }).then(response => {
@@ -273,22 +268,23 @@ export default function UserPortalDashboardPage() {
             }).catch(error => {
                 console.error("Could not clear remote session:", error);
             });
-        }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้ Redirect ทำงานเสร็จสมบูรณ์
+        }, 100);
     };
 
-    const handleClearOtherSessions = async () => {
-        const toastId = toast.loading("Clearing other sessions...");
-        try {
-            const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(response.data.message, { id: toastId });
+    // --- START: แก้ไขฟังก์ชันนี้ ---
+    const handleClearOtherSessions = () => {
+        // ไม่ต้องใช้ toast.promise แล้ว เพื่อให้ควบคุม Flow ได้เอง
+        axiosInstance.post('/portal/me/clear-sessions', {}, { 
+            headers: { Authorization: `Bearer ${token}` } 
+        }).then(response => {
+            toast.success(response.data.message || "Successfully cleared other sessions.");
             // เมื่อสำเร็จ ให้ redirect ไปยังหน้าใหม่
             navigate('/portal/sessions-cleared', { replace: true });
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to clear sessions.', { id: toastId });
-        }
+        }).catch(error => {
+            toast.error(error.response?.data?.message || 'Failed to clear sessions.');
+        });
     };
+    // --- END ---
 
     if (error && !profile) return <div>Failed to load profile. Please try again.</div>
     if (!profile) return <div>Loading your profile...</div>
