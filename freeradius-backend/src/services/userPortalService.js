@@ -2,9 +2,8 @@
 const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { kickUserSession } = require('./kickService');
+const { kickUserSession } = require('./kickService'); // <-- Import kickService
 
-// ... (ฟังก์ชัน login, getMyProfile, updateMyProfile, changeMyPassword ไม่มีการเปลี่ยนแปลง) ...
 const login = async (username, password) => {
     if (!username || !password) {
         throw new Error('Please provide username and password');
@@ -42,6 +41,7 @@ const getMyProfile = async (userId) => {
         throw new Error('User not found.');
     }
 
+    // ค้นหา Session ที่กำลังออนไลน์อยู่
     const currentSession = await prisma.radacct.findFirst({
         where: {
             username: userProfile.username,
@@ -52,6 +52,7 @@ const getMyProfile = async (userId) => {
         }
     });
 
+    // ค้นหาวันหมดอายุจาก radcheck
     const expirationAttr = await prisma.radcheck.findFirst({
         where: {
             username: userProfile.username,
@@ -85,11 +86,14 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("User not found.");
 
+    // 1. ตรวจสอบรหัสผ่านเก่า
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) throw new Error("Your old password is not correct.");
 
+    // 2. เข้ารหัสผ่านใหม่
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
+    // 3. อัปเดตข้อมูลใน Transaction เดียวกัน
     return prisma.$transaction([
         prisma.user.update({
             where: { id: userId },
@@ -97,6 +101,7 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
         }),
         prisma.radcheck.update({
             where: { 
+                // ใช้ unique identifier ที่เราสร้างไว้ใน schema
                 username_attribute: { 
                     username: user.username, 
                     attribute: 'Crypt-Password' 
@@ -108,13 +113,11 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
 };
 
 const clearMySessions = async (username) => {
-    // --- START: แก้ไขส่วนนี้ ---
     const onlineSessions = await prisma.radacct.findMany({
         where: {
             username: username,
             acctstoptime: null
         },
-        // เพิ่ม select เพื่อให้แน่ใจว่าได้ข้อมูลครบ
         select: {
             username: true,
             nasipaddress: true,
@@ -122,7 +125,6 @@ const clearMySessions = async (username) => {
             framedipaddress: true
         }
     });
-    // --- END ---
 
     if (onlineSessions.length === 0) {
         return { cleared: 0, message: "No active sessions found to clear." };

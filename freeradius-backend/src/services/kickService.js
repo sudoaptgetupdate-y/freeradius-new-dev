@@ -9,10 +9,8 @@ const executeCommand = (command, args, stdinData) => {
     return Promise.resolve('Kick command simulated on non-Linux OS.');
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const child = execFile(command, args, (error, stdout, stderr) => {
-      // ไม่ว่าคำสั่งจะสำเร็จหรือไม่ ให้ resolve ค่ากลับไปเสมอ
-      // เพื่อให้ฟังก์ชันหลักทำงานต่อได้ (จัดการ stale session)
       if (error) {
         resolve(stderr || error.message);
         return;
@@ -30,54 +28,37 @@ const executeCommand = (command, args, stdinData) => {
 const kickUserSession = async (sessionData) => {
   const { username, nasipaddress, acctsessionid, framedipaddress } = sessionData;
 
-  // เพิ่มการตรวจสอบให้แน่ใจว่า framedipaddress ไม่ใช่ค่าว่าง
   if (!username || !nasipaddress || !acctsessionid || !framedipaddress) {
-    throw new Error('Username, NAS IP, Session ID, and Framed IP Address are required to kick a user.');
+    throw new Error('Internal Error: Missing required data for kickUserSession.');
   }
 
-  const nas = await prisma.nas.findFirst({
-    where: { nasname: nasipaddress },
-  });
-
+  const nas = await prisma.nas.findFirst({ where: { nasname: nasipaddress } });
   if (!nas) {
-    throw new Error(`NAS with IP ${nasipaddress} not found.`);
+    console.error(`Kick failed: NAS with IP ${nasipaddress} not found in DB.`);
+    return { success: false, reason: 'NAS not found' };
   }
 
   const nasSecret = nas.secret;
   const disconnectPort = 3799;
   const stdinData = `User-Name=${username},Acct-Session-Id=${acctsessionid},Framed-IP-Address=${framedipaddress}`;
-  const args = [
-    '-x',
-    `${nasipaddress}:${disconnectPort}`,
-    'disconnect',
-    nasSecret,
-  ];
+  const args = [ '-x', `${nasipaddress}:${disconnectPort}`, 'disconnect', nasSecret ];
 
-  console.log(`Attempting to send Disconnect-Request for user ${username} on NAS ${nasipaddress}`);
-  // พยายามส่งคำสั่ง kick แต่จะไม่หยุดแม้ว่าจะล้มเหลว (สำหรับ stale session)
+  console.log(`Attempting to send Disconnect-Request for user ${username}`);
   const radclientOutput = await executeCommand('/usr/bin/radclient', args, stdinData);
   console.log(`radclient output: ${radclientOutput}`);
 
-  // ไม่ว่าจะ Kick สำเร็จหรือไม่ ให้ทำการปิด session ในฐานข้อมูลเสมอ
-  // เพื่อให้แน่ใจว่า user จะหายไปจากหน้า Online Users
-  console.log(`Force-closing session in database for user ${username} (Acct-Session-Id: ${acctsessionid})`);
-  const updateResult = await prisma.radacct.updateMany({
-    where: {
-      acctsessionid: acctsessionid,
-      username: username,
-      acctstoptime: null,
-    },
-    data: {
-      acctstoptime: new Date(),
-      acctterminatecause: 'Admin-Disconnect',
-    },
+  // บังคับปิด Session ใน DB เสมอ เพื่อความสะอาดของ UI
+  await prisma.radacct.updateMany({
+    where: { acctsessionid: acctsessionid, username: username, acctstoptime: null },
+    data: { acctstoptime: new Date(), acctterminatecause: 'Admin-Disconnect' },
   });
 
-  if (updateResult.count === 0) {
-    console.log(`Session for user ${username} was already closed in the database.`);
+  if (radclientOutput.includes('Disconnect-ACK')) {
+    return { success: true, reason: 'ACK' };
+  } else {
+    // ไม่ throw error แล้ว แต่คืนค่าสถานะล้มเหลว
+    return { success: false, reason: 'NAK or Timeout' };
   }
-
-  return { radclientOutput, dbUpdateResult: updateResult };
 };
 
 module.exports = {

@@ -261,15 +261,19 @@ export default function UserPortalDashboardPage() {
     const handleLogout = async () => {
         const toastId = toast.loading("Logging out...");
         try {
-            await axiosInstance.post('/portal/me/clear-sessions', {}, {
+            const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success("Logout successful.", { id: toastId });
+            toast.success(response.data.message || "You have been logged out successfully.", {
+                id: toastId,
+            });
         } catch (error) {
-            console.error("Remote session clear failed, but logging out locally.", error);
-            toast.warning("Could not clear remote session, but you will be logged out.", { id: toastId });
+            console.error("Logout API call failed:", error);
+            toast.error("Logout completed, but failed to clear remote session.", {
+                id: toastId,
+            });
         } finally {
-            // ทำการ logout และ redirect เสมอ
+            // ไม่ว่าจะสำเร็จหรือล้มเหลว ให้เคลียร์ token และ redirect เสมอ
             logout();
             navigate('/portal/logged-out', { replace: true });
         }
