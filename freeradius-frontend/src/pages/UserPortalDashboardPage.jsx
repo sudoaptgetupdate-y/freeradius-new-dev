@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
+import { useNavigate } from 'react-router-dom'; // <-- 1. Import useNavigate
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -239,6 +240,7 @@ const InfoRow = ({ icon: Icon, label, value }) => (
 
 export default function UserPortalDashboardPage() {
     const { token, logout, setUser, user: initialProfile } = useUserAuthStore();
+    const navigate = useNavigate(); // <-- 2. เรียกใช้ useNavigate
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     
     const { data: profile, error, mutate } = useSWR('/portal/me', fetcher, {
@@ -254,31 +256,21 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    // --- START: แก้ไขฟังก์ชันนี้ ---
+    // --- START: แก้ไขฟังก์ชันนี้ใหม่ทั้งหมด ---
     const handleLogout = async () => {
         const toastId = toast.loading("Logging out...");
         try {
-            const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
+            await axiosInstance.post('/portal/me/clear-sessions', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
-            toast.success(response.data.message || "You have been logged out successfully.", {
-                id: toastId,
-            });
-            
-            // หน่วงเวลาการลบ token เล็กน้อยเพื่อให้ toast แสดงผลเสร็จก่อนเกิด redirect
-            setTimeout(() => {
-                logout();
-            }, 50);
-
+            toast.success("Logout successful.", { id: toastId });
         } catch (error) {
-            toast.error(error.response?.data?.message || "An unexpected error occurred during logout.", {
-                id: toastId,
-            });
-            // ยังคง logout ที่ฝั่ง frontend แม้ว่า backend จะ error
-            setTimeout(() => {
-                logout();
-            }, 50);
+            // แม้ว่าจะ error ก็ยังถือว่า Logout สำเร็จในฝั่ง Client
+            toast.warning("Could not clear remote session, but you have been logged out locally.", { id: toastId });
+        } finally {
+            // ทำการ logout และ redirect เสมอ
+            logout();
+            navigate('/portal/logged-out', { replace: true });
         }
     };
     // --- END ---

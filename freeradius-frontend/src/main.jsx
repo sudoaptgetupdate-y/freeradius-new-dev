@@ -34,7 +34,8 @@ import VoucherPrintPage from './pages/VoucherPrintPage.jsx';
 import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
 import AdLandingPage from './pages/AdLandingPage.jsx';
 import UserPortalLoginPage from './pages/UserPortalLoginPage.jsx';
-import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx'; // <-- ผมเพิ่ม Import ที่ขาดไปให้แล้ว
+import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx';
+import LoggedOutPage from './pages/LoggedOutPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
           { path: 'register', element: <RegisterPage /> },
           { path: 'user-login', element: <ExternalLoginPage /> },
           { path: 'portal/login', element: <UserPortalLoginPage /> },
+          { path: 'portal/logged-out', element: <LoggedOutPage /> },
         ]
       },
       {
