@@ -9,6 +9,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- (Các model nas, radacct, radcheck,... không thay đổi) ---
+
 model nas {
   id          Int     @id @default(autoincrement())
   nasname     String  @db.VarChar(128)
@@ -141,17 +143,17 @@ model radusergroup {
 }
 
 model Administrator {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  password     String
-  role         String   @default("admin")
-  fullName     String?
-  email        String   @unique
-  phoneNumber  String?
-  status       String   @default("active")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  createdUsers User[]   @relation("AdminCreatedUsers")
+  id             Int            @id @default(autoincrement())
+  username       String         @unique
+  password       String
+  role           String         @default("admin")
+  fullName       String?
+  email          String         @unique
+  phoneNumber    String?
+  status         String         @default("active")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  createdUsers   User[]         @relation("AdminCreatedUsers")
   createdBatches VoucherBatch[] @relation("AdminCreatedBatches")
 }
 
@@ -176,24 +178,29 @@ model Organization {
   users                 User[]
   radiusProfileId       Int
   radiusProfile         RadiusProfile @relation(fields: [radiusProfileId], references: [id])
+
+  // --- START: เพิ่ม Field สำหรับเชื่อมกับโฆษณา ---
+  advertisementId       Int?
+  advertisement         Advertisement? @relation(fields: [advertisementId], references: [id], onDelete: SetNull)
+  // --- END ---
 }
 
 model User {
-  id             Int          @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   organizationId Int
-  username       String       @unique
+  username       String        @unique
   password       String
   full_name      String
-  national_id    String?      @unique
-  employee_id    String?      @unique
-  student_id     String?      @unique
-  status         String       @default("active")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  national_id    String?       @unique
+  employee_id    String?       @unique
+  student_id     String?       @unique
+  status         String        @default("active")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields: [organizationId], references: [id])
   createdById    Int?
   createdBy      Administrator? @relation("AdminCreatedUsers", fields: [createdById], references: [id])
-  email          String?      @unique
+  email          String?       @unique
   phoneNumber    String?
 
   @@index([organizationId], map: "User_organizationId_fkey")
@@ -216,25 +223,44 @@ model Setting {
 }
 
 model VoucherPackage {
-  id              Int      @id @default(autoincrement())
-  name            String   @unique
+  id              Int           @id @default(autoincrement())
+  name            String        @unique
   durationDays    Int
   price           Float?
   radiusProfileId Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   radiusProfile   RadiusProfile @relation(fields: [radiusProfileId], references: [id])
 }
 
 model VoucherBatch {
-  id               Int      @id @default(autoincrement())
-  batchIdentifier  String   @unique
-  createdAt        DateTime @default(now())
-  quantity         Int
-  packageName      String
-  usernamePrefix   String
-  passwordType     String
-  usersJson        String   @db.Text
-  createdById      Int
-  createdBy        Administrator @relation("AdminCreatedBatches", fields: [createdById], references: [id])
+  id              Int           @id @default(autoincrement())
+  batchIdentifier String        @unique
+  createdAt       DateTime      @default(now())
+  quantity        Int
+  packageName     String
+  usernamePrefix  String
+  passwordType    String
+  usersJson       String        @db.Text
+  createdById     Int
+  createdBy       Administrator @relation("AdminCreatedBatches", fields: [createdById], references: [id])
 }
+
+// --- START: เพิ่ม Model ใหม่สำหรับโฆษณา ---
+model Advertisement {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  type        String   // Template A or B
+  imageUrl    String?
+  videoUrl    String?
+  headerText  String?
+  bodyText    String?  @db.Text
+  buttonText  String   @default("Continue to Internet")
+  buttonUrl   String   @default("https://www.ntplc.co.th")
+  countdown   Int?     @default(5)
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+
+  organizations Organization[]
+}
+// --- END ---
