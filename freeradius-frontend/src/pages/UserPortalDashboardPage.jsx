@@ -20,8 +20,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { useNavigate } from 'react-router-dom'; // <-- 1. Import useNavigate
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 
+// ... (Component ย่อย และ Helper Functions เหมือนเดิม) ...
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -240,7 +241,7 @@ const InfoRow = ({ icon: Icon, label, value }) => (
 
 export default function UserPortalDashboardPage() {
     const { token, logout, setUser, user: initialProfile } = useUserAuthStore();
-    const navigate = useNavigate(); // <-- 2. เรียกใช้ useNavigate
+    const navigate = useNavigate(); // 2. เรียกใช้ useNavigate
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     
     const { data: profile, error, mutate } = useSWR('/portal/me', fetcher, {
@@ -265,8 +266,8 @@ export default function UserPortalDashboardPage() {
             });
             toast.success("Logout successful.", { id: toastId });
         } catch (error) {
-            // แม้ว่าจะ error ก็ยังถือว่า Logout สำเร็จในฝั่ง Client
-            toast.warning("Could not clear remote session, but you have been logged out locally.", { id: toastId });
+            console.error("Remote session clear failed, but logging out locally.", error);
+            toast.warning("Could not clear remote session, but you will be logged out.", { id: toastId });
         } finally {
             // ทำการ logout และ redirect เสมอ
             logout();
