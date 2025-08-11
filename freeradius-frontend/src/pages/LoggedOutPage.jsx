@@ -17,13 +17,10 @@ export default function LoggedOutPage() {
                     <CardHeader>
                         <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
                         <CardTitle className="text-2xl">Logged Out Successfully</CardTitle>
-                        <CardDescription>You have been securely logged out of your account.</CardDescription>
+                        <CardDescription>
+                            You have been securely disconnected. You can now safely close this browser window.
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button asChild className="w-full">
-                            <Link to="/user-login">Return to Login Page</Link>
-                        </Button>
-                    </CardContent>
                 </Card>
             </motion.div>
         </div>
