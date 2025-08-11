@@ -256,36 +256,36 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    const handleLogout = async () => {
-        const toastId = toast.loading("Logging out...");
-        try {
-            await axiosInstance.post('/portal/me/clear-sessions', {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("You have been logged out successfully.", { id: toastId });
-        } catch (error) {
-            console.error("Remote session clear failed, but logging out locally.", error);
-            toast.warning("Could not clear remote session, but you have been logged out locally.", { id: toastId });
-        } finally {
+    const handleLogout = () => {
+        // 1. ย้ายไปหน้า logged-out ทันที เพื่อหลีกเลี่ยง Race Condition
+        navigate('/portal/logged-out', { replace: true });
+
+        // 2. ทำการเคลียร์ข้อมูลเบื้องหลัง
+        setTimeout(() => {
+            // 2.1 เคลียร์ Token ในเครื่อง
             logout();
-            navigate('/portal/logged-out', { replace: true });
-        }
+            
+            // 2.2 ส่งคำสั่งเคลียร์ Session ที่ Backend (Fire and Forget)
+            axiosInstance.post('/portal/me/clear-sessions', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            }).then(response => {
+                console.log('Remote sessions cleared:', response.data.message);
+            }).catch(error => {
+                console.error("Could not clear remote session:", error);
+            });
+        }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้ Redirect ทำงานเสร็จสมบูรณ์
     };
 
-    // --- START: แก้ไขฟังก์ชันนี้ใหม่ทั้งหมด ---
-    const handleClearOtherSessions = async () => {
-        const toastId = toast.loading("Clearing other sessions...");
-        try {
-            const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(response.data.message, { id: toastId });
-            mutate(); // สั่งให้ SWR โหลดข้อมูลใหม่เพื่ออัปเดตหน้าจอ
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to clear sessions.', { id: toastId });
-        }
+    const handleClearOtherSessions = () => {
+        toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
+            loading: 'Clearing other sessions...',
+            success: (res) => {
+                mutate(); // สั่งให้ SWR โหลดข้อมูลใหม่เพื่ออัปเดตหน้าจอ
+                return res.data.message;
+            },
+            error: (err) => err.response?.data?.message || 'Failed to clear sessions.',
+        });
     };
-    // --- END ---
 
     if (error && !profile) return <div>Failed to load profile. Please try again.</div>
     if (!profile) return <div>Loading your profile...</div>
