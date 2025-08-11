@@ -254,24 +254,28 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    // --- START: แก้ไขฟังก์ชันนี้ใหม่ทั้งหมด ---
+    // --- START: แก้ไขฟังก์ชันนี้ ---
     const handleLogout = async () => {
         const toastId = toast.loading("Logging out...");
         try {
             const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+            
             // เมื่อคำสั่งสำเร็จ (Backend ตอบกลับมาเป็น status 2xx)
             toast.success(response.data.message || "You have been logged out successfully.", {
                 id: toastId,
             });
+            
+            // ย้าย logout() มาไว้ในนี้ เพื่อให้ทำงานหลัง Backend ตอบกลับสำเร็จ
+            logout();
+
         } catch (error) {
             // เมื่อคำสั่งล้มเหลว (Backend ตอบกลับมาเป็น status อื่นๆ)
             toast.error(error.response?.data?.message || "An unexpected error occurred during logout.", {
                 id: toastId,
             });
-        } finally {
-            // ไม่ว่าจะสำเร็จหรือล้มเหลว ให้เคลียร์ token ในเครื่องเสมอ
+            // ยังคง logout ที่ฝั่ง frontend แม้ว่า backend จะ error
             logout();
         }
     };
