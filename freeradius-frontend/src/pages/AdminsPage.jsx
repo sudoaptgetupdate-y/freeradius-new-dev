@@ -12,14 +12,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+// --- START: เพิ่มการ import Tooltip ---
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// --- END ---
 import { toast } from "sonner";
 import AdminFormDialog from "@/components/dialogs/AdminFormDialog";
 
 export default function AdminsPage() {
-    // --- START: แก้ไขส่วนนี้ ---
     const currentUser = useAuthStore((state) => state.user);
     const token = useAuthStore((state) => state.token);
-    // --- END: สิ้นสุดส่วนที่แก้ไข ---
 
     const { data: admins, isLoading, refreshData } = usePaginatedFetch("/admins");
 
@@ -114,66 +115,87 @@ export default function AdminsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Full Name</TableHead>
-                                    <TableHead>Username</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    [...Array(3)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : admins.length > 0 ? (
-                                    admins.map((admin) => (
-                                        <TableRow key={admin.id}>
-                                            <TableCell className="font-medium">{admin.fullName}</TableCell>
-                                            <TableCell>{admin.username}</TableCell>
-                                            <TableCell>{admin.email}</TableCell>
-                                            <TableCell>{admin.role}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={admin.status === 'active' ? 'success' : 'secondary'}>
-                                                    {admin.status === 'active' ? 'Active' : 'Inactive'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-center space-x-1">
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(admin)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleToggleStatus(admin)}
-                                                    disabled={admin.id === currentUser.id}
-                                                >
-                                                    {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(admin)}
-                                                    disabled={admin.id === currentUser.id}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">No administrators found.</TableCell>
+                                        <TableHead>Full Name</TableHead>
+                                        <TableHead>Username</TableHead>
+                                        <TableHead>Email</TableHead>
+                                        <TableHead>Role</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-center">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        [...Array(3)].map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : admins.length > 0 ? (
+                                        admins.map((admin) => (
+                                            <TableRow key={admin.id}>
+                                                <TableCell className="font-medium">{admin.fullName}</TableCell>
+                                                <TableCell>{admin.username}</TableCell>
+                                                <TableCell>{admin.email}</TableCell>
+                                                <TableCell>{admin.role}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={admin.status === 'active' ? 'success' : 'secondary'}>
+                                                        {admin.status === 'active' ? 'Active' : 'Inactive'}
+                                                    </Badge>
+                                                </TableCell>
+                                                {/* --- START: แก้ไขปุ่ม Action --- */}
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(admin)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Edit Admin</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost" size="icon" className="h-8 w-8"
+                                                                    onClick={() => handleToggleStatus(admin)}
+                                                                    disabled={admin.id === currentUser.id}
+                                                                >
+                                                                    {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{admin.status === 'active' ? 'Disable' : 'Enable'} Admin</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                                                                    onClick={() => handleDelete(admin)}
+                                                                    disabled={admin.id === currentUser.id}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Delete Admin</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                </TableCell>
+                                                {/* --- END --- */}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">No administrators found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
+                        {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>

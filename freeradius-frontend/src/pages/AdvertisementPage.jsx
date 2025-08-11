@@ -7,15 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Palette } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Palette, Eye } from "lucide-react"; // <-- Import Eye icon
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // <-- Import Tooltip
 import { toast } from "sonner";
 import AdvertisementFormDialog from "@/components/dialogs/AdvertisementFormDialog";
+import AdvertisementPreviewDialog from "@/components/dialogs/AdvertisementPreviewDialog"; // <-- Import Preview Dialog
 
-// --- START: เพิ่มฟังก์ชันสำหรับแปลง Type ---
 const getTemplateName = (type) => {
     const names = {
         A: 'Hero Page',
@@ -24,29 +25,40 @@ const getTemplateName = (type) => {
     };
     return names[type] || 'Unknown';
 };
-// --- END ---
 
 export default function AdvertisementPage() {
     const token = useAuthStore((state) => state.token);
     const { data: ads, isLoading, refreshData } = usePaginatedFetch("/advertisements");
 
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [editingAd, setEditingAd] = useState(null);
     const [adToDelete, setAdToDelete] = useState(null);
 
+    // --- START: Add state for the preview dialog ---
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [adToPreview, setAdToPreview] = useState(null);
+    // --- END ---
+
     const handleAddNew = () => {
         setEditingAd(null);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
 
     const handleEdit = (ad) => {
         setEditingAd(ad);
-        setIsDialogOpen(true);
+        setIsFormDialogOpen(true);
     };
 
     const handleDelete = (ad) => {
         setAdToDelete(ad);
     };
+    
+    // --- START: Add handler for the preview action ---
+    const handlePreview = (ad) => {
+        setAdToPreview(ad);
+        setIsPreviewOpen(true);
+    };
+    // --- END ---
 
     const confirmDelete = async () => {
         if (!adToDelete) return;
@@ -85,63 +97,95 @@ export default function AdvertisementPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Campaign Name</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    [...Array(5)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : ads.length > 0 ? (
-                                    ads.map((ad) => (
-                                        <TableRow key={ad.id}>
-                                            <TableCell className="font-medium">{ad.name}</TableCell>
-                                            {/* --- START: เรียกใช้ฟังก์ชันแปลงชื่อ --- */}
-                                            <TableCell>{getTemplateName(ad.type)}</TableCell>
-                                            {/* --- END --- */}
-                                            <TableCell>
-                                                <Badge variant={ad.status === 'active' ? 'success' : 'secondary'}>
-                                                    {ad.status === 'active' ? 'Active' : 'Inactive'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-center space-x-2">
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(ad)}>
-                                                    <Edit className="h-4 w-4 mr-2" /> Edit
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(ad)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">No advertisement campaigns found.</TableCell>
+                                        <TableHead>Campaign Name</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-center">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : ads.length > 0 ? (
+                                        ads.map((ad) => (
+                                            <TableRow key={ad.id}>
+                                                <TableCell className="font-medium">{ad.name}</TableCell>
+                                                <TableCell>{getTemplateName(ad.type)}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={ad.status === 'active' ? 'success' : 'secondary'}>
+                                                        {ad.status === 'active' ? 'Active' : 'Inactive'}
+                                                    </Badge>
+                                                </TableCell>
+                                                {/* --- START: Update the actions cell --- */}
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePreview(ad)}>
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Preview</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(ad)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Edit</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(ad)}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Delete</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                </TableCell>
+                                                 {/* --- END --- */}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">No advertisement campaigns found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
                     </div>
                 </CardContent>
             </Card>
 
-            {isDialogOpen && (
+            {isFormDialogOpen && (
                 <AdvertisementFormDialog
-                    isOpen={isDialogOpen}
-                    setIsOpen={setIsDialogOpen}
+                    isOpen={isFormDialogOpen}
+                    setIsOpen={setIsFormDialogOpen}
                     ad={editingAd}
                     onSave={refreshData}
                 />
             )}
+
+            {/* --- START: Add the preview dialog instance --- */}
+            {isPreviewOpen && (
+                <AdvertisementPreviewDialog
+                    isOpen={isPreviewOpen}
+                    setIsOpen={setIsPreviewOpen}
+                    ad={adToPreview}
+                />
+            )}
+            {/* --- END --- */}
 
             <AlertDialog open={!!adToDelete} onOpenChange={(isOpen) => !isOpen && setAdToDelete(null)}>
                 <AlertDialogContent>

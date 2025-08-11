@@ -9,11 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { History, Printer, PlusCircle, Settings } from 'lucide-react';
+// --- START: เพิ่มการ import Ticket icon และ PlusCircle ---
+import { History, Printer, PlusCircle, Settings, Ticket } from 'lucide-react';
+// --- END ---
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import VoucherGenerationDialog from '@/components/dialogs/VoucherGenerationDialog';
 import VoucherSettingsDialog from '@/components/dialogs/VoucherSettingsDialog';
+// --- START: เพิ่มการ import PackageFormDialog ---
+import PackageFormDialog from '@/components/dialogs/PackageFormDialog';
+// --- END ---
 
 export default function VoucherBatchesPage() {
     const token = useAuthStore((state) => state.token);
@@ -30,6 +35,9 @@ export default function VoucherBatchesPage() {
     const [admins, setAdmins] = useState([]);
     const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+    // --- START: เพิ่ม State สำหรับ Package Dialog ---
+    const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
+    // --- END ---
 
     const {
         data: batches,
@@ -74,17 +82,23 @@ export default function VoucherBatchesPage() {
                             </CardTitle>
                             <CardDescription>History of all generated voucher batches.</CardDescription>
                         </div>
+                        {/* --- START: แก้ไขกลุ่มของปุ่ม --- */}
                         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
                             <Button variant="outline" size="sm" onClick={() => setIsSettingsDialogOpen(true)}>
                                 <Settings className="mr-2 h-4 w-4" /> Voucher Settings
+                            </Button>
+                             <Button variant="outline" size="sm" onClick={() => setIsPackageDialogOpen(true)}>
+                                <Ticket className="mr-2 h-4 w-4" /> Add New Package
                             </Button>
                             <Button size="sm" onClick={() => setIsGenerateDialogOpen(true)}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Batch
                             </Button>
                         </div>
+                        {/* --- END --- */}
                     </div>
                 </CardHeader>
                 <CardContent>
+                    {/* ... (เนื้อหาส่วนที่เหลือของ CardContent ไม่เปลี่ยนแปลง) ... */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <Input
                             placeholder="Search by package, creator..."
@@ -173,13 +187,26 @@ export default function VoucherBatchesPage() {
                 />
             )}
             
-            {/* --- เพิ่มการเรียกใช้ Dialog Settings --- */}
             {isSettingsDialogOpen && (
                 <VoucherSettingsDialog
                     isOpen={isSettingsDialogOpen}
                     setIsOpen={setIsSettingsDialogOpen}
                 />
             )}
+
+            {/* --- START: เพิ่มการเรียกใช้ PackageFormDialog --- */}
+            {isPackageDialogOpen && (
+                <PackageFormDialog
+                    isOpen={isPackageDialogOpen}
+                    setIsOpen={setIsPackageDialogOpen}
+                    pkg={null}
+                    onSave={() => {
+                        // ไม่ต้องทำอะไรเมื่อ Save สำเร็จ เพราะ Dialog จะปิดตัวเอง
+                        // และเราไม่จำเป็นต้อง refresh ข้อมูลหน้านี้
+                    }}
+                />
+            )}
+            {/* --- END --- */}
         </>
     );
 }

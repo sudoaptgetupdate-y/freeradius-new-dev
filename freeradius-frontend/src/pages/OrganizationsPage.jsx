@@ -16,7 +16,10 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge"; // <-- 1. Import Badge
+import { Badge } from "@/components/ui/badge";
+// --- START: เพิ่มการ import Tooltip ---
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// --- END ---
 
 export default function OrganizationsPage() {
     const token = useAuthStore((state) => state.token);
@@ -90,57 +93,71 @@ export default function OrganizationsPage() {
                         />
                     </div>
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>Login Type</TableHead>
-                                    <TableHead>Radius Profile</TableHead>
-                                    {/* --- START: 2. เพิ่มคอลัมน์ใหม่ --- */}
-                                    <TableHead>Advertisement</TableHead>
-                                    {/* --- END --- */}
-                                    <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    [...Array(pagination.itemsPerPage)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : organizations.length > 0 ? (
-                                    organizations.map((org) => (
-                                        <TableRow key={org.id}>
-                                            <TableCell className="font-medium">{org.name}</TableCell>
-                                            <TableCell>{org.login_identifier_type}</TableCell>
-                                            <TableCell>{org.radiusProfile?.name || 'N/A'}</TableCell>
-                                            {/* --- START: 3. แสดงข้อมูลโฆษณาที่ผูกอยู่ --- */}
-                                            <TableCell>
-                                                {org.advertisement ? (
-                                                    <Badge variant="default">{org.advertisement.name}</Badge>
-                                                ) : (
-                                                    <Badge variant="secondary">Disabled</Badge>
-                                                )}
-                                            </TableCell>
-                                            {/* --- END --- */}
-                                            <TableCell className="text-center space-x-2">
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(org)}>
-                                                    <Edit className="h-4 w-4 mr-2" /> Edit
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(org)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">No organizations found.</TableCell>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Login Type</TableHead>
+                                        <TableHead>Radius Profile</TableHead>
+                                        <TableHead>Advertisement</TableHead>
+                                        <TableHead className="text-center">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        [...Array(pagination.itemsPerPage)].map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : organizations.length > 0 ? (
+                                        organizations.map((org) => (
+                                            <TableRow key={org.id}>
+                                                <TableCell className="font-medium">{org.name}</TableCell>
+                                                <TableCell>{org.login_identifier_type}</TableCell>
+                                                <TableCell>{org.radiusProfile?.name || 'N/A'}</TableCell>
+                                                <TableCell>
+                                                    {org.advertisement ? (
+                                                        <Badge variant="default">{org.advertisement.name}</Badge>
+                                                    ) : (
+                                                        <Badge variant="secondary">Disabled</Badge>
+                                                    )}
+                                                </TableCell>
+                                                {/* --- START: แก้ไขปุ่ม Action ทั้งหมด --- */}
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(org)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Edit Organization</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(org)}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Delete Organization</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                </TableCell>
+                                                {/* --- END --- */}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center">No organizations found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
+                         {/* --- END --- */}
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">

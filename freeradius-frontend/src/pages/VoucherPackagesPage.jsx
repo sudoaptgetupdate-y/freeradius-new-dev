@@ -12,7 +12,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import PackageFormDialog from "@/components/dialogs/PackageFormDialog"; // <-- 1. Import Dialog ที่สร้างใหม่
+import PackageFormDialog from "@/components/dialogs/PackageFormDialog";
+// --- START: เพิ่มการ import Tooltip ---
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// --- END ---
 
 export default function VoucherPackagesPage() {
     const token = useAuthStore((state) => state.token);
@@ -22,7 +25,7 @@ export default function VoucherPackagesPage() {
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingPackage, setEditingPackage] = useState(null);
-    const [packageToDelete, setPackageToDelete] = useState(null); // <-- State สำหรับยืนยันการลบ
+    const [packageToDelete, setPackageToDelete] = useState(null);
 
     const handleAddNew = () => {
         setEditingPackage(null);
@@ -35,7 +38,7 @@ export default function VoucherPackagesPage() {
     };
 
     const handleDelete = (pkg) => {
-        setPackageToDelete(pkg); // <-- เปิด Dialog ยืนยัน
+        setPackageToDelete(pkg);
     };
 
     const confirmDelete = async () => {
@@ -45,8 +48,8 @@ export default function VoucherPackagesPage() {
             {
                 loading: 'Deleting package...',
                 success: () => {
-                    mutate(); // Refresh data
-                    setPackageToDelete(null); // ปิด Dialog
+                    mutate();
+                    setPackageToDelete(null);
                     return `Package '${packageToDelete.name}' deleted successfully!`;
                 },
                 error: (err) => {
@@ -74,43 +77,64 @@ export default function VoucherPackagesPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Package Name</TableHead>
-                                    <TableHead className="text-center">Duration (Days)</TableHead>
-                                    <TableHead>Radius Profile</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading && (
-                                    <TableRow><TableCell colSpan={4} className="text-center h-24">Loading packages...</TableCell></TableRow>
-                                )}
-                                {error && (
-                                    <TableRow><TableCell colSpan={4} className="text-center h-24 text-red-500">Failed to load packages.</TableCell></TableRow>
-                                )}
-                                {packages && packages.length === 0 && (
-                                     <TableRow><TableCell colSpan={4} className="text-center h-24">No packages found. Click "Add New Package" to start.</TableCell></TableRow>
-                                )}
-                                {packages?.map((pkg) => (
-                                    <TableRow key={pkg.id}>
-                                        <TableCell className="font-medium">{pkg.name}</TableCell>
-                                        <TableCell className="text-center">{pkg.durationDays}</TableCell>
-                                        <TableCell>{pkg.radiusProfile?.name || 'N/A'}</TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <Button variant="outline" size="sm" onClick={() => handleEdit(pkg)}><Edit className="h-4 w-4" /></Button>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDelete(pkg)}><Trash2 className="h-4 w-4" /></Button>
-                                        </TableCell>
+                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Package Name</TableHead>
+                                        <TableHead className="text-center">Duration (Days)</TableHead>
+                                        <TableHead>Radius Profile</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading && (
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24">Loading packages...</TableCell></TableRow>
+                                    )}
+                                    {error && (
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24 text-red-500">Failed to load packages.</TableCell></TableRow>
+                                    )}
+                                    {packages && packages.length === 0 && (
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24">No packages found. Click "Add New Package" to start.</TableCell></TableRow>
+                                    )}
+                                    {packages?.map((pkg) => (
+                                        <TableRow key={pkg.id}>
+                                            <TableCell className="font-medium">{pkg.name}</TableCell>
+                                            <TableCell className="text-center">{pkg.durationDays}</TableCell>
+                                            <TableCell>{pkg.radiusProfile?.name || 'N/A'}</TableCell>
+                                            {/* --- START: แก้ไขปุ่ม Action --- */}
+                                            <TableCell className="text-right">
+                                                 <div className="inline-flex items-center justify-end gap-1">
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(pkg)}>
+                                                                <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Edit Package</p></TooltipContent>
+                                                    </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(pkg)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Delete Package</p></TooltipContent>
+                                                    </Tooltip>
+                                                 </div>
+                                            </TableCell>
+                                            {/* --- END --- */}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
+                        {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>
 
-            {/* 2. เรียกใช้ Dialog Component ที่ import เข้ามา */}
             {isDialogOpen && (
                 <PackageFormDialog 
                     isOpen={isDialogOpen} 
@@ -120,7 +144,6 @@ export default function VoucherPackagesPage() {
                 />
             )}
 
-            {/* 3. เพิ่ม Dialog ยืนยันการลบ */}
             <AlertDialog open={!!packageToDelete} onOpenChange={() => setPackageToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

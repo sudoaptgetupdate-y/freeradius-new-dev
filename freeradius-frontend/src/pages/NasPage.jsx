@@ -3,7 +3,7 @@ import { useState } from "react";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
 import axiosInstance from "@/api/axiosInstance";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, Edit, Trash2, Server } from "lucide-react";
@@ -13,10 +13,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+// --- START: เพิ่มการ import Tooltip ---
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// --- END ---
 
 export default function NasPage() {
     const token = useAuthStore((state) => state.token);
-    // Hook นี้ดึงข้อมูลจาก /api/nas แต่ยังไม่มีการแบ่งหน้าหรือค้นหาใน Backend
     const { data: nasList, isLoading, refreshData } = usePaginatedFetch("/nas");
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -70,50 +72,66 @@ export default function NasPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {/* Placeholder for Search Input if needed in the future */}
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>NAS Name (IP/Hostname)</TableHead>
-                                    <TableHead>Short Name</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    [...Array(5)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : nasList.length > 0 ? (
-                                    nasList.map((nas) => (
-                                        <TableRow key={nas.id}>
-                                            <TableCell className="font-medium font-mono">{nas.nasname}</TableCell>
-                                            <TableCell>{nas.shortname}</TableCell>
-                                            <TableCell>{nas.description}</TableCell>
-                                            <TableCell className="text-center space-x-2">
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(nas)}>
-                                                    <Edit className="h-4 w-4 mr-2" /> Edit
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(nas)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">No NAS clients found.</TableCell>
+                                        <TableHead>NAS Name (IP/Hostname)</TableHead>
+                                        <TableHead>Short Name</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-center">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : nasList.length > 0 ? (
+                                        nasList.map((nas) => (
+                                            <TableRow key={nas.id}>
+                                                <TableCell className="font-medium font-mono">{nas.nasname}</TableCell>
+                                                <TableCell>{nas.shortname}</TableCell>
+                                                <TableCell>{nas.description}</TableCell>
+                                                {/* --- START: แก้ไขปุ่ม Action --- */}
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(nas)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Edit NAS</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(nas)}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Delete NAS</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                </TableCell>
+                                                {/* --- END --- */}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">No NAS clients found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
+                         {/* --- END --- */}
                     </div>
                 </CardContent>
-                {/* Footer can be added here if pagination is implemented for NAS */}
             </Card>
 
             {isDialogOpen && (

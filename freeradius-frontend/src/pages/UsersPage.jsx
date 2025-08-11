@@ -20,10 +20,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+// --- START: เพิ่มการ import Tooltip ---
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// --- END ---
 import { toast } from "sonner";
 import { format } from 'date-fns';
 
-// Component สำหรับหัวตารางที่เรียงลำดับได้
+
+// ... (โค้ดส่วนอื่นๆ ที่ไม่เปลี่ยนแปลง) ...
 const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
     const isSorted = sortConfig.key === columnKey;
     const direction = isSorted ? sortConfig.direction : 'desc';
@@ -44,6 +48,7 @@ const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
         </TableHead>
     );
 };
+
 
 export default function UsersPage() {
     const token = useAuthStore((state) => state.token);
@@ -190,11 +195,13 @@ export default function UsersPage() {
     const handleViewDetails = (username) => {
         navigate(`/users/${username}`);
     };
+    
 
     return (
         <>
             <Card>
-                <CardHeader>
+                 {/* ... (ส่วน CardHeader และ CardContent ด้านบนไม่เปลี่ยนแปลง) ... */}
+                 <CardHeader>
                     <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                         <div>
                             <CardTitle className="flex items-center gap-2">
@@ -267,10 +274,12 @@ export default function UsersPage() {
                     )}
 
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    {isBulkActionsEnabled && (
+                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                         {isBulkActionsEnabled && (
                                         <TableHead className="w-[50px]">
                                             <Checkbox
                                                 checked={users.length > 0 && selectedUsers.length === users.length}
@@ -284,65 +293,86 @@ export default function UsersPage() {
                                     <TableHead>Status</TableHead>
                                     <SortableHeader columnKey="createdAt" sortConfig={sortConfig} setSortConfig={setSortConfig}>Created At</SortableHeader>
                                     <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    Array.from({ length: pagination.itemsPerPage }).map((_, i) => (
-                                        <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 7 : 6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
-                                    ))
-                                ) : users.length > 0 ? (
-                                    users.map((user) => (
-                                        <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
-                                            {isBulkActionsEnabled && (
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        Array.from({ length: pagination.itemsPerPage }).map((_, i) => (
+                                            <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 7 : 6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                        ))
+                                    ) : users.length > 0 ? (
+                                        users.map((user) => (
+                                            <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
+                                                {isBulkActionsEnabled && (
                                                 <TableCell>
                                                     <Checkbox
                                                         checked={selectedUsers.some(u => u.id === user.id)}
                                                         onCheckedChange={(checked) => handleSelectSingle(checked, user)}
                                                     />
                                                 </TableCell>
-                                            )}
-                                            <TableCell className="font-medium">{user.full_name}</TableCell>
-                                            <TableCell>{user.username}</TableCell>
-                                            <TableCell>{user.organization.name}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
-                                                    {user.status === 'active' ? 'Active' : 'Disabled'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{format(new Date(user.createdAt), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
-                                            <TableCell className="text-center">
-                                                <div className="inline-flex items-center justify-center flex-wrap gap-1">
-                                                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(user.username)}>
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(user)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() => setUserToToggle(user)}
-                                                    >
-                                                      {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                                                    </Button>
-                                                    <Button variant="destructive" size="sm" onClick={() => handleDelete(user)}>
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                                                )}
+                                                <TableCell className="font-medium">{user.full_name}</TableCell>
+                                                <TableCell>{user.username}</TableCell>
+                                                <TableCell>{user.organization.name}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
+                                                        {user.status === 'active' ? 'Active' : 'Disabled'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{format(new Date(user.createdAt), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                                                <TableCell className="text-center">
+                                                    {/* --- START: แก้ไขปุ่ม Action ทั้งหมด --- */}
+                                                    <div className="inline-flex items-center justify-center flex-wrap gap-1">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewDetails(user.username)}>
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>View Details</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(user)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Edit User</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setUserToToggle(user)}>
+                                                                    {user.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>{user.status === 'active' ? 'Disable' : 'Enable'} User</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(user)}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Delete User</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                    {/* --- END --- */}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={isBulkActionsEnabled ? 7 : 6} className="h-24 text-center">No users found.</TableCell>
                                         </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={isBulkActionsEnabled ? 7 : 6} className="h-24 text-center">No users found.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
+                         {/* --- END: ปิด TooltipProvider --- */}
                     </div>
                 </CardContent>
-                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                 {/* ... (ส่วน CardFooter และ Dialogs ไม่เปลี่ยนแปลง) ... */}
+                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Label htmlFor="rows-per-page">Rows per page:</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>

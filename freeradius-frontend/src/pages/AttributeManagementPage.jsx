@@ -16,21 +16,21 @@ import {
 import { toast } from "sonner";
 import AttributeDefinitionFormDialog from "@/components/dialogs/AttributeDefinitionFormDialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+// --- START: เพิ่มการ import Tooltip ---
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// --- END ---
 
 export default function AttributeManagementPage() {
     const token = useAuthStore((state) => state.token);
     const { data: attributes, isLoading, refreshData } = usePaginatedFetch("/attribute-definitions");
 
-    // --- START: เพิ่ม State สำหรับ Search และ Filter ---
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState("all");
-    // --- END ---
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingAttribute, setEditingAttribute] = useState(null);
     const [attributeToDelete, setAttributeToDelete] = useState(null);
 
-    // --- START: เพิ่ม Logic การกรองข้อมูล ---
     const filteredAttributes = useMemo(() => {
         return attributes
             .filter(attr => {
@@ -42,7 +42,6 @@ export default function AttributeManagementPage() {
                 (attr.description && attr.description.toLowerCase().includes(searchTerm.toLowerCase()))
             );
     }, [attributes, searchTerm, filterType]);
-    // --- END ---
 
     const handleAddNew = () => {
         setEditingAttribute(null);
@@ -91,7 +90,6 @@ export default function AttributeManagementPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {/* --- START: เพิ่มส่วนของ Search และ Filter --- */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Input 
                             placeholder="Search by name or description..."
@@ -110,51 +108,68 @@ export default function AttributeManagementPage() {
                             <ToggleGroupItem value="check" className="flex-1">Check</ToggleGroupItem>
                         </ToggleGroup>
                     </div>
-                    {/* --- END --- */}
                     <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Attribute Name</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className="text-center">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    [...Array(5)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : filteredAttributes.length > 0 ? (
-                                    filteredAttributes.map((attr) => (
-                                        <TableRow key={attr.id}>
-                                            <TableCell className="font-medium font-mono">{attr.name}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={attr.type === 'reply' ? 'default' : 'secondary'}>
-                                                    {attr.type}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{attr.description}</TableCell>
-                                            <TableCell className="text-center space-x-2">
-                                                <Button variant="outline" size="sm" onClick={() => handleEdit(attr)}>
-                                                    <Edit className="h-4 w-4 mr-2" /> Edit
-                                                </Button>
-                                                <Button variant="destructive" size="sm" onClick={() => handleDelete(attr)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
+                        <TooltipProvider delayDuration={0}>
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">No attribute definitions found.</TableCell>
+                                        <TableHead>Attribute Name</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Description</TableHead>
+                                        <TableHead className="text-center">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoading ? (
+                                        [...Array(5)].map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={4}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : filteredAttributes.length > 0 ? (
+                                        filteredAttributes.map((attr) => (
+                                            <TableRow key={attr.id}>
+                                                <TableCell className="font-medium font-mono">{attr.name}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={attr.type === 'reply' ? 'default' : 'secondary'}>
+                                                        {attr.type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{attr.description}</TableCell>
+                                                {/* --- START: แก้ไขปุ่ม Action --- */}
+                                                <TableCell className="text-center">
+                                                    <div className="inline-flex items-center justify-center gap-1">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(attr)}>
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Edit Attribute</p></TooltipContent>
+                                                        </Tooltip>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(attr)}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent><p>Delete Attribute</p></TooltipContent>
+                                                        </Tooltip>
+                                                    </div>
+                                                </TableCell>
+                                                {/* --- END --- */}
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">No attribute definitions found.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TooltipProvider>
+                        {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>
