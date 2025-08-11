@@ -22,7 +22,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 
-// ... (Component ย่อย และ Helper Functions ทั้งหมดเหมือนเดิม) ...
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -271,18 +270,16 @@ export default function UserPortalDashboardPage() {
         }, 100);
     };
 
-    // --- START: แก้ไขฟังก์ชันนี้ ---
     const handleClearOtherSessions = () => {
         toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
             loading: 'Disconnecting other sessions...',
             success: (res) => {
-                mutate(); // สั่งให้โหลดข้อมูลโปรไฟล์ใหม่ (Session จะหายไป)
+                mutate();
                 return res.data.message || "Successfully disconnected other sessions.";
             },
             error: (err) => err.response?.data?.message || 'Failed to clear sessions.',
         });
     };
-    // --- END ---
 
     if (error && !profile) return <div>Failed to load profile. Please try again.</div>
     if (!profile) return <div>Loading your profile...</div>

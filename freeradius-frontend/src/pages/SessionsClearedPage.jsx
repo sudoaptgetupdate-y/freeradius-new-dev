@@ -7,14 +7,19 @@ import { CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function SessionsClearedPage() {
-    const [countdown, setCountdown] = useState(10); // ให้เวลานานขึ้นเล็กน้อยเผื่อผู้ใช้อยากอ่าน
+    const [countdown, setCountdown] = useState(10);
 
     useEffect(() => {
         if (countdown <= 0) {
+            // Redirect ไปยังเว็บที่ไม่ใช้ HTTPS เพื่อหลีกเลี่ยงปัญหา HSTS
             window.location.href = 'http://neverssl.com';
             return;
         }
-        const timerId = setTimeout(() => setCountdown(countdown - 1), 1000);
+
+        const timerId = setTimeout(() => {
+            setCountdown(countdown - 1);
+        }, 1000);
+
         return () => clearTimeout(timerId);
     }, [countdown]);
 
@@ -35,7 +40,7 @@ export default function SessionsClearedPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            This page will redirect to Login agian {countdown} seconds.
+                            This page will redirect in {countdown} seconds.
                         </p>
                         <Button asChild className="w-full">
                             <Link to="/portal/dashboard">Back to Dashboard</Link>
