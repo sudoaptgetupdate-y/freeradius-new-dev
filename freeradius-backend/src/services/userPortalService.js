@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { kickUserSession } = require('./kickService');
 
+// ... (ฟังก์ชัน login, getMyProfile, updateMyProfile, changeMyPassword เหมือนเดิม) ...
 const login = async (username, password) => {
     if (!username || !password) {
         throw new Error('Please provide username and password');
@@ -24,7 +25,6 @@ const login = async (username, password) => {
     return { token, user: userWithoutPassword };
 };
 
-// --- START: แก้ไขฟังก์ชันนี้ ---
 const getMyProfile = async (userId) => {
     const userProfile = await prisma.user.findUnique({
         where: { id: userId },
@@ -42,7 +42,6 @@ const getMyProfile = async (userId) => {
         throw new Error('User not found.');
     }
 
-    // ค้นหา Session ที่กำลังออนไลน์อยู่
     const currentSession = await prisma.radacct.findFirst({
         where: {
             username: userProfile.username,
@@ -53,7 +52,6 @@ const getMyProfile = async (userId) => {
         }
     });
 
-    // ค้นหาวันหมดอายุจาก radcheck
     const expirationAttr = await prisma.radcheck.findFirst({
         where: {
             username: userProfile.username,
@@ -74,7 +72,6 @@ const getMyProfile = async (userId) => {
         } : null
     };
 };
-// --- END ---
 
 const updateMyProfile = async (userId, data) => {
     const { full_name, email, phoneNumber } = data;
@@ -125,11 +122,14 @@ const clearMySessions = async (username) => {
     let clearedCount = 0;
     for (const session of onlineSessions) {
         try {
+            // --- START: แก้ไขส่วนนี้ ---
             await kickUserSession({
                 username: session.username,
                 nasipaddress: session.nasipaddress,
-                acctsessionid: session.acctsessionid
+                acctsessionid: session.acctsessionid,
+                framedipaddress: session.framedipaddress, // <-- เพิ่ม IP ของ User เข้าไป
             });
+            // --- END ---
             clearedCount++;
         } catch (error) {
             console.error(`Failed to kick session ${session.acctsessionid} for user ${username}:`, error.message);

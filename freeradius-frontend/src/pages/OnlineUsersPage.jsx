@@ -106,11 +106,14 @@ export default function OnlineUsersPage() {
     const confirmKickUser = async () => {
         if (!userToKick) return;
         try {
+            // --- START: แก้ไขส่วนนี้ ---
             const payload = {
                 username: userToKick.username,
                 nasipaddress: userToKick.nasipaddress,
                 acctsessionid: userToKick.acctsessionid,
+                framedipaddress: userToKick.framedipaddress, // <-- เพิ่ม IP ของ User เข้าไป
             };
+            // --- END ---
             await axiosInstance.post('/online-users/kick', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
