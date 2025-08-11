@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { kickUserSession } = require('./kickService');
 
-// ... (ฟังก์ชัน login, getMyProfile, updateMyProfile, changeMyPassword เหมือนเดิม) ...
+// ... (ฟังก์ชัน login, getMyProfile, updateMyProfile, changeMyPassword ไม่มีการเปลี่ยนแปลง) ...
 const login = async (username, password) => {
     if (!username || !password) {
         throw new Error('Please provide username and password');
@@ -108,12 +108,21 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
 };
 
 const clearMySessions = async (username) => {
+    // --- START: แก้ไขส่วนนี้ ---
     const onlineSessions = await prisma.radacct.findMany({
         where: {
             username: username,
             acctstoptime: null
+        },
+        // เพิ่ม select เพื่อให้แน่ใจว่าได้ข้อมูลครบ
+        select: {
+            username: true,
+            nasipaddress: true,
+            acctsessionid: true,
+            framedipaddress: true
         }
     });
+    // --- END ---
 
     if (onlineSessions.length === 0) {
         return { cleared: 0, message: "No active sessions found to clear." };
@@ -122,14 +131,12 @@ const clearMySessions = async (username) => {
     let clearedCount = 0;
     for (const session of onlineSessions) {
         try {
-            // --- START: แก้ไขส่วนนี้ ---
             await kickUserSession({
                 username: session.username,
                 nasipaddress: session.nasipaddress,
                 acctsessionid: session.acctsessionid,
-                framedipaddress: session.framedipaddress, // <-- เพิ่ม IP ของ User เข้าไป
+                framedipaddress: session.framedipaddress,
             });
-            // --- END ---
             clearedCount++;
         } catch (error) {
             console.error(`Failed to kick session ${session.acctsessionid} for user ${username}:`, error.message);
