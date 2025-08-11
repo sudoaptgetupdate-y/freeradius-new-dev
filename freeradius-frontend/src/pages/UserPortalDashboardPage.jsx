@@ -262,21 +262,23 @@ export default function UserPortalDashboardPage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            // เมื่อคำสั่งสำเร็จ (Backend ตอบกลับมาเป็น status 2xx)
             toast.success(response.data.message || "You have been logged out successfully.", {
                 id: toastId,
             });
             
-            // ย้าย logout() มาไว้ในนี้ เพื่อให้ทำงานหลัง Backend ตอบกลับสำเร็จ
-            logout();
+            // หน่วงเวลาการลบ token เล็กน้อยเพื่อให้ toast แสดงผลเสร็จก่อนเกิด redirect
+            setTimeout(() => {
+                logout();
+            }, 50);
 
         } catch (error) {
-            // เมื่อคำสั่งล้มเหลว (Backend ตอบกลับมาเป็น status อื่นๆ)
             toast.error(error.response?.data?.message || "An unexpected error occurred during logout.", {
                 id: toastId,
             });
             // ยังคง logout ที่ฝั่ง frontend แม้ว่า backend จะ error
-            logout();
+            setTimeout(() => {
+                logout();
+            }, 50);
         }
     };
     // --- END ---
