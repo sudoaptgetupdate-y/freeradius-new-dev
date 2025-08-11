@@ -2,7 +2,7 @@
 const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { kickUserSession } = require('./kickService'); // <-- 1. Import kickService
+const { kickUserSession } = require('./kickService');
 
 const login = async (username, password) => {
     if (!username || !password) {
@@ -24,12 +24,12 @@ const login = async (username, password) => {
     return { token, user: userWithoutPassword };
 };
 
-// --- START: 2. เพิ่มฟังก์ชันใหม่ทั้งหมด ---
-
+// --- START: แก้ไขฟังก์ชันนี้ ---
 const getMyProfile = async (userId) => {
-    return prisma.user.findUnique({
+    const userProfile = await prisma.user.findUnique({
         where: { id: userId },
         select: {
+            id: true,
             username: true,
             full_name: true,
             email: true,
@@ -37,7 +37,44 @@ const getMyProfile = async (userId) => {
             organization: { select: { name: true } }
         }
     });
+
+    if (!userProfile) {
+        throw new Error('User not found.');
+    }
+
+    // ค้นหา Session ที่กำลังออนไลน์อยู่
+    const currentSession = await prisma.radacct.findFirst({
+        where: {
+            username: userProfile.username,
+            acctstoptime: null
+        },
+        orderBy: {
+            acctstarttime: 'desc'
+        }
+    });
+
+    // ค้นหาวันหมดอายุจาก radcheck
+    const expirationAttr = await prisma.radcheck.findFirst({
+        where: {
+            username: userProfile.username,
+            attribute: 'Expiration'
+        }
+    });
+    
+    return {
+        ...userProfile,
+        expirationDate: expirationAttr ? expirationAttr.value : null,
+        currentSession: currentSession ? {
+            ip: currentSession.framedipaddress,
+            mac: currentSession.callingstationid,
+            nas: currentSession.nasipaddress,
+            loginTime: currentSession.acctstarttime,
+            dataUp: currentSession.acctoutputoctets?.toString() || '0',
+            dataDown: currentSession.acctinputoctets?.toString() || '0',
+        } : null
+    };
 };
+// --- END ---
 
 const updateMyProfile = async (userId, data) => {
     const { full_name, email, phoneNumber } = data;
@@ -51,14 +88,11 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error("User not found.");
 
-    // 1. ตรวจสอบรหัสผ่านเก่า
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) throw new Error("Your old password is not correct.");
 
-    // 2. เข้ารหัสผ่านใหม่
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    // 3. อัปเดตข้อมูลใน Transaction เดียวกัน
     return prisma.$transaction([
         prisma.user.update({
             where: { id: userId },
@@ -66,7 +100,6 @@ const changeMyPassword = async (userId, oldPassword, newPassword) => {
         }),
         prisma.radcheck.update({
             where: { 
-                // ใช้ unique identifier ที่เราสร้างไว้ใน schema
                 username_attribute: { 
                     username: user.username, 
                     attribute: 'Crypt-Password' 

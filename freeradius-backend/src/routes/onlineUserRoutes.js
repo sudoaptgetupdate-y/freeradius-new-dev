@@ -1,6 +1,6 @@
 // src/routes/onlineUserRoutes.js
 const express = require('express');
-const { listOnlineUsers, kickUser } = require('../controllers/onlineUsersController');
+const { listOnlineUsers, kickUser, clearStale } = require('../controllers/onlineUsersController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
 
@@ -15,5 +15,8 @@ router.get('/', listOnlineUsers);
 
 // POST /api/online-users/kick -> สั่ง Kick User
 router.post('/kick', kickUser);
+
+// POST /api/online-users/clear-stale -> เคลียร์ Session ที่ค้าง
+router.post('/clear-stale', clearStale);
 
 module.exports = router;

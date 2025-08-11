@@ -4,7 +4,6 @@ const kickService = require('../services/kickService');
 
 const listOnlineUsers = async (req, res, next) => {
   try {
-    // ส่ง req.query ทั้งหมดไปให้ Service
     const result = await onlineUserService.getOnlineUsers(req.query);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
@@ -22,7 +21,17 @@ const kickUser = async (req, res, next) => {
   }
 };
 
+const clearStale = async (req, res, next) => {
+  try {
+    const result = await onlineUserService.clearStaleSessions();
+    res.status(200).json({ success: true, message: `${result.clearedCount} stale session(s) cleared.`, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listOnlineUsers,
   kickUser,
+  clearStale,
 };

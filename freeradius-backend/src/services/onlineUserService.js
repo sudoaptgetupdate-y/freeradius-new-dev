@@ -124,6 +124,26 @@ const getOnlineUsers = async (filters = {}) => {
   };
 };
 
+const clearStaleSessions = async () => {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const result = await prisma.radacct.updateMany({
+    where: {
+      acctstoptime: null,
+      acctstarttime: {
+        lt: twentyFourHoursAgo,
+      },
+    },
+    data: {
+      acctstoptime: new Date(),
+      acctterminatecause: 'Admin-Reset',
+    },
+  });
+
+  return { clearedCount: result.count };
+};
+
 module.exports = {
   getOnlineUsers,
+  clearStaleSessions,
 };

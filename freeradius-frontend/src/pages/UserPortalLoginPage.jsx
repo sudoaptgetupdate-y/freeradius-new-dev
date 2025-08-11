@@ -11,38 +11,45 @@ import { toast } from "sonner";
 
 export default function UserPortalLoginPage() {
     const navigate = useNavigate();
-    const { login, token } = useUserAuthStore();
+    const { login, token, _hasHydrated } = useUserAuthStore();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [loginData, setLoginData] = useState(null);
 
-    // --- START: เพิ่ม Logic การ Redirect ที่เสถียร ---
+    // Effect นี้จะรอฟังการเปลี่ยนแปลงของ loginData
     useEffect(() => {
-        // Hook นี้จะทำงานทุกครั้งที่ค่า token เปลี่ยนแปลง
-        if (token) {
-            // ถ้ามี token แสดงว่า login สำเร็จแล้ว ให้ redirect ไปหน้า dashboard
+        if (loginData) {
+            login(loginData.token, loginData.user);
             navigate('/portal/dashboard', { replace: true });
         }
-    }, [token, navigate]);
-    // --- END ---
+    }, [loginData, login, navigate]);
+
+    // Effect นี้จะจัดการกรณีที่ User มี Token อยู่แล้ว (เช่น refresh หน้า)
+    useEffect(() => {
+        if (_hasHydrated && token) {
+            navigate('/portal/dashboard', { replace: true });
+        }
+    }, [_hasHydrated, token, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         try {
             const response = await axiosInstance.post('/portal/login', { username, password });
-            const { token, user: userData } = response.data;
-            toast.success(`Welcome back, ${userData.full_name || userData.username}!`);
-            // แค่สั่ง login, useEffect ที่เราสร้างไว้จะจัดการเรื่องการ redirect เอง
-            login(token, userData);
+            toast.success(`Welcome back, ${response.data.user.full_name || response.data.user.username}!`);
+            setLoginData(response.data);
         } catch (error) {
             toast.error("Login Failed", {
               description: error.response?.data?.message || "Please check your credentials.",
             });
-        } finally {
             setIsLoading(false);
         }
     };
+    
+    if (!_hasHydrated) {
+        return null; // รอจนกว่าข้อมูลจาก localStorage จะพร้อมใช้งาน
+    }
 
     return (
         <>

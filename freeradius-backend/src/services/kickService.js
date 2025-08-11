@@ -1,6 +1,6 @@
 // src/services/kickService.js
 const prisma = require('../prisma');
-const { execFile } = require('child_process'); // 1. เปลี่ยนมาใช้ execFile
+const { execFile } = require('child_process');
 const os = require('os');
 
 /**
@@ -11,23 +11,22 @@ const os = require('os');
  * @returns {Promise<string>} A promise that resolves with the stdout of the command.
  */
 const executeCommand = (command, args, stdinData) => {
-  // ยังคงจำลองการทำงานบน OS อื่นที่ไม่ใช่ Linux
   if (os.platform() !== 'linux') {
     console.log(`SKIPPING command on non-linux OS: "${command} ${args.join(' ')}"`);
     return Promise.resolve('Kick command simulated on non-Linux OS.');
   }
 
-  // 2. เปลี่ยนมาใช้ execFile ซึ่งปลอดภัยกว่า
   return new Promise((resolve, reject) => {
     const child = execFile(command, args, (error, stdout, stderr) => {
       if (error) {
-        reject(new Error(stderr || error.message));
+        // We don't reject here anymore, as failure is expected for stale sessions.
+        // We resolve with the error message to allow the caller to log it.
+        resolve(stderr || error.message);
         return;
       }
       resolve(stdout);
     });
 
-    // 3. ส่งข้อมูล user ผ่าน stdin แทนการต่อ string ใน command
     if (stdinData) {
       child.stdin.write(stdinData);
       child.stdin.end();
@@ -36,13 +35,13 @@ const executeCommand = (command, args, stdinData) => {
 };
 
 /**
- * Kick a user session by sending a Disconnect-Request packet.
+ * Kicks a user session by sending a Disconnect-Request and force-closing the session in the database.
+ * This handles both active and stale sessions.
  * @param {object} sessionData - The session data including username, nasipaddress, acctsessionid.
  */
 const kickUserSession = async (sessionData) => {
   const { username, nasipaddress, acctsessionid } = sessionData;
 
-  // 4. เพิ่มการตรวจสอบ Input เบื้องต้น เพื่อป้องกันอักขระแปลกปลอม
   if (!/^[a-zA-Z0-9._-]+$/.test(username) || 
       !/^[a-zA-Z0-9:.-]+$/.test(nasipaddress) || 
       !/^[a-zA-Z0-9]+$/.test(acctsessionid)) {
@@ -63,11 +62,7 @@ const kickUserSession = async (sessionData) => {
 
   const nasSecret = nas.secret;
   const disconnectPort = 3799;
-
-  // 5. เตรียมข้อมูลที่จะส่งผ่าน stdin
   const stdinData = `User-Name=${username},Acct-Session-Id=${acctsessionid}`;
-  
-  // 6. เตรียม arguments แยกเป็นอาร์เรย์
   const args = [
     '-x',
     `${nasipaddress}:${disconnectPort}`,
@@ -75,10 +70,30 @@ const kickUserSession = async (sessionData) => {
     nasSecret,
   ];
 
-  console.log(`Executing kick command: /usr/bin/radclient with args: [${args.join(', ')}]`);
+  console.log(`Attempting to send Disconnect-Request for user ${username} on NAS ${nasipaddress}`);
+  // We try to kick the user but don't stop if it fails (e.g., stale session)
+  const radclientOutput = await executeCommand('/usr/bin/radclient', args, stdinData);
+  console.log(`radclient output: ${radclientOutput}`);
 
-  // 7. รันคำสั่งอย่างปลอดภัยโดยแยกระหว่าง "คำสั่ง", "arguments", และ "ข้อมูล"
-  return executeCommand('/usr/bin/radclient', args, stdinData);
+  // Regardless of the kick result, we force-close the session in the database.
+  console.log(`Force-closing session in database for user ${username} (Acct-Session-Id: ${acctsessionid})`);
+  const updateResult = await prisma.radacct.updateMany({
+    where: {
+      acctsessionid: acctsessionid,
+      username: username,
+      acctstoptime: null, // Only update sessions that are currently marked as online
+    },
+    data: {
+      acctstoptime: new Date(),
+      acctterminatecause: 'Admin-Disconnect',
+    },
+  });
+
+  if (updateResult.count === 0) {
+    console.log(`Session for user ${username} was already closed in the database.`);
+  }
+
+  return { radclientOutput, dbUpdateResult: updateResult };
 };
 
 module.exports = {

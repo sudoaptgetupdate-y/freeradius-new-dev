@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-// --- START: อัปเกรด Template A เป็น "Full-Screen Background with Bottom Content" ---
 const TemplateA = ({ ad, onContinue }) => {
     const [countdown, setCountdown] = useState(ad.countdown === null ? -1 : ad.countdown);
     const imageUrl = ad.imageUrl || 'https://via.placeholder.com/1920x1080?text=Advertisement';
@@ -23,10 +22,7 @@ const TemplateA = ({ ad, onContinue }) => {
             className="relative w-full h-full bg-cover bg-center flex flex-col justify-end"
             style={{ backgroundImage: `url(${imageUrl})` }}
         >
-            {/* Gradient Overlay จากล่างขึ้นบน เพื่อให้ข้อความอ่านง่าย */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-
-            {/* Content Container ที่อยู่ด้านล่าง */}
             <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -53,9 +49,7 @@ const TemplateA = ({ ad, onContinue }) => {
         </div>
     );
 };
-// --- END ---
 
-// Template B (ไม่เปลี่ยนแปลง)
 const TemplateB = ({ ad, onContinue }) => {
     const imageUrl = ad.imageUrl || 'https://via.placeholder.com/1280x720?text=Advertisement';
     return (
@@ -80,7 +74,6 @@ const TemplateB = ({ ad, onContinue }) => {
     );
 };
 
-// Template C (ไม่เปลี่ยนแปลง)
 const TemplateC = ({ ad, onContinue }) => {
     const countdownDuration = ad.countdown === null ? -1 : ad.countdown;
     const [countdown, setCountdown] = useState(countdownDuration);
@@ -145,7 +138,7 @@ export default function AdLandingPage() {
     }, [ad, navigate]);
 
     const handleContinue = () => {
-        window.location.href = ad?.buttonUrl || 'https://www.google.com';
+        navigate('/portal/dashboard', { replace: true });
     };
 
     if (!ad) {

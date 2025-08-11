@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { LogOut, KeyRound, WifiOff, Check, X, Mail, Phone, Building, CalendarOff, Globe } from 'lucide-react';
+import { LogOut, KeyRound, WifiOff, Check, X, Mail, Phone, Building, CalendarOff, Globe, ArrowDown, ArrowUp, Server, Clock } from 'lucide-react';
 import useSWR from 'swr';
 import axiosInstance from '@/api/axiosInstance';
 import { toast } from 'sonner';
@@ -21,7 +21,30 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 
-// Custom Hook สำหรับดึงข้อมูล Settings
+// --- START: เพิ่ม Helper Functions ---
+const formatBytes = (bytes, decimals = 2) => {
+    if (!bytes || bytes === "0") return '0 Bytes';
+    const b = BigInt(bytes);
+    if (b === 0n) return '0 Bytes';
+    const k = 1024n;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    let tempBytes = b;
+    while (tempBytes >= k && i < sizes.length - 1) {
+        tempBytes /= k;
+        i++;
+    }
+    return `${parseFloat((Number(b) / Number(k ** BigInt(i))).toFixed(dm))} ${sizes[i]}`;
+};
+
+const formatMacAddress = (mac) => {
+    if (!mac || typeof mac !== 'string') return 'N/A';
+    const cleanedMac = mac.replace(/[:-]/g, '');
+    return (cleanedMac.match(/.{1,2}/g) || []).join(':').toUpperCase();
+};
+// --- END ---
+
 const usePortalSettings = () => {
     const [settings, setSettings] = useState({ logoUrl: '' });
     useEffect(() => {
@@ -32,8 +55,6 @@ const usePortalSettings = () => {
     return settings;
 };
 
-
-// Component สำหรับแสดงผลการตรวจสอบรหัสผ่าน
 const PasswordRequirement = ({ met, text }) => (
     <div className={cn("flex items-center text-sm transition-colors", met ? "text-emerald-600" : "text-muted-foreground")}>
         {met ? <Check className="h-4 w-4 mr-2" /> : <X className="h-4 w-4 mr-2 text-red-500" />}
@@ -50,7 +71,6 @@ const PasswordValidationChecks = ({ checks }) => (
     </div>
 );
 
-// Component สำหรับ Dialog เปลี่ยนรหัสผ่าน
 const ChangePasswordDialog = ({ token }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -144,17 +164,13 @@ const ChangePasswordDialog = ({ token }) => {
     );
 };
 
-// Component สำหรับการ์ดข้อมูลผู้ใช้ที่ออกแบบใหม่
 const UserInfoCard = ({ profile, logoUrl }) => {
-    const currentSession = profile.currentSession;
-    const expirationDate = profile.expirationDate;
-
     return (
         <Card className="h-full flex flex-col">
             <CardHeader className="items-center text-center">
                 <div className="w-24 h-24 rounded-full border overflow-hidden mb-4 bg-slate-200">
                     <img
-                        src={logoUrl || "/uploads/logo.png"} // ใช้ logoUrl ถ้ามี, ถ้าไม่มีให้ใช้รูป Default
+                        src={logoUrl || "/uploads/logo.png"}
                         alt="Avatar"
                         className="object-cover w-full h-full"
                     />
@@ -167,31 +183,60 @@ const UserInfoCard = ({ profile, logoUrl }) => {
                     <InfoRow icon={Mail} label="Email" value={profile.email} />
                     <InfoRow icon={Phone} label="Phone" value={profile.phoneNumber} />
                     <InfoRow icon={Building} label="Organization" value={profile.organization?.name} />
-                    <InfoRow icon={CalendarOff} label="Expires On" value={expirationDate ? format(new Date(expirationDate), 'dd MMM yyyy') : 'No expiration'} />
+                    <InfoRow icon={CalendarOff} label="Account Expires" value={profile.expirationDate ? format(new Date(profile.expirationDate), 'dd MMM yyyy, HH:mm') : 'No expiration'} />
                 </div>
-                {currentSession && (
-                    <div className="border-t pt-4">
-                        <h4 className="font-semibold mb-2 flex items-center gap-2">
-                           <Globe className="h-4 w-4 text-emerald-500"/> Current Session
-                        </h4>
-                        <div className="space-y-3 text-sm">
-                            <InfoRow label="IP Address" value={currentSession.ip} />
-                            <InfoRow label="Logged In" value={formatDistanceToNowStrict(new Date(currentSession.loginTime), { addSuffix: true })} />
-                        </div>
-                    </div>
-                )}
             </CardContent>
         </Card>
     );
 };
 
-// Component ย่อยสำหรับแสดงข้อมูลแต่ละแถว
+// --- START: Component ใหม่สำหรับแสดงข้อมูล Session ---
+const SessionInfoCard = ({ session }) => {
+    if (!session) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5 text-muted-foreground"/>Current Session</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center text-muted-foreground py-10">
+                    <p>You are not currently connected to the network.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    const dataUp = BigInt(session.dataUp || 0);
+    const dataDown = BigInt(session.dataDown || 0);
+    const totalData = dataUp + dataDown;
+
+    return (
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5 text-emerald-500"/>Current Session</CardTitle>
+                <CardDescription>Details of your active connection.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-x-4 gap-y-6 pt-2">
+                <InfoRow label="IP Address" value={session.ip} />
+                <InfoRow label="MAC Address" value={formatMacAddress(session.mac)} />
+                <InfoRow label="Connection Time" value={formatDistanceToNowStrict(new Date(session.loginTime), { addSuffix: true })} />
+                <InfoRow label="Connected via" value={session.nas} />
+                <InfoRow icon={ArrowDown} label="Data Down" value={formatBytes(dataDown)} />
+                <InfoRow icon={ArrowUp} label="Data Up" value={formatBytes(dataUp)} />
+                <div className="col-span-2 border-t pt-4">
+                     <InfoRow icon={Server} label="Total Data Used" value={formatBytes(totalData)} />
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+// --- END ---
+
 const InfoRow = ({ icon: Icon, label, value }) => (
     <div className="flex items-start gap-3">
-        {Icon && <Icon className="h-4 w-4 mt-0.5 text-muted-foreground" />}
+        {Icon && <Icon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />}
         <div className="flex-1">
-            <p className="text-muted-foreground">{label}</p>
-            <p className="font-medium break-words">{value || 'Not set'}</p>
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="font-medium break-words text-sm">{value || 'Not set'}</p>
         </div>
     </div>
 );
@@ -201,11 +246,12 @@ export default function UserPortalDashboardPage() {
     const { token, logout, setUser, user: initialProfile } = useUserAuthStore();
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     
-    const { data: profile, error } = useSWR('/portal/me', fetcher, {
-      fallbackData: initialProfile
+    const { data: profile, error, mutate } = useSWR('/portal/me', fetcher, {
+      fallbackData: initialProfile,
+      revalidateOnFocus: true,
     });
 
-    const settings = usePortalSettings(); // เรียกใช้ Hook เพื่อดึงข้อมูล Settings
+    const settings = usePortalSettings();
 
     useEffect(() => {
         if (profile) {
@@ -213,10 +259,27 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    const handleClearSessions = () => {
+    const handleLogout = () => {
         toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
-            loading: 'Clearing sessions...',
-            success: (res) => res.data.message,
+            loading: 'Logging out...',
+            success: (res) => {
+                logout(); 
+                return res.data.message || "You have been logged out.";
+            },
+            error: (err) => {
+                logout();
+                return err.response?.data?.message || 'Logout failed but session cleared locally.';
+            },
+        });
+    };
+
+    const handleClearOtherSessions = () => {
+        toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
+            loading: 'Clearing other sessions...',
+            success: (res) => {
+                mutate();
+                return res.data.message;
+            },
             error: (err) => err.response?.data?.message || 'Failed to clear sessions.',
         });
     };
@@ -233,8 +296,8 @@ export default function UserPortalDashboardPage() {
         >
             <header className="bg-white shadow-sm">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                    <h1 className="text-xl font-bold text-slate-800">User Portal</h1>
-                    <Button variant="ghost" size="sm" onClick={logout}>
+                    <h1 className="text-xl font-bold text-slate-800">Connection Status</h1>
+                    <Button variant="ghost" size="sm" onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" /> Logout
                     </Button>
                 </div>
@@ -244,10 +307,13 @@ export default function UserPortalDashboardPage() {
                     <UserInfoCard profile={profile} logoUrl={settings.logoUrl} />
                 </div>
                 <div className="md:col-span-2 space-y-8">
+                    {/* --- START: เพิ่มการเรียกใช้ SessionInfoCard --- */}
+                    <SessionInfoCard session={profile.currentSession} />
+                    {/* --- END --- */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Security</CardTitle>
-                            <CardDescription>Manage your password and active sessions.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Security & Sessions</CardTitle>
+                            <CardDescription>Manage your password and active connections.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
@@ -257,24 +323,24 @@ export default function UserPortalDashboardPage() {
                             </div>
                             <hr/>
                             <div>
-                                <h4 className="font-semibold">Active Sessions</h4>
-                                <p className="text-sm text-muted-foreground mb-2">If you can't log in on a new device, clear your old sessions.</p>
+                                <h4 className="font-semibold">Active Connections</h4>
+                                <p className="text-sm text-muted-foreground mb-2">If you're having trouble logging in on a new device, you can disconnect all your other sessions.</p>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="destructive">
-                                            <WifiOff className="mr-2 h-4 w-4" /> Clear All Sessions
+                                            <WifiOff className="mr-2 h-4 w-4" /> Disconnect All Other Devices
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                This will disconnect all devices currently logged in with your account.
+                                                This will disconnect all devices currently logged in with your account. You will remain logged in on this device.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleClearSessions}>Confirm & Disconnect</AlertDialogAction>
+                                            <AlertDialogAction onClick={handleClearOtherSessions}>Confirm & Disconnect</AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>

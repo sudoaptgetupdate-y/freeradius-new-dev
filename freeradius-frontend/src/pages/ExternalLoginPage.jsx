@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
+import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import { CheckCircle, Info, HelpCircle } from 'lucide-react';
+import { Info, HelpCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,10 +23,10 @@ import { Separator } from '@/components/ui/separator';
 
 export default function ExternalLoginPage() {
     const navigate = useNavigate();
+    const { login } = useUserAuthStore();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [loginSuccess, setLoginSuccess] = useState(false);
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
@@ -52,22 +53,27 @@ export default function ExternalLoginPage() {
         setIsLoading(true);
         try {
             const response = await axiosInstance.post('/external-auth/login', formData);
-            const { advertisement } = response.data.data;
+            const { token, user, advertisement } = response.data.data;
+            
+            // 1. บันทึก Token และข้อมูล User ลง Store
+            login(token, user);
 
+            toast.success("Login Successful!", {
+                description: "Redirecting...",
+            });
+
+            // 2. สั่ง Redirect ทันที
             if (advertisement && advertisement.status === 'active') {
                 navigate('/ad-landing', { state: { ad: advertisement }, replace: true });
             } else {
-                toast.success("Login Successful!", {
-                    description: "You can now access the internet.",
-                });
-                setLoginSuccess(true);
+                navigate('/portal/dashboard', { replace: true });
             }
+
         } catch (error) {
             toast.error("Login Failed", {
                 description: error.response?.data?.message || "Please check your credentials.",
             });
-        } finally {
-            setIsLoading(false);
+            setIsLoading(false); // หยุด Loading เมื่อเกิด Error
         }
     };
     
@@ -78,28 +84,20 @@ export default function ExternalLoginPage() {
     return (
         <>
             <div className="text-center mb-6 px-6">
-                {settings.externalLoginEnabled === 'true' && !loginSuccess ? (
+                {settings.externalLoginEnabled === 'true' ? (
                     <>
                         <CardTitle className="text-2xl">User Login</CardTitle>
                         <CardDescription>Please enter your credentials to access the network.</CardDescription>
                     </>
-                ) : !loginSuccess ? (
+                ) : (
                      <>
                         <CardTitle className="text-2xl">Login Disabled</CardTitle>
                         <CardDescription>Login is currently unavailable.</CardDescription>
                     </>
-                ) : (
-                    <CardTitle className="text-2xl">Login Successful</CardTitle>
                 )}
             </div>
             
-            {loginSuccess ? (
-                <CardContent className="text-center p-8">
-                    <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold">Login Successful</h3>
-                    <p className="text-muted-foreground mt-2">You are now connected. You can close this page.</p>
-                </CardContent>
-            ) : settings.externalLoginEnabled === 'true' ? (
+            {settings.externalLoginEnabled === 'true' ? (
                 <>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">

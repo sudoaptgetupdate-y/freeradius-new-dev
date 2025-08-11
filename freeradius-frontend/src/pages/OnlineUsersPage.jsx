@@ -9,14 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Wifi, ZapOff, ArrowUpDown } from "lucide-react";
+import { Wifi, ZapOff, ArrowUpDown, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-// --- START: เพิ่ม format จาก date-fns ---
 import { formatDistanceToNow, format } from 'date-fns';
-// --- END ---
 
-// --- Helper Functions (ไม่เปลี่ยนแปลง) ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const b = typeof bytes === 'bigint' || typeof bytes === 'number' ? bytes : BigInt(bytes);
@@ -83,6 +80,7 @@ export default function OnlineUsersPage() {
     });
 
     const [userToKick, setUserToKick] = useState(null);
+    const [isClearStaleDialogOpen, setIsClearStaleDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchOrgs = async () => {
@@ -125,6 +123,23 @@ export default function OnlineUsersPage() {
         }
     };
 
+    const confirmClearStaleSessions = async () => {
+        toast.promise(
+            axiosInstance.post('/online-users/clear-stale', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            }),
+            {
+                loading: 'Clearing stale sessions...',
+                success: (res) => {
+                    refreshData();
+                    return res.data.message || 'Stale sessions cleared.';
+                },
+                error: (err) => err.response?.data?.message || "Failed to clear stale sessions.",
+                finally: () => setIsClearStaleDialogOpen(false)
+            }
+        );
+    };
+
     return (
         <>
             <Card>
@@ -134,7 +149,12 @@ export default function OnlineUsersPage() {
                             <CardTitle className="flex items-center gap-2"><Wifi className="h-6 w-6" />Online Users</CardTitle>
                             <CardDescription>Showing currently active user sessions.</CardDescription>
                         </div>
-                        <Button onClick={refreshData} variant="outline">Refresh</Button>
+                        <div className="flex items-center gap-2">
+                             <Button onClick={() => setIsClearStaleDialogOpen(true)} variant="outline">
+                                <Trash2 className="mr-2 h-4 w-4" /> Clear Stale Sessions
+                            </Button>
+                            <Button onClick={refreshData} variant="outline">Refresh</Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -189,9 +209,7 @@ export default function OnlineUsersPage() {
                                             <TableRow key={user.radacctid}>
                                                 <TableCell className="font-medium">{user.full_name}<br/><span className="text-xs text-muted-foreground">{user.username}</span></TableCell>
                                                 <TableCell className="font-mono">{user.framedipaddress}</TableCell>
-                                                {/* --- START: แก้ไขการแสดงผลเวลา --- */}
                                                 <TableCell>{format(new Date(user.acctstarttime), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
-                                                {/* --- END --- */}
                                                 <TableCell>{calculateDuration(user.acctstarttime)}</TableCell>
                                                 <TableCell className="font-mono">{formatMacAddress(user.callingstationid)}</TableCell>
                                                 <TableCell>{formatBytes(dataUp)}</TableCell>
@@ -249,6 +267,21 @@ export default function OnlineUsersPage() {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmKickUser} className="bg-destructive hover:bg-destructive/90">Confirm Kick</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isClearStaleDialogOpen} onOpenChange={setIsClearStaleDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Clear Stale Sessions</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action will close any sessions that have been open for more than 24 hours. It will not affect users who are actively online. Are you sure you want to continue?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmClearStaleSessions}>Confirm Clear</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

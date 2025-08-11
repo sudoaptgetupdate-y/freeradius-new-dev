@@ -256,7 +256,6 @@ model Advertisement {
   headerText  String?
   bodyText    String?  @db.Text
   buttonText  String   @default("Continue to Internet")
-  buttonUrl   String   @default("https://www.ntplc.co.th")
   countdown   Int?     @default(5)
   status      String   @default("active")
   createdAt   DateTime @default(now())

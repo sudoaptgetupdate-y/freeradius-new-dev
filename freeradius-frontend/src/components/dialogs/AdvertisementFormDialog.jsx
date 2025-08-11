@@ -18,7 +18,7 @@ const initialFormData = {
     headerText: '',
     bodyText: '',
     buttonText: 'Continue to Internet',
-    buttonUrl: 'https://www.google.com',
+    // buttonUrl is no longer needed
     countdown: 5,
     status: 'active',
 };
@@ -38,7 +38,6 @@ export default function AdvertisementFormDialog({ isOpen, setIsOpen, ad, onSave 
                 headerText: ad.headerText || '',
                 bodyText: ad.bodyText || '',
                 buttonText: ad.buttonText || 'Continue to Internet',
-                buttonUrl: ad.buttonUrl || 'https://www.google.com',
                 countdown: ad.countdown === null ? 0 : ad.countdown,
                 status: ad.status || 'active',
             });
@@ -129,20 +128,16 @@ export default function AdvertisementFormDialog({ isOpen, setIsOpen, ad, onSave 
                         <Label htmlFor="bodyText">Body Text (สำหรับ A, B)</Label>
                         <Textarea id="bodyText" value={formData.bodyText} onChange={handleInputChange} placeholder="Enjoy high-speed internet access." />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="buttonText">Button Text</Label>
-                            <Input id="buttonText" value={formData.buttonText} onChange={handleInputChange} required />
-                        </div>
-                        <div className="space-y-2">
-                             <Label htmlFor="buttonUrl">Button URL (Redirect)</Label>
-                            <Input id="buttonUrl" value={formData.buttonUrl} onChange={handleInputChange} placeholder="https://www.google.com" required />
-                        </div>
+                    {/* --- START: แก้ไขส่วนนี้ --- */}
+                    <div className="space-y-2">
+                        <Label htmlFor="buttonText">Button Text</Label>
+                        <Input id="buttonText" value={formData.buttonText} onChange={handleInputChange} required />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="countdown">Countdown (seconds)</Label>
                         <Input id="countdown" type="number" value={formData.countdown ?? ''} onChange={handleInputChange} placeholder="e.g., 5. Leave blank for no countdown." />
                     </div>
+                    {/* --- END --- */}
                 </form>
                 <DialogFooter className="mt-4">
                     <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
