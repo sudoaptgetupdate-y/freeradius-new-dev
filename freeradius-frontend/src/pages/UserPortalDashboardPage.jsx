@@ -273,15 +273,13 @@ export default function UserPortalDashboardPage() {
 
     // --- START: แก้ไขฟังก์ชันนี้ ---
     const handleClearOtherSessions = () => {
-        // ไม่ต้องใช้ toast.promise แล้ว เพื่อให้ควบคุม Flow ได้เอง
-        axiosInstance.post('/portal/me/clear-sessions', {}, { 
-            headers: { Authorization: `Bearer ${token}` } 
-        }).then(response => {
-            toast.success(response.data.message || "Successfully cleared other sessions.");
-            // เมื่อสำเร็จ ให้ redirect ไปยังหน้าใหม่
-            navigate('/portal/sessions-cleared', { replace: true });
-        }).catch(error => {
-            toast.error(error.response?.data?.message || 'Failed to clear sessions.');
+        toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
+            loading: 'Disconnecting other sessions...',
+            success: (res) => {
+                mutate(); // สั่งให้โหลดข้อมูลโปรไฟล์ใหม่ (Session จะหายไป)
+                return res.data.message || "Successfully disconnected other sessions.";
+            },
+            error: (err) => err.response?.data?.message || 'Failed to clear sessions.',
         });
     };
     // --- END ---
