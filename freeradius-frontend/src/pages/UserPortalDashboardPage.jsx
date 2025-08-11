@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { LogOut, KeyRound, WifiOff, Check, X, Mail, Phone, Building, CalendarOff, Globe, ArrowDown, ArrowUp, Server, Clock } from 'lucide-react';
+import { LogOut, KeyRound, WifiOff, Check, X, Mail, Phone, Building, CalendarOff, Globe, ArrowDown, ArrowUp, Server } from 'lucide-react';
 import useSWR from 'swr';
 import axiosInstance from '@/api/axiosInstance';
 import { toast } from 'sonner';
@@ -21,7 +21,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 
-// --- START: เพิ่ม Helper Functions ---
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -43,7 +42,6 @@ const formatMacAddress = (mac) => {
     const cleanedMac = mac.replace(/[:-]/g, '');
     return (cleanedMac.match(/.{1,2}/g) || []).join(':').toUpperCase();
 };
-// --- END ---
 
 const usePortalSettings = () => {
     const [settings, setSettings] = useState({ logoUrl: '' });
@@ -190,7 +188,6 @@ const UserInfoCard = ({ profile, logoUrl }) => {
     );
 };
 
-// --- START: Component ใหม่สำหรับแสดงข้อมูล Session ---
 const SessionInfoCard = ({ session }) => {
     if (!session) {
         return (
@@ -229,7 +226,6 @@ const SessionInfoCard = ({ session }) => {
         </Card>
     )
 }
-// --- END ---
 
 const InfoRow = ({ icon: Icon, label, value }) => (
     <div className="flex items-start gap-3">
@@ -240,7 +236,6 @@ const InfoRow = ({ icon: Icon, label, value }) => (
         </div>
     </div>
 );
-
 
 export default function UserPortalDashboardPage() {
     const { token, logout, setUser, user: initialProfile } = useUserAuthStore();
@@ -259,19 +254,28 @@ export default function UserPortalDashboardPage() {
         }
     }, [profile, setUser]);
     
-    const handleLogout = () => {
-        toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
-            loading: 'Logging out...',
-            success: (res) => {
-                logout(); 
-                return res.data.message || "You have been logged out.";
-            },
-            error: (err) => {
-                logout();
-                return err.response?.data?.message || 'Logout failed but session cleared locally.';
-            },
-        });
+    // --- START: แก้ไขฟังก์ชันนี้ใหม่ทั้งหมด ---
+    const handleLogout = async () => {
+        const toastId = toast.loading("Logging out...");
+        try {
+            const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // เมื่อคำสั่งสำเร็จ (Backend ตอบกลับมาเป็น status 2xx)
+            toast.success(response.data.message || "You have been logged out successfully.", {
+                id: toastId,
+            });
+        } catch (error) {
+            // เมื่อคำสั่งล้มเหลว (Backend ตอบกลับมาเป็น status อื่นๆ)
+            toast.error(error.response?.data?.message || "An unexpected error occurred during logout.", {
+                id: toastId,
+            });
+        } finally {
+            // ไม่ว่าจะสำเร็จหรือล้มเหลว ให้เคลียร์ token ในเครื่องเสมอ
+            logout();
+        }
     };
+    // --- END ---
 
     const handleClearOtherSessions = () => {
         toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
@@ -307,9 +311,7 @@ export default function UserPortalDashboardPage() {
                     <UserInfoCard profile={profile} logoUrl={settings.logoUrl} />
                 </div>
                 <div className="md:col-span-2 space-y-8">
-                    {/* --- START: เพิ่มการเรียกใช้ SessionInfoCard --- */}
                     <SessionInfoCard session={profile.currentSession} />
-                    {/* --- END --- */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Security & Sessions</CardTitle>
