@@ -276,15 +276,18 @@ export default function UserPortalDashboardPage() {
         }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้ Redirect ทำงานเสร็จสมบูรณ์
     };
 
-    const handleClearOtherSessions = () => {
-        toast.promise(axiosInstance.post('/portal/me/clear-sessions', {}, { headers: { Authorization: `Bearer ${token}` } }), {
-            loading: 'Clearing other sessions...',
-            success: (res) => {
-                mutate(); // สั่งให้ SWR โหลดข้อมูลใหม่เพื่ออัปเดตหน้าจอ
-                return res.data.message;
-            },
-            error: (err) => err.response?.data?.message || 'Failed to clear sessions.',
-        });
+    const handleClearOtherSessions = async () => {
+        const toastId = toast.loading("Clearing other sessions...");
+        try {
+            const response = await axiosInstance.post('/portal/me/clear-sessions', {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success(response.data.message, { id: toastId });
+            // เมื่อสำเร็จ ให้ redirect ไปยังหน้าใหม่
+            navigate('/portal/sessions-cleared', { replace: true });
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to clear sessions.', { id: toastId });
+        }
     };
 
     if (error && !profile) return <div>Failed to load profile. Please try again.</div>

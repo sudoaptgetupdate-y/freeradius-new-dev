@@ -35,7 +35,8 @@ import ExternalLoginPage from './pages/ExternalLoginPage.jsx';
 import AdLandingPage from './pages/AdLandingPage.jsx';
 import UserPortalLoginPage from './pages/UserPortalLoginPage.jsx';
 import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx';
-import LoggedOutPage from './pages/LoggedOutPage.jsx'; // 1. Import หน้าใหม่
+import LoggedOutPage from './pages/LoggedOutPage.jsx';
+import SessionsClearedPage from './pages/SessionsClearedPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -49,7 +50,8 @@ const router = createBrowserRouter([
           { path: 'register', element: <RegisterPage /> },
           { path: 'user-login', element: <ExternalLoginPage /> },
           { path: 'portal/login', element: <UserPortalLoginPage /> },
-          { path: 'portal/logged-out', element: <LoggedOutPage /> }, // 2. เพิ่ม Route ใหม่ (เป็น Public)
+          { path: 'portal/logged-out', element: <LoggedOutPage /> },
+          { path: 'portal/sessions-cleared', element: <SessionsClearedPage /> },
         ]
       },
       {

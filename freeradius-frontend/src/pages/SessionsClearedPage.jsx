@@ -1,25 +1,20 @@
-// src/pages/LoggedOutPage.jsx
+// src/pages/SessionsClearedPage.jsx
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function LoggedOutPage() {
-    const [countdown, setCountdown] = useState(5);
+export default function SessionsClearedPage() {
+    const [countdown, setCountdown] = useState(10); // ให้เวลานานขึ้นเล็กน้อยเผื่อผู้ใช้อยากอ่าน
 
     useEffect(() => {
-        // ถ้า countdown หมดแล้ว ให้ redirect
         if (countdown <= 0) {
             window.location.href = 'https://www.google.com';
             return;
         }
-
-        // ตั้งเวลาลดค่า countdown ทุก 1 วินาที
-        const timerId = setTimeout(() => {
-            setCountdown(countdown - 1);
-        }, 1000);
-
-        // Clear timer เมื่อ component ถูก unmount
+        const timerId = setTimeout(() => setCountdown(countdown - 1), 1000);
         return () => clearTimeout(timerId);
     }, [countdown]);
 
@@ -33,15 +28,18 @@ export default function LoggedOutPage() {
                 <Card className="w-full max-w-md text-center">
                     <CardHeader>
                         <CheckCircle className="mx-auto h-16 w-16 text-emerald-500 mb-4" />
-                        <CardTitle className="text-2xl">Logged Out Successfully</CardTitle>
+                        <CardTitle className="text-2xl">Sessions Cleared</CardTitle>
                         <CardDescription>
-                            You have been securely disconnected. You can now safely close this window.
+                            All your other active sessions have been disconnected. You can now log in on a new device.
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            Redirecting to Google in {countdown} seconds...
+                            This page will redirect to Google in {countdown} seconds.
                         </p>
+                        <Button asChild className="w-full">
+                            <Link to="/portal/dashboard">Back to Dashboard</Link>
+                        </Button>
                     </CardContent>
                 </Card>
             </motion.div>
