@@ -10,7 +10,7 @@ export default function LoggedOutPage() {
     useEffect(() => {
         // ถ้า countdown หมดแล้ว ให้ redirect
         if (countdown <= 0) {
-            window.location.href = 'http://www.google.com';
+            window.location.href = 'www.ntplc.co.th';
             return;
         }
 
