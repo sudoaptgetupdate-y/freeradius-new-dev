@@ -5,15 +5,16 @@ const jwt = require('jsonwebtoken');
 const { execFile } = require('child_process');
 const os = require('os');
 
-// --- START: เพิ่มฟังก์ชันใหม่สำหรับยิง RADIUS Auth ---
+// --- ฟังก์ชันใหม่สำหรับยิง RADIUS Auth ---
 const performRadiusAuth = (username, password) => {
   return new Promise((resolve, reject) => {
     if (os.platform() !== 'linux') {
       console.log(`[AUTH] Simulating RADIUS auth for user ${username} on non-linux OS.`);
-      return resolve(true); // บนเครื่องที่ไม่ใช่ Linux ให้ผ่านเสมอ
+      return resolve(true);
     }
 
     const command = '/usr/bin/radclient';
+    // Secret นี้ใช้สำหรับคุยกับ FreeRADIUS บน localhost เท่านั้น
     const args = ['-x', 'localhost:1812', 'auth', process.env.RADIUS_SECRET || 'testing123'];
     const stdinData = `User-Name="${username}",User-Password="${password}"`;
 
@@ -36,7 +37,7 @@ const performRadiusAuth = (username, password) => {
     child.stdin.end();
   });
 };
-// --- END ---
+// --- สิ้นสุดฟังก์ชันใหม่ ---
 
 const loginUser = async (loginData) => {
     const loginSetting = await prisma.setting.findUnique({
@@ -67,22 +68,22 @@ const loginUser = async (loginData) => {
     if (!user) { throw new Error('Invalid credentials.'); }
     if (user.status !== 'active') { throw new Error('Your account is currently disabled.'); }
     
-    // 1. ตรวจสอบรหัสผ่านกับ DB ก่อน (ยังคงเดิม)
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) { throw new Error('Invalid credentials.'); }
     
-    // --- START: แก้ไข Logic ส่วนนี้ ---
-    // 2. ทำการยืนยันตัวตนผ่าน RADIUS จริงๆ
-    await performRadiusAuth(username, password);
-
-    // 3. ทำงานส่วนที่เหลือตามปกติ
+    // --- START: แก้ไข Logic การทำงาน ---
     if (magic && post) {
-        // โหมด Captive Portal
+        // === CAPTIVE PORTAL MODE ===
+        // 1. ทำการยืนยันตัวตนผ่าน RADIUS จริงๆ ก่อน
+        await performRadiusAuth(username, password);
+        
+        // 2. เมื่อสำเร็จ ให้สร้าง URL Redirect กลับไปหา FortiGate (ยังคงส่ง username และ password)
         console.log(`Captive Portal login successful for user: ${username}. Redirecting back to FortiGate.`);
         const redirectUrl = `${post}?magic=${magic}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
         return { action: 'redirect', redirectUrl: redirectUrl };
+
     } else {
-        // โหมด Firewall Authentication
+        // === FIREWALL AUTHENTICATION MODE === (ทำงานเหมือนเดิมทุกประการ)
         console.log(`Firewall Authentication successful for user: ${username}.`);
         const token = jwt.sign(
           { id: user.id, username: user.username },
