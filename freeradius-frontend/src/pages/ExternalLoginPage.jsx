@@ -1,8 +1,7 @@
 // src/pages/ExternalLoginPage.jsx
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
-import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,33 +21,14 @@ import {
 import { Separator } from '@/components/ui/separator';
 
 export default function ExternalLoginPage() {
-    const navigate = useNavigate();
-    const location = useLocation(); // <-- 1. เรียกใช้ useLocation
-    const { login } = useUserAuthStore();
+    const location = useLocation(); // Hook สำหรับเข้าถึง URL ปัจจุบัน
+    const [magic, setMagic] = useState(''); // State สำหรับเก็บค่า magic token
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
-    // --- START: 2. สร้าง State สำหรับเก็บค่าจาก FortiGate ---
-    const [captivePortalParams, setCaptivePortalParams] = useState({
-        magic: null,
-        post: null,
-    });
-
-    useEffect(() => {
-        // ดึงค่าจาก URL query string เมื่อหน้าโหลด
-        const queryParams = new URLSearchParams(location.search);
-        const magic = queryParams.get('magic');
-        const post = queryParams.get('post');
-        if (magic && post) {
-            setCaptivePortalParams({ magic, post });
-            toast.info("Captive Portal Detected", { description: "Please log in to continue."});
-        }
-    }, [location.search]);
-    // --- END ---
-
+    // Effect สำหรับดึงค่า settings ของระบบ (เหมือนเดิม)
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => setSettings(response.data.data))
@@ -59,55 +39,24 @@ export default function ExternalLoginPage() {
           .finally(() => setIsPageLoading(false));
     }, []);
 
+    // Effect สำหรับดึงค่า 'magic' จาก URL query string
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const magicValue = params.get('magic');
+        if (magicValue) {
+            setMagic(magicValue);
+        } else {
+            console.warn("Magic token not found in URL.");
+        }
+    }, [location.search]);
+
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!agreed) {
-            toast.error("You must agree to the terms and conditions to log in.");
-            return;
-        }
-        setIsLoading(true);
+    // ไม่ใช้ handleSubmit ที่ส่งผ่าน axios แล้ว ปล่อยให้ form ทำงานตามปกติ
+    // สามารถลบฟังก์ชัน handleSubmit เดิมออกได้เลย
 
-        try {
-            // --- 3. แนบค่าจาก FortiGate ไปกับ Request ---
-            const payload = {
-                ...formData,
-                ...captivePortalParams
-            };
-            const response = await axiosInstance.post('/external-auth/login', payload);
-            // --- END ---
-            
-            // ตรวจสอบว่า Backend สั่งให้ Redirect หรือไม่
-            if (response.data.action === 'redirect') {
-                // ถ้าใช่ ให้เปลี่ยนหน้าไปที่ URL ที่ Backend ส่งมา
-                window.location.href = response.data.redirectUrl;
-                return; 
-            }
-
-            // ถ้าไม่ใช่ (เป็น Flow ปกติ) ให้ทำงานเหมือนเดิม
-            const { token, user, advertisement } = response.data.data;
-            login(token, user);
-            toast.success("Login Successful!", { description: "Redirecting..." });
-
-            if (advertisement && advertisement.status === 'active') {
-                navigate('/ad-landing', { state: { ad: advertisement }, replace: true });
-            } else {
-                navigate('/portal/dashboard', { replace: true });
-            }
-
-        } catch (error) {
-            toast.error("Login Failed", {
-                description: error.response?.data?.message || "Please check your credentials.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    // ... (ส่วน JSX ที่เหลือเหมือนเดิมทั้งหมด ไม่ต้องแก้ไข) ...
     if (isPageLoading) {
         return <div className="flex items-center justify-center p-8">Loading...</div>;
     }
@@ -131,19 +80,30 @@ export default function ExternalLoginPage() {
             {settings.externalLoginEnabled === 'true' ? (
                 <>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* หัวใจสำคัญของการแก้ไข:
+                          1. `action` ชี้ไปที่ URL ของ FortiGate Captive Portal
+                          2. `method` เป็น "POST"
+                          3. ไม่มี `onSubmit` ที่เรียกใช้ JavaScript
+                        */}
+                        <form action="http://192.168.146.1:1000/fgtauth" method="POST" className="space-y-4">
+                            
+                            {/* Input ที่ซ่อนไว้สำหรับส่งค่า magic กลับไป */}
+                            <input type="hidden" name="magic" value={magic} />
+                            
                             <div className="space-y-2">
                                 <Label htmlFor="username">Username</Label>
-                                <Input id="username" value={formData.username} onChange={handleInputChange} placeholder="Enter your username" required autoFocus/>
+                                {/* เพิ่ม attribute `name` เพื่อให้ form ส่งข้อมูลนี้ไป */}
+                                <Input id="username" name="username" value={formData.username} onChange={handleInputChange} placeholder="Enter your username" required autoFocus/>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
-                                <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required />
+                                {/* เพิ่ม attribute `name` เพื่อให้ form ส่งข้อมูลนี้ไป */}
+                                <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required />
                             </div>
                             <Dialog>
                                 <div className="space-y-2 pt-2">
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
+                                        <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} required />
                                         <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
                                             I have read and agree to the terms
                                         </Label>
@@ -162,8 +122,8 @@ export default function ExternalLoginPage() {
                                     <DialogFooter><DialogClose asChild><Button type="button">Close</Button></DialogClose></DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                            <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
-                                {isLoading ? 'Logging in...' : 'Login'}
+                            <Button type="submit" className="w-full !mt-6" disabled={!agreed || !magic}>
+                                Login
                             </Button>
                         </form>
                     </CardContent>

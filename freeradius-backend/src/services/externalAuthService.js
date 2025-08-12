@@ -1,43 +1,7 @@
 // src/services/externalAuthService.js
 const prisma = require('../prisma');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { execFile } = require('child_process');
-const os = require('os');
-
-// --- ฟังก์ชันใหม่สำหรับยิง RADIUS Auth ---
-const performRadiusAuth = (username, password) => {
-  return new Promise((resolve, reject) => {
-    if (os.platform() !== 'linux') {
-      console.log(`[AUTH] Simulating RADIUS auth for user ${username} on non-linux OS.`);
-      return resolve(true);
-    }
-
-    const command = '/usr/bin/radclient';
-    // Secret นี้ใช้สำหรับคุยกับ FreeRADIUS บน localhost เท่านั้น
-    const args = ['-x', 'localhost:1812', 'auth', process.env.RADIUS_SECRET || 'testing123'];
-    const stdinData = `User-Name="${username}",User-Password="${password}"`;
-
-    console.log(`[AUTH] Performing RADIUS auth for user: ${username}`);
-    const child = execFile(command, args, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`[AUTH] radclient error: ${stderr}`);
-        return reject(new Error('RADIUS authentication failed.'));
-      }
-      if (stdout.includes('Access-Accept')) {
-        console.log(`[AUTH] Received Access-Accept for user: ${username}`);
-        resolve(true);
-      } else {
-        console.log(`[AUTH] Received Access-Reject for user: ${username}. Output: ${stdout}`);
-        reject(new Error('Invalid credentials.'));
-      }
-    });
-
-    child.stdin.write(stdinData);
-    child.stdin.end();
-  });
-};
-// --- สิ้นสุดฟังก์ชันใหม่ ---
+const jwt = require('jsonwebtoken'); // <-- 1. Import jwt
 
 const loginUser = async (loginData) => {
     const loginSetting = await prisma.setting.findUnique({
@@ -48,7 +12,7 @@ const loginUser = async (loginData) => {
       throw new Error('Login is currently disabled by the administrator.');
     }
     
-    const { username, password, magic, post } = loginData;
+    const { username, password } = loginData;
 
     if (!username || !password) {
         throw new Error('Username and password are required.');
@@ -65,38 +29,34 @@ const loginUser = async (loginData) => {
         }
     });
 
-    if (!user) { throw new Error('Invalid credentials.'); }
-    if (user.status !== 'active') { throw new Error('Your account is currently disabled.'); }
-    
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if (!isPasswordMatch) { throw new Error('Invalid credentials.'); }
-    
-    // --- START: แก้ไข Logic การทำงาน ---
-    if (magic && post) {
-        // === CAPTIVE PORTAL MODE ===
-        // 1. ทำการยืนยันตัวตนผ่าน RADIUS จริงๆ ก่อน
-        await performRadiusAuth(username, password);
-        
-        // 2. เมื่อสำเร็จ ให้สร้าง URL Redirect กลับไปหา FortiGate (ยังคงส่ง username และ password)
-        console.log(`Captive Portal login successful for user: ${username}. Redirecting back to FortiGate.`);
-        const redirectUrl = `${post}?magic=${magic}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
-        return { action: 'redirect', redirectUrl: redirectUrl };
-
-    } else {
-        // === FIREWALL AUTHENTICATION MODE === (ทำงานเหมือนเดิมทุกประการ)
-        console.log(`Firewall Authentication successful for user: ${username}.`);
-        const token = jwt.sign(
-          { id: user.id, username: user.username },
-          process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-        
-        const advertisement = user.organization.advertisement;
-        const { password: _, organization, ...userWithoutPassword } = user;
-        
-        return { action: 'login', data: { token, user: userWithoutPassword, advertisement } };
+    if (!user) {
+        throw new Error('Invalid credentials.');
     }
+
+    if (user.status !== 'active') {
+        throw new Error('Your account is currently disabled. Please contact an administrator.');
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+        throw new Error('Invalid credentials.');
+    }
+    
+    // --- START: 2. ส่วนที่เพิ่มเข้ามา ---
+    // สร้าง Token สำหรับ User คนนี้
+    const token = jwt.sign(
+      { id: user.id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
     // --- END ---
+    
+    const advertisement = user.organization.advertisement;
+    const { password: _, organization, ...userWithoutPassword } = user;
+    
+    // 3. ส่ง token กลับไปด้วย
+    return { token, user: userWithoutPassword, advertisement: advertisement };
 };
 
 module.exports = {
