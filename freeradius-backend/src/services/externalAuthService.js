@@ -77,12 +77,13 @@ const loginUser = async (loginData) => {
 
     // 3. ทำงานส่วนที่เหลือตามปกติ
     if (magic && post) {
-        // โหมด Captive Portal
+        // === CAPTIVE PORTAL MODE === (แก้ไขเฉพาะส่วนนี้)
         console.log(`Captive Portal login successful for user: ${username}. Redirecting back to FortiGate.`);
-        const redirectUrl = `${post}?magic=${magic}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+        // ส่งเฉพาะ magic และ username กลับไป (ไม่ส่ง password)
+        const redirectUrl = `${post}?magic=${magic}&username=${encodeURIComponent(username)}`;
         return { action: 'redirect', redirectUrl: redirectUrl };
     } else {
-        // โหมด Firewall Authentication
+        // === FIREWALL AUTHENTICATION MODE === (ไม่แตะต้องเลย)
         console.log(`Firewall Authentication successful for user: ${username}.`);
         const token = jwt.sign(
           { id: user.id, username: user.username },
