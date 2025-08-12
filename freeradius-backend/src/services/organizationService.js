@@ -2,18 +2,28 @@
 const prisma = require('../prisma');
 
 const createOrganization = async (orgData) => {
-  const { name, login_identifier_type, radiusProfileId } = orgData;
+  // --- START: ส่วนที่แก้ไข ---
+  const { name, login_identifier_type, radiusProfileId, advertisementId } = orgData;
+  // --- END ---
 
   if (!radiusProfileId) {
     throw new Error('A Radius Profile must be selected.');
   }
 
+  // --- START: ส่วนที่แก้ไข ---
+  const dataToCreate = {
+    name,
+    login_identifier_type: login_identifier_type || 'manual',
+    radiusProfileId: parseInt(radiusProfileId),
+  };
+
+  if (advertisementId) {
+    dataToCreate.advertisementId = parseInt(advertisementId);
+  }
+  // --- END ---
+
   return prisma.organization.create({
-    data: {
-      name,
-      login_identifier_type: login_identifier_type || 'manual',
-      radiusProfileId: parseInt(radiusProfileId),
-    },
+    data: dataToCreate,
   });
 };
 

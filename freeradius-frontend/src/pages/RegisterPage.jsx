@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import { CheckCircle, Info } from 'lucide-react'; // <-- เพิ่ม CheckCircle กลับเข้ามา
+import { CheckCircle, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -33,10 +33,8 @@ export default function RegisterPage() {
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     
-    // --- START: เพิ่ม State เหล่านี้กลับเข้ามา ---
     const [registrationSuccess, setRegistrationSuccess] = useState(false);
     const [countdown, setCountdown] = useState(5);
-    // --- END ---
 
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
@@ -51,11 +49,12 @@ export default function RegisterPage() {
           .finally(() => setIsPageLoading(false));
     }, []);
 
-    // --- START: เพิ่ม useEffect สำหรับนับถอยหลัง ---
+    // --- ส่วนที่แก้ไข ---
     useEffect(() => {
         if (registrationSuccess) {
             if (countdown <= 0) {
-                navigate('/user-login', { replace: true });
+                // เปลี่ยนจาก navigate(...) เป็นการ redirect ไปยัง URL ภายนอก
+                window.location.href = 'http://neverssl.com';
                 return;
             }
 
@@ -66,7 +65,7 @@ export default function RegisterPage() {
             return () => clearTimeout(timerId);
         }
     }, [registrationSuccess, countdown, navigate]);
-    // --- END ---
+    // --- สิ้นสุดส่วนที่แก้ไข ---
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -85,11 +84,8 @@ export default function RegisterPage() {
         setIsLoading(true);
         try {
             await axiosInstance.post('/register', formData);
-            // --- START: แก้ไขส่วนนี้ ---
-            // ไม่ต้อง navigate ทันที แต่ให้เปลี่ยน state เพื่อแสดงผลหน้า success
             toast.success("Registration Successful!");
             setRegistrationSuccess(true);
-            // --- END ---
         } catch (error) {
             toast.error("Registration Failed", {
                 description: error.response?.data?.message || "An unexpected error occurred.",
@@ -121,14 +117,15 @@ export default function RegisterPage() {
                  )}
             </div>
 
-            {/* --- START: นำ JSX สำหรับแสดงผลหน้า Success กลับมา --- */}
             {registrationSuccess ? (
                 <CardContent className="text-center p-8">
                     <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold">Registration Successful</h3>
-                    <p className="text-muted-foreground mt-2">You can now log in with your new account.</p>
+                    <p className="text-muted-foreground mt-2">
+                        Your account has been created. Please wait for an administrator to approve it.
+                    </p>
                     <p className="text-sm text-muted-foreground mt-4">
-                        Redirecting to login page in {countdown} seconds...
+                        Redirecting in {countdown} seconds...
                     </p>
                 </CardContent>
             ) : settings.registrationEnabled === 'true' ? (
@@ -207,7 +204,6 @@ export default function RegisterPage() {
                      <p className="text-muted-foreground">Please contact an administrator for assistance.</p>
                 </CardContent>
             )}
-             {/* --- END --- */}
         </>
     );
 }

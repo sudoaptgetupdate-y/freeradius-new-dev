@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { 
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
-    Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal
+    Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal,
+    Megaphone // <-- 1. Import ไอคอนใหม่
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -128,7 +129,9 @@ export default function MainLayout() {
                             <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/radius-profiles" icon={<Settings size={18} />} text="Radius Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/advertisements" icon={<Palette size={18} />} text="Advertisements" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            {/* --- 2. แก้ไขไอคอนบรรทัดนี้ --- */}
+                            <NavItem to="/advertisements" icon={<Megaphone size={18} />} text="Advertisements" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            {/* --- 3. ไอคอนบรรทัดนี้คงเดิม --- */}
                             <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>
