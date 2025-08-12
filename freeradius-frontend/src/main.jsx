@@ -36,7 +36,6 @@ import AdLandingPage from './pages/AdLandingPage.jsx';
 import UserPortalLoginPage from './pages/UserPortalLoginPage.jsx';
 import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx';
 import LoggedOutPage from './pages/LoggedOutPage.jsx';
-import SessionsClearedPage from './pages/SessionsClearedPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -51,7 +50,6 @@ const router = createBrowserRouter([
           { path: 'user-login', element: <ExternalLoginPage /> },
           { path: 'portal/login', element: <UserPortalLoginPage /> },
           { path: 'portal/logged-out', element: <LoggedOutPage /> },
-          { path: 'portal/sessions-cleared', element: <SessionsClearedPage /> },
         ]
       },
       {

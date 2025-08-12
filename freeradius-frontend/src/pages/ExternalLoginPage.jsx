@@ -1,6 +1,6 @@
 // src/pages/ExternalLoginPage.jsx
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
 import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
@@ -23,12 +23,31 @@ import { Separator } from '@/components/ui/separator';
 
 export default function ExternalLoginPage() {
     const navigate = useNavigate();
+    const location = useLocation(); // <-- 1. เรียกใช้ useLocation
     const { login } = useUserAuthStore();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
+
+    // --- START: 2. สร้าง State สำหรับเก็บค่าจาก FortiGate ---
+    const [captivePortalParams, setCaptivePortalParams] = useState({
+        magic: null,
+        post: null,
+    });
+
+    useEffect(() => {
+        // ดึงค่าจาก URL query string เมื่อหน้าโหลด
+        const queryParams = new URLSearchParams(location.search);
+        const magic = queryParams.get('magic');
+        const post = queryParams.get('post');
+        if (magic && post) {
+            setCaptivePortalParams({ magic, post });
+            toast.info("Captive Portal Detected", { description: "Please log in to continue."});
+        }
+    }, [location.search]);
+    // --- END ---
 
     useEffect(() => {
         axiosInstance.get('/settings')
@@ -51,18 +70,28 @@ export default function ExternalLoginPage() {
             return;
         }
         setIsLoading(true);
+
         try {
-            const response = await axiosInstance.post('/external-auth/login', formData);
-            const { token, user, advertisement } = response.data.data;
+            // --- 3. แนบค่าจาก FortiGate ไปกับ Request ---
+            const payload = {
+                ...formData,
+                ...captivePortalParams
+            };
+            const response = await axiosInstance.post('/external-auth/login', payload);
+            // --- END ---
             
-            // 1. บันทึก Token และข้อมูล User ลง Store
+            // ตรวจสอบว่า Backend สั่งให้ Redirect หรือไม่
+            if (response.data.action === 'redirect') {
+                // ถ้าใช่ ให้เปลี่ยนหน้าไปที่ URL ที่ Backend ส่งมา
+                window.location.href = response.data.redirectUrl;
+                return; 
+            }
+
+            // ถ้าไม่ใช่ (เป็น Flow ปกติ) ให้ทำงานเหมือนเดิม
+            const { token, user, advertisement } = response.data.data;
             login(token, user);
+            toast.success("Login Successful!", { description: "Redirecting..." });
 
-            toast.success("Login Successful!", {
-                description: "Redirecting...",
-            });
-
-            // 2. สั่ง Redirect ทันที
             if (advertisement && advertisement.status === 'active') {
                 navigate('/ad-landing', { state: { ad: advertisement }, replace: true });
             } else {
@@ -73,10 +102,12 @@ export default function ExternalLoginPage() {
             toast.error("Login Failed", {
                 description: error.response?.data?.message || "Please check your credentials.",
             });
-            setIsLoading(false); // หยุด Loading เมื่อเกิด Error
+        } finally {
+            setIsLoading(false);
         }
     };
     
+    // ... (ส่วน JSX ที่เหลือเหมือนเดิมทั้งหมด ไม่ต้องแก้ไข) ...
     if (isPageLoading) {
         return <div className="flex items-center justify-center p-8">Loading...</div>;
     }
