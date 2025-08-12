@@ -22,6 +22,8 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 
+// --- (ส่วนของ Helper Functions และ Components ย่อยๆ ด้านบนยังคงเหมือนเดิม) ---
+
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
     const b = BigInt(bytes);
@@ -238,8 +240,10 @@ const InfoRow = ({ icon: Icon, label, value }) => (
     </div>
 );
 
+
 export default function UserPortalDashboardPage() {
-    const { token, logout, setUser, user: initialProfile } = useUserAuthStore();
+    // ดึง pendingAd และ clearPendingAd มาจาก store
+    const { token, logout, setUser, user: initialProfile, pendingAd, clearPendingAd } = useUserAuthStore();
     const navigate = useNavigate();
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     
@@ -249,6 +253,18 @@ export default function UserPortalDashboardPage() {
     });
 
     const settings = usePortalSettings();
+
+    // --- START: เพิ่ม useEffect สำหรับจัดการโฆษณา ---
+    useEffect(() => {
+        // ตรวจสอบว่ามีโฆษณาที่ต้องแสดง และมีสถานะเป็น active หรือไม่
+        if (pendingAd && pendingAd.status === 'active') {
+            // ส่งต่อไปยังหน้าโฆษณา และส่งข้อมูลโฆษณาไปด้วย
+            navigate('/ad-landing', { state: { ad: pendingAd }, replace: true });
+            // เคลียร์ข้อมูลโฆษณาออกจาก store ทันที ป้องกันการวนลูป
+            clearPendingAd();
+        }
+    }, [pendingAd, navigate, clearPendingAd]);
+    // --- END ---
 
     useEffect(() => {
         if (profile) {
@@ -283,6 +299,11 @@ export default function UserPortalDashboardPage() {
 
     if (error && !profile) return <div>Failed to load profile. Please try again.</div>
     if (!profile) return <div>Loading your profile...</div>
+
+    // ถ้ากำลังจะ redirect ไปหน้าโฆษณา ให้แสดงหน้าว่างๆ ไปก่อน
+    if (pendingAd && pendingAd.status === 'active') {
+        return <div className="p-4">Loading advertisement...</div>;
+    }
 
     return (
         <motion.div

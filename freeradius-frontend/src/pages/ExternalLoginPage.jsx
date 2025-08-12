@@ -1,8 +1,8 @@
 // src/pages/ExternalLoginPage.jsx
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
-import useUserAuthStore from '@/store/userAuthStore'; // Import store ของ User
+import useUserAuthStore from '@/store/userAuthStore';
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,9 +23,8 @@ import { Separator } from '@/components/ui/separator';
 
 export default function ExternalLoginPage() {
     const location = useLocation();
-    const navigate = useNavigate();
-    const { login } = useUserAuthStore(); // ดึงฟังก์ชัน login จาก store
-    const formRef = useRef(null); // Ref สำหรับอ้างอิงถึง form element
+    const { login } = useUserAuthStore();
+    const formRef = useRef(null);
 
     const [magic, setMagic] = useState('');
     const [formData, setFormData] = useState({ username: '', password: '' });
@@ -57,7 +56,7 @@ export default function ExternalLoginPage() {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault(); // หยุดการ submit form ปกติไว้ก่อน
+        e.preventDefault();
 
         if (!agreed) {
             toast.error("You must agree to the terms and conditions to log in.");
@@ -66,18 +65,15 @@ export default function ExternalLoginPage() {
         setIsLoading(true);
 
         try {
-            // Step 1: ยืนยันตัวตนกับ Backend ของเราเพื่อขอ Token
             const response = await axiosInstance.post('/external-auth/login', formData);
-            const { token, user } = response.data.data;
+            // ดึง advertisement ออกมาจาก response
+            const { token, user, advertisement } = response.data.data;
             
-            // Step 2: บันทึก Token และข้อมูล User ลงใน Store (LocalStorage)
-            login(token, user);
+            // ส่ง advertisement ไปพร้อมกับข้อมูล user ตอน login
+            login(token, user, advertisement);
 
-            // Step 3: เมื่อบันทึก Token สำเร็จ จึงสั่งให้ form submit ไปที่ FortiGate
-            // Toast จะแสดงแค่แป๊บเดียวก่อนที่หน้าจะเปลี่ยน
             toast.success("Authentication successful!", { description: "Redirecting via FortiGate..." });
             
-            // ใช้ timeout เล็กน้อยเพื่อให้แน่ใจว่า state update และ toast แสดงผล
             setTimeout(() => {
                 if (formRef.current) {
                     formRef.current.submit();
@@ -88,7 +84,7 @@ export default function ExternalLoginPage() {
             toast.error("Login Failed", {
                 description: error.response?.data?.message || "Please check your credentials.",
             });
-            setIsLoading(false); // หยุด Loading เมื่อเกิด Error
+            setIsLoading(false);
         }
     };
     
@@ -115,9 +111,6 @@ export default function ExternalLoginPage() {
             {settings.externalLoginEnabled === 'true' ? (
                 <>
                     <CardContent>
-                        {/* - `ref` ถูกเพิ่มเข้ามาเพื่อให้เราสามารถเรียก .submit() ได้
-                          - `onSubmit` จะเรียกฟังก์ชัน handleSubmit ของเรา
-                        */}
                         <form
                             ref={formRef}
                             action="http://192.168.146.1:1000/fgtauth"
