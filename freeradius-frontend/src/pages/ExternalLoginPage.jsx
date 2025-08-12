@@ -1,7 +1,8 @@
 // src/pages/ExternalLoginPage.jsx
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
+import useUserAuthStore from '@/store/userAuthStore'; // Import store ของ User
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,14 +22,18 @@ import {
 import { Separator } from '@/components/ui/separator';
 
 export default function ExternalLoginPage() {
-    const location = useLocation(); // Hook สำหรับเข้าถึง URL ปัจจุบัน
-    const [magic, setMagic] = useState(''); // State สำหรับเก็บค่า magic token
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { login } = useUserAuthStore(); // ดึงฟังก์ชัน login จาก store
+    const formRef = useRef(null); // Ref สำหรับอ้างอิงถึง form element
+
+    const [magic, setMagic] = useState('');
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
-    // Effect สำหรับดึงค่า settings ของระบบ (เหมือนเดิม)
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => setSettings(response.data.data))
@@ -39,14 +44,11 @@ export default function ExternalLoginPage() {
           .finally(() => setIsPageLoading(false));
     }, []);
 
-    // Effect สำหรับดึงค่า 'magic' จาก URL query string
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const magicValue = params.get('magic');
         if (magicValue) {
             setMagic(magicValue);
-        } else {
-            console.warn("Magic token not found in URL.");
         }
     }, [location.search]);
 
@@ -54,9 +56,42 @@ export default function ExternalLoginPage() {
         setFormData({ ...formData, [e.target.id]: e.target.value });
     };
 
-    // ไม่ใช้ handleSubmit ที่ส่งผ่าน axios แล้ว ปล่อยให้ form ทำงานตามปกติ
-    // สามารถลบฟังก์ชัน handleSubmit เดิมออกได้เลย
+    const handleSubmit = async (e) => {
+        e.preventDefault(); // หยุดการ submit form ปกติไว้ก่อน
 
+        if (!agreed) {
+            toast.error("You must agree to the terms and conditions to log in.");
+            return;
+        }
+        setIsLoading(true);
+
+        try {
+            // Step 1: ยืนยันตัวตนกับ Backend ของเราเพื่อขอ Token
+            const response = await axiosInstance.post('/external-auth/login', formData);
+            const { token, user } = response.data.data;
+            
+            // Step 2: บันทึก Token และข้อมูล User ลงใน Store (LocalStorage)
+            login(token, user);
+
+            // Step 3: เมื่อบันทึก Token สำเร็จ จึงสั่งให้ form submit ไปที่ FortiGate
+            // Toast จะแสดงแค่แป๊บเดียวก่อนที่หน้าจะเปลี่ยน
+            toast.success("Authentication successful!", { description: "Redirecting via FortiGate..." });
+            
+            // ใช้ timeout เล็กน้อยเพื่อให้แน่ใจว่า state update และ toast แสดงผล
+            setTimeout(() => {
+                if (formRef.current) {
+                    formRef.current.submit();
+                }
+            }, 100);
+
+        } catch (error) {
+            toast.error("Login Failed", {
+                description: error.response?.data?.message || "Please check your credentials.",
+            });
+            setIsLoading(false); // หยุด Loading เมื่อเกิด Error
+        }
+    };
+    
     if (isPageLoading) {
         return <div className="flex items-center justify-center p-8">Loading...</div>;
     }
@@ -80,30 +115,30 @@ export default function ExternalLoginPage() {
             {settings.externalLoginEnabled === 'true' ? (
                 <>
                     <CardContent>
-                        {/* หัวใจสำคัญของการแก้ไข:
-                          1. `action` ชี้ไปที่ URL ของ FortiGate Captive Portal
-                          2. `method` เป็น "POST"
-                          3. ไม่มี `onSubmit` ที่เรียกใช้ JavaScript
+                        {/* - `ref` ถูกเพิ่มเข้ามาเพื่อให้เราสามารถเรียก .submit() ได้
+                          - `onSubmit` จะเรียกฟังก์ชัน handleSubmit ของเรา
                         */}
-                        <form action="http://192.168.146.1:1000/fgtauth" method="POST" className="space-y-4">
-                            
-                            {/* Input ที่ซ่อนไว้สำหรับส่งค่า magic กลับไป */}
+                        <form
+                            ref={formRef}
+                            action="http://192.168.146.1:1000/fgtauth"
+                            method="POST"
+                            className="space-y-4"
+                            onSubmit={handleSubmit}
+                        >
                             <input type="hidden" name="magic" value={magic} />
                             
                             <div className="space-y-2">
                                 <Label htmlFor="username">Username</Label>
-                                {/* เพิ่ม attribute `name` เพื่อให้ form ส่งข้อมูลนี้ไป */}
                                 <Input id="username" name="username" value={formData.username} onChange={handleInputChange} placeholder="Enter your username" required autoFocus/>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="password">Password</Label>
-                                {/* เพิ่ม attribute `name` เพื่อให้ form ส่งข้อมูลนี้ไป */}
                                 <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required />
                             </div>
                             <Dialog>
                                 <div className="space-y-2 pt-2">
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} required />
+                                        <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
                                         <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
                                             I have read and agree to the terms
                                         </Label>
@@ -122,8 +157,8 @@ export default function ExternalLoginPage() {
                                     <DialogFooter><DialogClose asChild><Button type="button">Close</Button></DialogClose></DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                            <Button type="submit" className="w-full !mt-6" disabled={!agreed || !magic}>
-                                Login
+                            <Button type="submit" className="w-full !mt-6" disabled={isLoading || !agreed || !magic}>
+                                {isLoading ? 'Authenticating...' : 'Login'}
                             </Button>
                         </form>
                     </CardContent>
