@@ -65,7 +65,7 @@ const selfRegisterUser = async (userData) => {
         full_name: fullName,
         email: email,             // <-- เพิ่ม
         phoneNumber: phoneNumber, // <-- เพิ่ม
-        status: 'inactive', 
+        status: 'disabled', // <--- ❗️❗️❗️ แก้ไขจาก 'inactive' เป็น 'disabled' ❗️❗️❗️
       },
     });
 
