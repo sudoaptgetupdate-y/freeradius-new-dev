@@ -107,7 +107,7 @@ export default function CustomizationPage() {
 
     return (
         <Tabs defaultValue="appearance" className="w-full">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center mb-4">
                 <div>
                     <h1 className="text-2xl font-bold flex items-center gap-2"><Palette className="h-6 w-6" />Customization</h1>
                     <p className="text-muted-foreground">Adjust the look and feel of your login pages.</p>
@@ -131,11 +131,10 @@ export default function CustomizationPage() {
                             <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => handleFileChange(e, setLogo, setLogoPreview)} />
                             <p className="text-xs text-muted-foreground pt-1">
                                 • Recommended: SVG or PNG with transparent background.<br/>
-                                • Max height: 80px.
+                                • Max height: 80px. Max file size: 3MB.
                             </p>
                              {logoPreview && (
                                 <Dialog>
-                                    {/* --- 👇 แก้ไขคลาสตรงนี้ --- */}
                                     <div className="p-4 border rounded-md bg-muted/50 text-center relative group h-48 flex flex-col justify-center">
                                         <Label className="text-muted-foreground">Logo Preview</Label>
                                         <img src={logoPreview} alt="Logo Preview" className="mx-auto mt-2 max-h-24 object-contain" />
@@ -163,11 +162,10 @@ export default function CustomizationPage() {
                             <Input id="background-upload" type="file" accept="image/png, image/jpeg" onChange={(e) => handleFileChange(e, setBackground, setBackgroundPreview)} />
                              <p className="text-xs text-muted-foreground pt-1">
                                 • Recommended resolution: 1920x1080px (16:9 aspect ratio).<br/>
-                                • Max file size: 2MB.
+                                • Max file size: 3MB.
                             </p>
                             {backgroundPreview && (
                                 <Dialog>
-                                    {/* --- 👇 แก้ไขคลาสตรงนี้ --- */}
                                     <div className="p-4 border rounded-md bg-muted/50 text-center relative group h-48 flex flex-col justify-center">
                                         <Label className="text-muted-foreground">Background Preview</Label>
                                         <img src={backgroundPreview} alt="Background Preview" className="mx-auto mt-2 h-full w-full object-cover rounded-md" />

@@ -147,7 +147,7 @@ export default function OnlineUsersPage() {
         <>
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                         <div>
                             <CardTitle className="flex items-center gap-2"><Wifi className="h-6 w-6" />Online Users</CardTitle>
                             <CardDescription>Showing currently active user sessions.</CardDescription>
