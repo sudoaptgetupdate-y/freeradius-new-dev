@@ -89,8 +89,8 @@ async function main() {
   const settingsToSeed = [
       { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
       { key: 'logoUrl', value: '/uploads/nt-logo.png' },
-      { key: 'backgroundUrl', value: '/uploads/nt-background.jpg' },
-      { key: 'voucherLogoUrl', value: '/uploads/ntvoucherLogo.png' }, // <-- เพิ่มบรรทัดนี้
+      { key: 'backgroundUrl', value: '/uploads/nt-background.png' },
+      { key: 'voucherLogoUrl', value: '/uploads/nt-voucherLogo.png' },
       { key: 'registrationEnabled', value: 'false' },
       { key: 'externalLoginEnabled', value: 'false' }
   ];
