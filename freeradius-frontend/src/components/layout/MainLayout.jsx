@@ -128,15 +128,18 @@ export default function MainLayout() {
                          <div className="space-y-1">
                             <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/radius-profiles" icon={<Settings size={18} />} text="Radius Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            {/* --- 2. แก้ไขไอคอนบรรทัดนี้ --- */}
+                            {/* --- START: แก้ไขส่วนนี้ --- */}
+                            {isSuperAdmin && (
+                               <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            )}
+                            <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text="Voucher Packages" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            {/* --- END --- */}
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text="Advertisements" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            {/* --- 3. ไอคอนบรรทัดนี้คงเดิม --- */}
                             <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>
 
-                    {(isSuperAdmin) && (
+                    {isSuperAdmin && (
                          <div className="pt-2">
                             <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                                 SYSTEM
@@ -144,7 +147,6 @@ export default function MainLayout() {
                             <div className="space-y-1">
                                 <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text="Attributes" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text="Voucher Packages" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text="System Settings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             </div>
                         </div>

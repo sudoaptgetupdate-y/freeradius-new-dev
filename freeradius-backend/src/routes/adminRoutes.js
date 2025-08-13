@@ -1,20 +1,23 @@
 // src/routes/adminRoutes.js
 const express = require('express');
 const { createNewAdmin, getAllAdmins, deleteAdminById, getAdmin, updateAdmin, toggleStatus } = require('../controllers/adminController');
-const { protect } = require('../middlewares/authMiddleware'); // Import ยามคนแรก
-const { authorize } = require('../middlewares/roleMiddleware'); // Import ยามคนที่สอง
+const { protect } = require('../middlewares/authMiddleware');
+const { authorize } = require('../middlewares/roleMiddleware');
 const router = express.Router();
 
-// เพิ่มด่านตรวจ: ต้อง Login (protect) และต้องเป็น 'superadmin' (authorize) เท่านั้น
+// ใช้ protect กับทุก route ในไฟล์นี้
 router.use(protect);
-router.use(authorize('superadmin'));
 
-// Routes ด้านล่างทั้งหมดจะถูกป้องกันโดยอัตโนมัติ
-router.post('/', createNewAdmin);
-router.get('/', getAllAdmins);
-router.get('/:id', getAdmin);
-router.put('/:id', updateAdmin);
-router.put('/:id/status', toggleStatus);
-router.delete('/:id', deleteAdminById);
+// --- START: แก้ไขส่วนนี้ ---
+// GET routes: อนุญาตให้ทั้ง superadmin และ admin เข้าถึงได้
+router.get('/', authorize('superadmin', 'admin'), getAllAdmins);
+router.get('/:id', authorize('superadmin', 'admin'), getAdmin);
+
+// POST, PUT, DELETE routes: อนุญาตให้เฉพาะ superadmin เท่านั้น
+router.post('/', authorize('superadmin'), createNewAdmin);
+router.put('/:id', authorize('superadmin'), updateAdmin);
+router.put('/:id/status', authorize('superadmin'), toggleStatus);
+router.delete('/:id', authorize('superadmin'), deleteAdminById);
+// --- END ---
 
 module.exports = router;

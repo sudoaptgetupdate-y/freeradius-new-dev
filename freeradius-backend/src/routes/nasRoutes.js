@@ -7,7 +7,9 @@ const { authorize } = require('../middlewares/roleMiddleware');
 const router = express.Router();
 
 router.use(protect);
-router.use(authorize('superadmin', 'admin'));
+// --- START: แก้ไขส่วนนี้ ---
+router.use(authorize('superadmin'));
+// --- END ---
 
 router.get('/', getAllNas);
 router.post('/', createNas);
