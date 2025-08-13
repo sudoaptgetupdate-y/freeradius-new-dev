@@ -88,8 +88,9 @@ async function main() {
   console.log('Seeding default settings...');
   const settingsToSeed = [
       { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
-      { key: 'logoUrl', value: '/uploads/logo.png' },
-      { key: 'backgroundUrl', value: '/uploads/background.jpg' },
+      { key: 'logoUrl', value: '/uploads/nt-logo.png' },
+      { key: 'backgroundUrl', value: '/uploads/nt-background.jpg' },
+      { key: 'voucherLogoUrl', value: '/uploads/ntvoucherLogo.png' }, // <-- เพิ่มบรรทัดนี้
       { key: 'registrationEnabled', value: 'false' },
       { key: 'externalLoginEnabled', value: 'false' }
   ];
@@ -105,7 +106,11 @@ async function main() {
           });
           console.log(`✅ Default setting for '${setting.key}' created.`);
       } else {
-          console.log(`👍 Default setting for '${setting.key}' already exists.`);
+          await prisma.setting.update({
+              where: { key: setting.key },
+              data: { value: setting.value },
+          });
+          console.log(`👍 Default setting for '${setting.key}' updated.`);
       }
   }
 
