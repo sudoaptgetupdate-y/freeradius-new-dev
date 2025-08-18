@@ -43,7 +43,7 @@ export default function LoginPage() {
         <>
             <CardContent className="pt-0"> {/* เพิ่ม pt-0 เพื่อให้ชิดกับ Header */}
                 <div className="text-center mb-6"> {/* เพิ่ม Div ครอบ Title และ Description */}
-                    <CardTitle>Freeradius UISSSSSSSS</CardTitle>
+                    <CardTitle>Freeradius UI</CardTitle>
                     <CardDescription>Please log in to continue.</CardDescription>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
