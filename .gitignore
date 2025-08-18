@@ -1,0 +1,55 @@
+# ===================================================================
+# A good gitignore file for a Node.js (Backend + Frontend) project
+# ===================================================================
+
+# Dependencies
+# โฟลเดอร์ที่เก็บ library ทั้งหมด สามารถติดตั้งใหม่ได้จาก package.json
+/node_modules/
+/freeradius-backend/node_modules/
+/freeradius-frontend/node_modules/
+
+# Environment Variables
+# ไฟล์ที่เก็บข้อมูลสำคัญ เช่น รหัสผ่าน, Database URL, JWT Secret
+# *** ห้ามอัปโหลดไฟล์นี้ขึ้น GitHub เด็ดขาด ***
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
+# ไฟล์ผลลัพธ์ที่ได้จากการ build โปรเจ็ค Frontend
+/dist/
+/freeradius-frontend/dist/
+
+# Logs
+# ไฟล์ log ที่โปรแกรมสร้างขึ้นระหว่างทำงาน
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Prisma
+# ไฟล์ที่ Prisma สร้างขึ้นระหว่างการทำงาน ไม่ควรเก็บใน Git
+/freeradius-backend/prisma/dev.db
+/freeradius-backend/prisma/dev.db-journal
+
+# Editor directories and files
+# ไฟล์การตั้งค่าของโปรแกรม Code Editor แต่ละคน
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating System files
+Thumbs.db
+ehthumbs.db
