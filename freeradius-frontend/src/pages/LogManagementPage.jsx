@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
+import LogVolumeChartCard from "@/components/ui/LogVolumeChartCard";
 
 const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
@@ -33,40 +34,45 @@ const DashboardTab = ({ token }) => {
     if (error || !data) return <div className="p-4 text-center text-destructive">Failed to load dashboard data.</div>;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-                <CardHeader><CardTitle className="text-base">Disk Usage</CardTitle></CardHeader>
-                <CardContent className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Total: {data.diskUsage.size}</p>
-                    <p className="text-sm text-muted-foreground">Used: {data.diskUsage.used} ({data.diskUsage.usePercent})</p>
-                    <p className="text-sm text-muted-foreground">Available: {data.diskUsage.available}</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader><CardTitle className="text-base">GPG Encryption Key</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground break-words" title={data.gpgKey.recipient || 'Not Set'}>
-                        Recipient: {data.gpgKey.recipient || 'Not Set'}
-                    </p>
-                </CardContent>
-            </Card>
-             <Card className="md:col-span-2">
-                <CardHeader><CardTitle className="text-base">Top 5 Log Sources by Size</CardTitle></CardHeader>
-                <CardContent>
-                    {data.topLogSources && data.topLogSources.length > 0 ? (
-                        <ul className="space-y-2">
-                            {data.topLogSources.map(source => (
-                                <li key={source.host} className="text-sm text-muted-foreground flex justify-between items-center">
-                                    <span className="font-mono">{source.host}</span>
-                                    <span className="font-medium text-foreground">{formatBytes(source.size)}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No log sources found.</p>
-                    )}
-                </CardContent>
-            </Card>
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                    <CardHeader><CardTitle className="text-base">Disk Usage</CardTitle></CardHeader>
+                    <CardContent className="space-y-1">
+                        <p className="text-sm text-muted-foreground">Total: {data.diskUsage.size}</p>
+                        <p className="text-sm text-muted-foreground">Used: {data.diskUsage.used} ({data.diskUsage.usePercent})</p>
+                        <p className="text-sm text-muted-foreground">Available: {data.diskUsage.available}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader><CardTitle className="text-base">GPG Encryption Key</CardTitle></CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground break-words" title={data.gpgKey.recipient || 'Not Set'}>
+                            Recipient: {data.gpgKey.recipient || 'Not Set'}
+                        </p>
+                    </CardContent>
+                </Card>
+                 <Card className="md:col-span-2">
+                    <CardHeader><CardTitle className="text-base">Top 5 Log Sources by Size</CardTitle></CardHeader>
+                    <CardContent>
+                        {data.topLogSources && data.topLogSources.length > 0 ? (
+                            <ul className="space-y-2">
+                                {data.topLogSources.map(source => (
+                                    <li key={source.host} className="text-sm text-muted-foreground flex justify-between items-center">
+                                        <span className="font-mono">{source.host}</span>
+                                        <span className="font-medium text-foreground">{formatBytes(source.size)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">No log sources found.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="h-[400px]">
+                <LogVolumeChartCard />
+            </div>
         </div>
     );
 };

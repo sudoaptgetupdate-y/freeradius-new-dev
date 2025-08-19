@@ -69,10 +69,21 @@ const getDownloadHistory = async (req, res, next) => {
     }
 };
 
+const getLogVolumeGraph = async (req, res, next) => {
+    try {
+        const { period } = req.query;
+        const data = await logManagerService.getLogVolumeGraphData(period);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardData,
     getLogFiles,
     downloadLogFile,
     getSystemConfig,
     getDownloadHistory,
+    getLogVolumeGraph,
 };

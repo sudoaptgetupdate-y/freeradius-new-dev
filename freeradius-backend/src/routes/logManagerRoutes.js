@@ -21,5 +21,6 @@ router.get('/files', getLogFiles);
 router.get('/files/download', downloadLogFile);
 router.get('/config', getSystemConfig);
 router.get('/history', getDownloadHistory);
+router.get('/volume-graph', getLogVolumeGraph);
 
 module.exports = router;

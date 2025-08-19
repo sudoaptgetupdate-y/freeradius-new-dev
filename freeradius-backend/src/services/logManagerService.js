@@ -338,11 +338,75 @@ const getDownloadHistory = async (filters = {}) => {
     };
 };
 
+const getLogVolumeGraphData = async (period = 'day') => {
+    let allFiles = [];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        for (const host of hosts) {
+            const hostPath = path.join(LOG_DIR, host);
+            if ((await fs.stat(hostPath)).isDirectory()) {
+                const filesInHost = await fs.readdir(hostPath);
+                for (const file of filesInHost) {
+                    if (file.endsWith('.log.gz.gpg')) {
+                        const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})/);
+                        if (dateMatch) {
+                            const filePath = path.join(hostPath, file);
+                            const fileStat = await fs.stat(filePath);
+                            allFiles.push({ host, date: dateMatch[1], size: fileStat.size });
+                        }
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error reading log files for graph:", error);
+        return [];
+    }
+
+    // Aggregate data
+    const aggregated = allFiles.reduce((acc, { host, date, size }) => {
+        let key;
+        const d = new Date(date);
+        switch (period) {
+            case 'week':
+                const weekStart = new Date(d);
+                weekStart.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1)); // Monday as start of week
+                key = weekStart.toISOString().split('T')[0];
+                break;
+            case 'month':
+                key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                break;
+            case 'year':
+                key = String(d.getFullYear());
+                break;
+            default: // day
+                key = date;
+        }
+
+        if (!acc[key]) acc[key] = {};
+        acc[key][host] = (acc[key][host] || 0) + size;
+        return acc;
+    }, {});
+    
+    // Format for recharts
+    const allHosts = [...new Set(allFiles.map(f => f.host))];
+    const chartData = Object.entries(aggregated).map(([date, hostData]) => {
+        const entry = { date };
+        allHosts.forEach(host => {
+            entry[host] = hostData[host] || 0;
+        });
+        return entry;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return { chartData, hosts: allHosts };
+};
+
 module.exports = {
     getDashboardData,
     getLogFiles,
     getSystemConfig,
     recordDownloadEvent,
     getDownloadHistory,
+    getLogVolumeGraphData,
     LOG_DIR,
 };
