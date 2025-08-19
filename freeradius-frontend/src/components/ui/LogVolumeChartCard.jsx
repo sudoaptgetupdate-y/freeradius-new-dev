@@ -15,7 +15,7 @@ const timePeriods = [
     { key: 'year', label: 'Yearly' },
 ];
 
-const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE", "#00C49F"];
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const formatBytes = (bytes) => {
     if (bytes === 0) return '0 B';
@@ -30,10 +30,15 @@ export default function LogVolumeChartCard() {
     const [loading, setLoading] = useState(true);
     const [activePeriod, setActivePeriod] = useState('day');
     const token = useAuthStore((state) => state.token);
+    
+    // --- START: 1. เพิ่ม State สำหรับจัดการการซ่อนกราฟ ---
+    const [hiddenHosts, setHiddenHosts] = useState({});
+    // --- END ---
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
+            setHiddenHosts({}); // Reset การซ่อนทุกครั้งที่เปลี่ยนช่วงเวลา
             try {
                 const response = await axiosInstance.get(`/logs/volume-graph?period=${activePeriod}`, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -50,13 +55,22 @@ export default function LogVolumeChartCard() {
         if (token) fetchData();
     }, [activePeriod, token]);
 
+    // --- START: 2. สร้างฟังก์ชันสำหรับจัดการการคลิก Legend ---
+    const handleLegendClick = (dataKey) => {
+        setHiddenHosts(prev => ({
+            ...prev,
+            [dataKey]: !prev[dataKey] // สลับค่า true/false
+        }));
+    };
+    // --- END ---
+
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                         <CardTitle>Log Volume Trend</CardTitle>
-                        <CardDescription>Total log size per device over time.</CardDescription>
+                        <CardDescription>Total log size per device over time. Click legend to toggle.</CardDescription>
                     </div>
                     <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
                         {timePeriods.map((period) => (
@@ -84,9 +98,23 @@ export default function LogVolumeChartCard() {
                             <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatBytes} />
                             <Tooltip formatter={(value) => formatBytes(value)} contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }} />
-                            <Legend />
+                            
+                            {/* --- START: 3. เพิ่ม onClick ให้กับ Legend --- */}
+                            <Legend onClick={(e) => handleLegendClick(e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
+                            {/* --- END --- */}
+                            
                             {data.hosts.map((host, index) => (
-                                <Line key={host} type="monotone" dataKey={host} stroke={COLORS[index % COLORS.length]} strokeWidth={2} dot={false} />
+                                <Line 
+                                    key={host} 
+                                    type="monotone" 
+                                    dataKey={host} 
+                                    stroke={COLORS[index % COLORS.length]} 
+                                    strokeWidth={2} 
+                                    dot={false}
+                                    // --- START: 4. ซ่อนกราฟตาม State ---
+                                    hide={hiddenHosts[host]}
+                                    // --- END ---
+                                />
                             ))}
                         </LineChart>
                     </ResponsiveContainer>
