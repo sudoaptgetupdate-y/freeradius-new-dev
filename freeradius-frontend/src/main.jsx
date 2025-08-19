@@ -36,6 +36,7 @@ import AdLandingPage from './pages/AdLandingPage.jsx';
 import UserPortalLoginPage from './pages/UserPortalLoginPage.jsx';
 import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx';
 import LoggedOutPage from './pages/LoggedOutPage.jsx';
+import LogManagementPage from './pages/LogManagementPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -80,6 +81,7 @@ const router = createBrowserRouter([
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
               { path: 'account-settings', element: <AdminProfilePage /> },
               { path: 'radius-profiles', element: <RadiusProfilesPage /> },
+              { path: 'log-management', element: <LogManagementPage /> },
             ]
           }
         ]

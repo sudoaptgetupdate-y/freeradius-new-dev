@@ -8,7 +8,7 @@ import {
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal,
-    Megaphone // <-- 1. Import ไอคอนใหม่
+    Megaphone,ShieldCheck
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -128,12 +128,10 @@ export default function MainLayout() {
                          <div className="space-y-1">
                             <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/radius-profiles" icon={<Settings size={18} />} text="Radius Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            {/* --- START: แก้ไขส่วนนี้ --- */}
                             {isSuperAdmin && (
                                <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             )}
                             <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text="Voucher Packages" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            {/* --- END --- */}
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text="Advertisements" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
@@ -148,6 +146,7 @@ export default function MainLayout() {
                                 <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text="Attributes" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text="System Settings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/log-management" icon={<ShieldCheck size={18} />} text="Log Management" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             </div>
                         </div>
                     )}

@@ -23,6 +23,7 @@ const voucherRoutes = require('./routes/voucherRoutes');
 const externalAuthRoutes = require('./routes/externalAuthRoutes');
 const advertisementRoutes = require('./routes/advertisementRoutes'); 
 const userPortalRoutes = require('./routes/userPortalRoutes');
+const logManagerRoutes = require('./routes/logManagerRoutes');
 
 const app = express();
 app.use(cors());
@@ -54,6 +55,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/portal', userPortalRoutes);
+app.use('/api/logs', logManagerRoutes);
 
 // --- Error Handler Middleware ---
 app.use(errorHandler);
