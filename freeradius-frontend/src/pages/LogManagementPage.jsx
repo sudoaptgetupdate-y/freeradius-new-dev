@@ -1,5 +1,6 @@
 // src/pages/LogManagementPage.jsx
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import useSWR, { useSWRConfig } from 'swr';
 import axiosInstance from '@/api/axiosInstance';
 import useAuthStore from '@/store/authStore';
@@ -484,6 +485,15 @@ const ConfigurationTab = ({ token }) => {
 
 export default function LogManagementPage() {
     const token = useAuthStore((state) => state.token);
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const getCurrentTab = () => location.hash.replace('#', '') || 'dashboard';
+    const [activeTab, setActiveTab] = useState(getCurrentTab());
+    const handleTabChange = (tabValue) => {
+        setActiveTab(tabValue);
+        navigate(`#${tabValue}`, { replace: true });
+    };
 
     return (
         <div className="space-y-6">
@@ -493,7 +503,7 @@ export default function LogManagementPage() {
                     <p className="text-muted-foreground">Monitor and manage system log archives.</p>
                 </div>
             </div>
-            <Tabs defaultValue="dashboard">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                     <TabsTrigger value="archive">Log Archive</TabsTrigger>

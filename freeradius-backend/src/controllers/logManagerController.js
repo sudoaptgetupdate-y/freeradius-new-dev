@@ -79,13 +79,42 @@ const getLogVolumeGraph = async (req, res, next) => {
     }
 };
 
-const updateDeviceIps = async (req, res, next) => {
+const updateDeviceIps = async (config) => {
+    if (!IS_PROD) {
+        console.log("SIMULATING: Updating Device IPs:", config.deviceIPs);
+        if (config.deviceIPsChanged) {
+             console.log("SIMULATED COMMAND: sudo /bin/systemctl restart rsyslog");
+        }
+        return { message: "Device IPs update simulated successfully." };
+    }
     try {
-        const result = await logManagerService.updateDeviceIps(req.body);
-        res.status(200).json({ success: true, data: result });
+        console.log(`[Config Update] Writing ${config.deviceIPs.length} IPs to ${RSYSLOG_CONFIG_FILE}`);
+        
+        // 1. สร้าง "แม่แบบ" (Template) ขึ้นมาก่อนที่บรรทัดบนสุด
+        const templateString = `template(name="DeviceLog" type="string" string="${LOG_DIR}/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log")`;
+        
+        // 2. สร้าง "กฎ" (Rule) สำหรับแต่ละ IP โดยให้อ้างอิงไปใช้แม่แบบ
+        const rulesString = config.deviceIPs
+            .map(ip => `if $fromhost-ip == '${ip}' then {
+    action(type="omfile" dynaFile="DeviceLog")
+    stop
+}`)
+            .join('\n');
+        
+        // 3. รวมทุกอย่างเข้าด้วยกัน แล้วเขียนลงไฟล์
+        const newRsyslogContent = `${templateString}\n\n${rulesString}\n`;
+        await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
+        console.log('[Config Update] Successfully wrote to rsyslog config.');
+
+        if (config.deviceIPsChanged) {
+            console.log('[Config Update] IP list changed. Attempting to restart rsyslog service...');
+            await executeCommand('sudo /bin/systemctl restart rsyslog');
+            console.log('[Config Update] rsyslog service restarted successfully.');
+        }
+        return { message: "Device IPs updated successfully." };
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-        next(error);
+        console.error('[CONFIG UPDATE FAILED - IPs]', error);
+        throw new Error(`IPs update failed: ${error.message}`);
     }
 };
 
