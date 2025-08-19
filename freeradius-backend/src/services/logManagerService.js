@@ -235,7 +235,8 @@ const getSystemConfig = async () => {
     if (!IS_PROD) return getMockSystemConfig();
     try {
         const rsyslogContent = await fs.readFile(RSYSLOG_CONFIG_FILE, 'utf-8');
-        const deviceIPs = (rsyslogContent.match(/\$fromhost-ip == '(\S+)'/g) || []).map(line => line.match(/'(\S+)'/)[1]);
+        const deviceIPs = (rsyslogContent.match(/if \$fromhost-ip == '(\S+)'/g) || [])
+            .map(line => line.match(/'(\S+)'/)[1]);
         const retentionDays = await readVarFromScript(MANAGE_SCRIPT_PATH, 'RETENTION_DAYS');
         const criticalThreshold = await readVarFromScript(FAILSAFE_SCRIPT_PATH, 'CRITICAL_THRESHOLD');
         const targetThreshold = await readVarFromScript(FAILSAFE_SCRIPT_PATH, 'TARGET_THRESHOLD');
@@ -336,9 +337,17 @@ const updateDeviceIps = async (config) => {
     }
     try {
         console.log(`[Config Update] Writing ${config.deviceIPs.length} IPs to ${RSYSLOG_CONFIG_FILE}`);
-        const newRsyslogContent = config.deviceIPs
-            .map(ip => `if $fromhost-ip == '${ip}' then /var/log/devices/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log`)
-            .join('\n') + '\n& stop\n';
+        
+        const templateString = `template(name="DeviceLog" type="string" string="${LOG_DIR}/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log")`;
+        
+        const rulesString = config.deviceIPs
+            .map(ip => `if $fromhost-ip == '${ip}' then {
+    action(type="omfile" dynaFile="DeviceLog")
+    stop
+}`)
+            .join('\n');
+        
+        const newRsyslogContent = `${templateString}\n\n${rulesString}\n`;
         await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
         console.log('[Config Update] Successfully wrote to rsyslog config.');
 
