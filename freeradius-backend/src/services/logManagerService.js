@@ -8,7 +8,7 @@ const prisma = require('../prisma');
 // --- START: ส่วนที่เพิ่มเข้ามาสำหรับการจำลองข้อมูล ---
 const IS_PROD = os.platform() === 'linux'; // ตรวจสอบว่ารันบน Linux (Server) หรือไม่
 // **สำคัญ:** กรุณาเปลี่ยน Path จำลองนี้ให้ตรงกับตำแหน่งที่คุณต้องการสร้างโฟลเดอร์บนเครื่องของคุณ
-const LOG_DIR = IS_PROD ? '/var/log/devices' : 'D:/fake_logs/devices'; 
+const LOG_DIR = IS_PROD ? '/var/log/devices' : 'D:/fake_logs/devices';
 // --- END ---
 
 const RSYSLOG_CONFIG_FILE = '/etc/rsyslog.d/50-devices.conf';
@@ -36,9 +36,8 @@ const getMockLogFiles = (filters = {}) => {
     let files = [];
     const hosts = ['firewall-01', 'switch-core', 'router-branch-A', 'server-db-01'];
 
-    // Generate more files for realistic pagination testing
     for (const host of hosts) {
-        for (let i = 0; i < 30; i++) { // Generate 30 days of logs for each host
+        for (let i = 0; i < 30; i++) {
             const date = new Date();
             date.setDate(date.getDate() - i);
             const dateStr = date.toISOString().split('T')[0];
@@ -53,7 +52,6 @@ const getMockLogFiles = (filters = {}) => {
         }
     }
     
-    // Filter by date
     if (startDate) {
         const start = new Date(startDate);
         start.setHours(0, 0, 0, 0);
@@ -67,7 +65,6 @@ const getMockLogFiles = (filters = {}) => {
 
     files.sort((a, b) => new Date(b.modified) - new Date(a.modified));
     
-    // Paginate results
     const totalRecords = files.length;
     const totalPages = Math.ceil(totalRecords / pageSize);
     const skip = (page - 1) * pageSize;
@@ -243,6 +240,10 @@ const getLogFiles = async (filters = {}) => {
 
 const recordDownloadEvent = async (adminId, fileName, ipAddress) => {
     try {
+        if (!adminId) {
+            console.error('[Audit Log Error] Admin ID is missing. Cannot record download event.');
+            return;
+        }
         await prisma.logDownloadHistory.create({
             data: {
                 fileName: fileName,
@@ -250,8 +251,15 @@ const recordDownloadEvent = async (adminId, fileName, ipAddress) => {
                 adminId: adminId,
             },
         });
+        console.log(`[Audit Log Success] Successfully recorded download for Admin ID: ${adminId}`);
     } catch (error) {
-        console.error('Failed to record log download event:', error);
+        console.error('--- [Audit Log Error] Failed to record log download event ---');
+        console.error('Timestamp:', new Date().toISOString());
+        console.error('Admin ID:', adminId);
+        console.error('Filename:', fileName);
+        console.error('IP Address:', ipAddress);
+        console.error('Prisma Error:', error);
+        console.error('--- End of Audit Log Error ---');
     }
 };
 
@@ -285,12 +293,31 @@ const getSystemConfig = async () => {
 };
 
 const getDownloadHistory = async (filters = {}) => {
-    const { page = 1, pageSize = 15 } = filters;
+    const { page = 1, pageSize = 15, adminId, startDate, endDate } = filters;
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
     const take = parseInt(pageSize);
 
+    const whereClause = {};
+
+    if (adminId) {
+        whereClause.adminId = parseInt(adminId);
+    }
+
+    if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        whereClause.createdAt = { ...whereClause.createdAt, gte: start };
+    }
+
+    if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        whereClause.createdAt = { ...whereClause.createdAt, lte: end };
+    }
+
     const [history, totalRecords] = await prisma.$transaction([
         prisma.logDownloadHistory.findMany({
+            where: whereClause,
             orderBy: { createdAt: 'desc' },
             include: {
                 admin: {
@@ -300,7 +327,7 @@ const getDownloadHistory = async (filters = {}) => {
             skip,
             take,
         }),
-        prisma.logDownloadHistory.count(),
+        prisma.logDownloadHistory.count({ where: whereClause }),
     ]);
 
     return {

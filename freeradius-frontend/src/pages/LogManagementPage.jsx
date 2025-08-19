@@ -206,25 +206,55 @@ const LogArchiveTab = ({ token }) => {
 };
 
 const DownloadHistoryTab = ({ token }) => {
-    // --- START: แก้ไขส่วนนี้ ---
+    const [filters, setFilters] = useState({ adminId: '', startDate: '', endDate: '' });
+    
+    const { data: admins } = useSWR('/admins', (url) => fetcher(url, token));
+
     const {
-        data: history, // เปลี่ยนชื่อตัวแปรที่รับค่าจาก data เป็น history โดยตรง
+        data: history,
         pagination,
         isLoading,
         handlePageChange,
         handleItemsPerPageChange
-    } = usePaginatedFetch("/logs/history", 15, {});
-    // --- END ---
+    } = usePaginatedFetch("/logs/history", 15, filters);
+    
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
 
     if (isLoading) return <div className="p-4 text-center">Loading download history...</div>;
-    // --- START: แก้ไขส่วนนี้ ---
     if (!history) return <div className="p-4 text-center text-destructive">Failed to load history.</div>;
-    // --- END ---
 
     return (
         <Card>
             <CardHeader><CardTitle>Download History</CardTitle><CardDescription>An audit trail of all log file downloads.</CardDescription></CardHeader>
             <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="adminFilter">Administrator</Label>
+                        <Select value={filters.adminId} onValueChange={(value) => handleFilterChange('adminId', value === 'all' ? '' : value)}>
+                            <SelectTrigger id="adminFilter">
+                                <SelectValue placeholder="Filter by admin..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Admins</SelectItem>
+                                {admins?.map(admin => (
+                                    <SelectItem key={admin.id} value={String(admin.id)}>
+                                        {admin.fullName || admin.username}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="startDateHistory">Start Date</Label>
+                        <Input id="startDateHistory" type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="endDateHistory">End Date</Label>
+                        <Input id="endDateHistory" type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
+                    </div>
+                </div>
                  <div className="border rounded-md">
                     <Table>
                         <TableHeader>
@@ -245,7 +275,7 @@ const DownloadHistoryTab = ({ token }) => {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                     <TableCell colSpan={4} className="text-center h-24">No download history found.</TableCell>
+                                     <TableCell colSpan={4} className="text-center h-24">No download history found for the selected criteria.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
