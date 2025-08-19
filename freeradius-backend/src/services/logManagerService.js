@@ -83,7 +83,7 @@ const getMockLogVolumeGraphData = (period) => {
             { date: '2025-08-11', 'firewall-01': 45e9, 'switch-core': 40e9 },
             { date: '2025-08-18', 'firewall-01': 50e9, 'switch-core': 42e9 },
         ];
-    } else { // month & year for simplicity
+    } else {
          chartData = [
             { date: '2025-07-01', 'firewall-01': 180e9, 'switch-core': 160e9 },
             { date: '2025-08-01', 'firewall-01': 200e9, 'switch-core': 170e9 },
@@ -136,12 +136,86 @@ const replaceVarInFile = async (filePath, varName, newValue) => {
 // --- Main Service Functions ---
 const getDashboardData = async () => {
     if (!IS_PROD) return getMockDashboardData();
-    // ... Production logic for getDashboardData ...
+    
+    const dfOutput = await executeCommand(`df -h ${LOG_DIR}`);
+    const lines = dfOutput.trim().split('\n');
+    const lastLine = lines[lines.length - 1];
+    const [, size, used, available, usePercent] = lastLine.split(/\s+/);
+    
+    const gpgRecipient = await readVarFromScript(MANAGE_SCRIPT_PATH, 'GPG_RECIPIENT');
+
+    const allIndividualFiles = [];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        for (const host of hosts) {
+            const hostPath = path.join(LOG_DIR, host);
+            if ((await fs.stat(hostPath)).isDirectory()) {
+                const filesInHost = await fs.readdir(hostPath);
+                for (const file of filesInHost) {
+                    if (file.endsWith('.log.gz.gpg')) {
+                        const filePath = path.join(hostPath, file);
+                        const fileStat = await fs.stat(filePath);
+                        allIndividualFiles.push({
+                            host,
+                            name: file,
+                            size: fileStat.size,
+                        });
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error reading log files for dashboard:", error);
+    }
+    
+    const top5LargestLogDays = allIndividualFiles
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 5);
+
+    return {
+        diskUsage: { size, used, available, usePercent },
+        gpgKey: { recipient: gpgRecipient },
+        top5LargestLogDays,
+    };
 };
 
 const getLogFiles = async (filters = {}) => {
     if (!IS_PROD) return getMockLogFiles(filters);
-    // ... Production logic for getLogFiles ...
+    const { page = 1, pageSize = 15, startDate, endDate } = filters;
+    let allFiles = [];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        for (const host of hosts) {
+            const hostPath = path.join(LOG_DIR, host);
+            try {
+                if ((await fs.stat(hostPath)).isDirectory()) {
+                    const filesInHost = await fs.readdir(hostPath);
+                    for (const file of filesInHost) {
+                        if (file.endsWith('.log.gz.gpg')) {
+                            const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})/);
+                            if (!dateMatch) continue;
+                            const fileDate = new Date(dateMatch[1]);
+                            if (startDate && fileDate < new Date(new Date(startDate).setHours(0,0,0,0))) continue;
+                            if (endDate && fileDate > new Date(new Date(endDate).setHours(23,59,59,999))) continue;
+                            const filePath = path.join(hostPath, file);
+                            const fileStat = await fs.stat(filePath);
+                            allFiles.push({ id: Buffer.from(filePath).toString('base64'), path: filePath, host, name: file, size: fileStat.size, modified: fileStat.mtime });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Could not process directory entries for ${hostPath}:`, error);
+            }
+        }
+    } catch (error) {
+        console.error(`Could not read LOG_DIR ${LOG_DIR}:`, error);
+    }
+    allFiles.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    const totalRecords = allFiles.length;
+    const totalPages = Math.ceil(totalRecords / parseInt(pageSize));
+    const skip = (parseInt(page) - 1) * parseInt(pageSize);
+    const paginatedFiles = allFiles.slice(skip, skip + parseInt(pageSize));
+    return { files: paginatedFiles, totalRecords, totalPages, currentPage: parseInt(page) };
 };
 
 const recordDownloadEvent = async (adminId, fileName, ipAddress) => {
@@ -175,12 +249,82 @@ const getSystemConfig = async () => {
 };
 
 const getDownloadHistory = async (filters = {}) => {
-    // ... Production logic for getDownloadHistory ...
+    const { page = 1, pageSize = 15, adminId, startDate, endDate } = filters;
+    const skip = (parseInt(page) - 1) * parseInt(pageSize);
+    const take = parseInt(pageSize);
+    const whereClause = {};
+    if (adminId) whereClause.adminId = parseInt(adminId);
+    if (startDate) whereClause.createdAt = { ...whereClause.createdAt, gte: new Date(new Date(startDate).setHours(0,0,0,0)) };
+    if (endDate) whereClause.createdAt = { ...whereClause.createdAt, lte: new Date(new Date(endDate).setHours(23,59,59,999)) };
+    const [history, totalRecords] = await prisma.$transaction([
+        prisma.logDownloadHistory.findMany({ where: whereClause, orderBy: { createdAt: 'desc' }, include: { admin: { select: { fullName: true, username: true } } }, skip, take }),
+        prisma.logDownloadHistory.count({ where: whereClause }),
+    ]);
+    return { history, totalRecords, totalPages: Math.ceil(totalRecords / take), currentPage: parseInt(page) };
 };
 
 const getLogVolumeGraphData = async (period = 'day') => {
-    if (!IS_PROD) return getMockLogVolumeGraphData(period);
-    // ... Production logic for getLogVolumeGraphData ...
+    if (!IS_PROD) {
+        return getMockLogVolumeGraphData(period);
+    }
+    
+    let allFiles = [];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        for (const host of hosts) {
+            const hostPath = path.join(LOG_DIR, host);
+            if ((await fs.stat(hostPath)).isDirectory()) {
+                const filesInHost = await fs.readdir(hostPath);
+                for (const file of filesInHost) {
+                    if (file.endsWith('.log.gz.gpg')) {
+                        const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})/);
+                        if (dateMatch) {
+                            const filePath = path.join(hostPath, file);
+                            const fileStat = await fs.stat(filePath);
+                            allFiles.push({ host, date: dateMatch[1], size: fileStat.size });
+                        }
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error reading log files for graph:", error);
+        return { chartData: [], hosts: [] };
+    }
+
+    const aggregated = allFiles.reduce((acc, { host, date, size }) => {
+        let key;
+        const d = new Date(date);
+        switch (period) {
+            case 'week':
+                const weekStart = new Date(d);
+                weekStart.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
+                key = weekStart.toISOString().split('T')[0];
+                break;
+            case 'month':
+                key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+                break;
+            case 'year':
+                key = `${d.getFullYear()}-01-01`;
+                break;
+            default:
+                key = date;
+        }
+        if (!acc[key]) acc[key] = {};
+        acc[key][host] = (acc[key][host] || 0) + size;
+        return acc;
+    }, {});
+    
+    const allHosts = [...new Set(allFiles.map(f => f.host))];
+    const chartData = Object.entries(aggregated).map(([date, hostData]) => {
+        const entry = { date };
+        allHosts.forEach(host => {
+            entry[host] = hostData[host] || 0;
+        });
+        return entry;
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return { chartData, hosts: allHosts };
 };
 
 const updateDeviceIps = async (config) => {
