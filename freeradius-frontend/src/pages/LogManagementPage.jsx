@@ -206,18 +206,20 @@ const LogArchiveTab = ({ token }) => {
 };
 
 const DownloadHistoryTab = ({ token }) => {
+    // --- START: แก้ไขส่วนนี้ ---
     const {
-        data: responseData,
+        data: history, // เปลี่ยนชื่อตัวแปรที่รับค่าจาก data เป็น history โดยตรง
         pagination,
         isLoading,
         handlePageChange,
         handleItemsPerPageChange
     } = usePaginatedFetch("/logs/history", 15, {});
-
-    const history = responseData?.history || [];
+    // --- END ---
 
     if (isLoading) return <div className="p-4 text-center">Loading download history...</div>;
-    if (!responseData) return <div className="p-4 text-center text-destructive">Failed to load history.</div>;
+    // --- START: แก้ไขส่วนนี้ ---
+    if (!history) return <div className="p-4 text-center text-destructive">Failed to load history.</div>;
+    // --- END ---
 
     return (
         <Card>
