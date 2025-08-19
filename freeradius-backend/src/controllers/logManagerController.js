@@ -79,16 +79,26 @@ const getLogVolumeGraph = async (req, res, next) => {
     }
 };
 
-const updateSystemConfig = async (req, res, next) => {
+const updateDeviceIps = async (req, res, next) => {
     try {
-        const result = await logManagerService.updateSystemConfig(req.body);
+        const result = await logManagerService.updateDeviceIps(req.body);
         res.status(200).json({ success: true, data: result });
     } catch (error) {
-        // ส่ง Error กลับไปที่ Frontend อย่างละเอียด
         res.status(500).json({ success: false, message: error.message });
         next(error);
     }
 };
+
+const updateLogSettings = async (req, res, next) => {
+    try {
+        const result = await logManagerService.updateLogSettings(req.body);
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardData,
     getLogFiles,
@@ -96,5 +106,6 @@ module.exports = {
     getSystemConfig,
     getDownloadHistory,
     getLogVolumeGraph,
-    updateSystemConfig,
+    updateDeviceIps,
+    updateLogSettings,
 };

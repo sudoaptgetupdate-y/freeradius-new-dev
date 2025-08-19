@@ -8,9 +8,9 @@ const prisma = require('../prisma');
 const IS_PROD = os.platform() === 'linux';
 const LOG_DIR = IS_PROD ? '/var/log/devices' : 'D:/fake_logs/devices';
 
-const RSYSLOG_CONFIG_FILE = '/etc/rsyslog.d/50-devices.conf';
-const MANAGE_SCRIPT_PATH = '/usr/local/bin/manage-device-logs.sh';
-const FAILSAFE_SCRIPT_PATH = '/usr/local/bin/clear-oldest-logs-failsafe.sh';
+const RSYSLOG_CONFIG_FILE = IS_PROD ? '/etc/rsyslog.d/50-devices.conf' : 'D:/fake_logs/50-devices.conf';
+const MANAGE_SCRIPT_PATH = IS_PROD ? '/usr/local/bin/manage-device-logs.sh' : 'D:/fake_logs/manage-device-logs.sh';
+const FAILSAFE_SCRIPT_PATH = IS_PROD ? '/usr/local/bin/clear-oldest-logs-failsafe.sh' : 'D:/fake_logs/clear-oldest-logs-failsafe.sh';
 
 // --- Mock Data Functions ---
 const getMockDashboardData = () => ({
@@ -96,8 +96,7 @@ const getMockLogVolumeGraphData = (period) => {
 // --- Helper Functions ---
 const executeCommand = (command) => {
   if (!IS_PROD) {
-    console.log(`SIMULATING command on non-linux OS: "${command}"`);
-    if (command.startsWith('df')) return Promise.resolve('Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/sda1 51475068 25956316 23379896 53% /');
+    console.log(`SIMULATING command: "${command}"`);
     return Promise.resolve('');
   }
   return new Promise((resolve, reject) => {
@@ -120,6 +119,18 @@ const readVarFromScript = async (filePath, varName) => {
         if (IS_PROD) console.error(`Could not read ${varName} from ${filePath}:`, error.message);
         return null;
     }
+};
+
+const replaceVarInFile = async (filePath, varName, newValue) => {
+    const originalContent = await fs.readFile(filePath, 'utf-8');
+    const regex = new RegExp(`(^${varName}=).*`, 'm');
+    let newContent;
+    if (originalContent.match(regex)) {
+        newContent = originalContent.replace(regex, `$1"${newValue}"`);
+    } else {
+        newContent = `${originalContent.trim()}\n${varName}="${newValue}"\n`;
+    }
+    await fs.writeFile(filePath, newContent, 'utf-8');
 };
 
 // --- Main Service Functions ---
@@ -216,10 +227,7 @@ const recordDownloadEvent = async (adminId, fileName, ipAddress) => {
         await prisma.logDownloadHistory.create({ data: { fileName, ipAddress, adminId } });
         console.log(`[Audit Log Success] Recorded download for Admin ID: ${adminId}`);
     } catch (error) {
-        console.error('--- [Audit Log Error] Failed to record log download event ---');
-        console.error('Timestamp:', new Date().toISOString(), { adminId, fileName, ipAddress });
-        console.error('Prisma Error:', error);
-        console.error('--- End of Audit Log Error ---');
+        console.error('--- [Audit Log Error] Failed to record log download event ---', { adminId, fileName, ipAddress, error });
     }
 };
 
@@ -318,78 +326,51 @@ const getLogVolumeGraphData = async (period = 'day') => {
     return { chartData, hosts: allHosts };
 };
 
-// Helper to replace a variable value in a script file
-const replaceVarInFile = async (filePath, varName, newValue) => {
-    // ไม่ต้องเช็คค่าว่าง เพื่อให้สามารถล้างค่าได้
-    const originalContent = await fs.readFile(filePath, 'utf-8');
-    const regex = new RegExp(`(^${varName}=).*`, 'm');
-    // ถ้าหาบรรทัดเจอ ให้แทนที่ค่า, ถ้าไม่เจอ ให้เพิ่มเข้าไปใหม่ท้ายไฟล์
-    let newContent;
-    if (originalContent.match(regex)) {
-        newContent = originalContent.replace(regex, `$1"${newValue}"`);
-    } else {
-        newContent = `${originalContent}\n${varName}="${newValue}"`;
-    }
-    await fs.writeFile(filePath, newContent, 'utf-8');
-};
-
-const updateSystemConfig = async (config) => {
+const updateDeviceIps = async (config) => {
     if (!IS_PROD) {
-        console.log("--- SIMULATING CONFIGURATION UPDATE ---");
-        console.log("Received new config:", JSON.stringify(config, null, 2));
+        console.log("SIMULATING: Updating Device IPs:", config.deviceIPs);
         if (config.deviceIPsChanged) {
-            console.log("SIMULATED COMMAND: sudo /bin/systemctl restart rsyslog");
+             console.log("SIMULATED COMMAND: sudo /bin/systemctl restart rsyslog");
         }
-        console.log("--- SIMULATION END ---");
-        return { message: "Configuration update simulated successfully." };
+        return { message: "Device IPs update simulated successfully." };
     }
-
-    // --- Production Logic with Detailed Logging ---
-    console.log('[Config Update] Starting update process...');
     try {
-        // 1. Update rsyslog config for device IPs
-        if (config.deviceIPs) {
-            console.log(`[Config Update] Writing ${config.deviceIPs.length} IPs to ${RSYSLOG_CONFIG_FILE}`);
-            // สร้าง rsyslog rules ที่ถูกต้อง
-            const newRsyslogContent = config.deviceIPs
-                .map(ip => `if $fromhost-ip == '${ip}' then /var/log/devices/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log`)
-                .join('\n') + '\n& stop\n'; // เพิ่ม & stop เพื่อประสิทธิภาพ
-            await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
-            console.log('[Config Update] Successfully wrote to rsyslog config.');
-        }
+        console.log(`[Config Update] Writing ${config.deviceIPs.length} IPs to ${RSYSLOG_CONFIG_FILE}`);
+        const newRsyslogContent = config.deviceIPs
+            .map(ip => `if $fromhost-ip == '${ip}' then /var/log/devices/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log`)
+            .join('\n') + '\n& stop\n';
+        await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
+        console.log('[Config Update] Successfully wrote to rsyslog config.');
 
-        // 2. Update manage-device-logs.sh
-        console.log(`[Config Update] Updating RETENTION_DAYS in ${MANAGE_SCRIPT_PATH}`);
-        await replaceVarInFile(MANAGE_SCRIPT_PATH, 'RETENTION_DAYS', config.retentionDays);
-        console.log('[Config Update] Successfully updated retention days.');
-
-        // 3. Update clear-oldest-logs-failsafe.sh
-        if (config.failsafe) {
-            console.log(`[Config Update] Updating Failsafe settings in ${FAILSAFE_SCRIPT_PATH}`);
-            await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'CRITICAL_THRESHOLD', config.failsafe.critical);
-            await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'TARGET_THRESHOLD', config.failsafe.target);
-            console.log('[Config Update] Successfully updated failsafe settings.');
-        }
-
-        // 4. Restart rsyslog if IPs changed
         if (config.deviceIPsChanged) {
             console.log('[Config Update] IP list changed. Attempting to restart rsyslog service...');
-            const restartOutput = await executeCommand('sudo /bin/systemctl restart rsyslog');
-            console.log('[Config Update] rsyslog service restarted successfully.', restartOutput);
+            await executeCommand('sudo /bin/systemctl restart rsyslog');
+            console.log('[Config Update] rsyslog service restarted successfully.');
         }
-
-        console.log('[Config Update] Update process completed successfully.');
-        return { message: "Configuration updated successfully." };
-
+        return { message: "Device IPs updated successfully." };
     } catch (error) {
-        // **ส่วนที่สำคัญที่สุด: แสดง Error ที่แท้จริงออกมา**
-        console.error('--- [CONFIG UPDATE FAILED] ---');
-        console.error('An error occurred during the configuration update process.');
-        console.error('Timestamp:', new Date().toISOString());
-        console.error('Error Details:', error);
-        console.error('--- END OF ERROR ---');
-        // ส่ง Error กลับไปให้ Frontend แสดงผล
-        throw new Error(`Update failed: ${error.message}`);
+        console.error('[CONFIG UPDATE FAILED - IPs]', error);
+        throw new Error(`IPs update failed: ${error.message}`);
+    }
+};
+
+const updateLogSettings = async (config) => {
+     if (!IS_PROD) {
+        console.log("SIMULATING: Updating Log Settings:", config);
+        return { message: "Log settings update simulated successfully." };
+    }
+    try {
+        console.log(`[Config Update] Updating Retention & Failsafe settings...`);
+        await replaceVarInFile(MANAGE_SCRIPT_PATH, 'RETENTION_DAYS', config.retentionDays);
+        if (config.failsafe) {
+            await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'CRITICAL_THRESHOLD', config.failsafe.critical);
+            await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'TARGET_THRESHOLD', config.failsafe.target);
+        }
+        console.log('[Config Update] Successfully updated Retention & Failsafe settings.');
+        return { message: "Log settings updated successfully." };
+    } catch (error) {
+        console.error('[CONFIG UPDATE FAILED - Settings]', error);
+        throw new Error(`Settings update failed: ${error.message}`);
     }
 };
 
@@ -400,6 +381,7 @@ module.exports = {
     recordDownloadEvent,
     getDownloadHistory,
     getLogVolumeGraphData,
-    updateSystemConfig,
+    updateDeviceIps,
+    updateLogSettings,
     LOG_DIR,
 };

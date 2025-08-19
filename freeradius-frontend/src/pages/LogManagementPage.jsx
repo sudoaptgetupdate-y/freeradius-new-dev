@@ -15,6 +15,10 @@ import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
 import LogVolumeChartCard from "@/components/ui/LogVolumeChartCard";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
@@ -318,147 +322,165 @@ const DownloadHistoryTab = ({ token }) => {
 };
 
 const ConfigurationTab = ({ token }) => {
-    const { data: initialConfig, error, isLoading } = useSWR('/logs/config', (url) => fetcher(url, token));
-    const { mutate } = useSWRConfig();
+    const { data: initialConfig, error, isLoading, mutate } = useSWR('/logs/config', (url) => fetcher(url, token));
 
-    const [config, setConfig] = useState(null);
+    const [deviceIPs, setDeviceIPs] = useState([]);
     const [newIp, setNewIp] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [isDirty, setIsDirty] = useState(false);
+    const [isIpsSaving, setIsIpsSaving] = useState(false);
+    const [isIpsDirty, setIsIpsDirty] = useState(false);
+    const [ipToDelete, setIpToDelete] = useState(null);
+
+    const [settings, setSettings] = useState({ retentionDays: '', failsafe: { critical: '', target: '' } });
+    const [isSettingsSaving, setIsSettingsSaving] = useState(false);
+    const [isSettingsDirty, setIsSettingsDirty] = useState(false);
 
     useEffect(() => {
         if (initialConfig) {
-            setConfig(JSON.parse(JSON.stringify(initialConfig)));
-            setIsDirty(false);
+            setDeviceIPs(initialConfig.deviceIPs || []);
+            setSettings({
+                retentionDays: initialConfig.retentionDays || '',
+                failsafe: initialConfig.failsafe || { critical: '', target: '' },
+            });
+            setIsIpsDirty(false);
+            setIsSettingsDirty(false);
         }
     }, [initialConfig]);
 
-    const handleValueChange = (key, value) => {
-        if (!config) return; // ป้องกัน Error ถ้า config ยังเป็น null
+    const addDeviceIp = () => {
+        if (newIp && !deviceIPs.includes(newIp)) {
+            setDeviceIPs([...deviceIPs, newIp]);
+            setNewIp('');
+            setIsIpsDirty(true);
+        } else {
+            toast.info("IP address is empty or already exists.");
+        }
+    };
+    
+    const confirmRemoveIp = () => {
+        if (!ipToDelete) return;
+        setDeviceIPs(deviceIPs.filter(ip => ip !== ipToDelete));
+        setIsIpsDirty(true);
+        setIpToDelete(null);
+    };
+
+    const handleSettingsChange = (key, value) => {
         const keys = key.split('.');
-        setConfig(prev => {
-            const newConfig = { ...prev };
-            let current = newConfig;
+        setSettings(prev => {
+            const newSettings = JSON.parse(JSON.stringify(prev));
+            let current = newSettings;
             for (let i = 0; i < keys.length - 1; i++) {
                 current = current[keys[i]];
             }
             current[keys[keys.length - 1]] = value;
-            return newConfig;
+            return newSettings;
         });
-        setIsDirty(true);
+        setIsSettingsDirty(true);
     };
 
-    const addDeviceIp = () => {
-        // เพิ่มการตรวจสอบให้ครอบคลุมมากขึ้น
-        if (!newIp || !config || !config.deviceIPs) {
-            toast.warning("Cannot add IP", { description: "Configuration is not loaded or IP is empty."});
-            return;
-        }
-        if (config.deviceIPs.includes(newIp)) {
-            toast.info("IP address already exists.");
-            return;
-        }
-
-        const updatedIps = [...config.deviceIPs, newIp];
-        setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
-        setNewIp('');
-        setIsDirty(true);
-    };
-
-    const removeDeviceIp = (ipToRemove) => {
-        if (!config || !config.deviceIPs) return; // ป้องกัน Error
-        const updatedIps = config.deviceIPs.filter(ip => ip !== ipToRemove);
-        setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
-        setIsDirty(true);
-    };
-
-    const handleSave = async () => {
-        if (!config) { // ป้องกัน Error
-            toast.error("Cannot save", { description: "Configuration data is not available."});
-            return;
-        }
-        setIsSaving(true);
+    const handleSaveIPs = async () => {
+        setIsIpsSaving(true);
         try {
             const payload = {
-                ...config,
-                deviceIPsChanged: JSON.stringify(config.deviceIPs) !== JSON.stringify(initialConfig.deviceIPs)
+                deviceIPs: deviceIPs,
+                deviceIPsChanged: JSON.stringify(deviceIPs) !== JSON.stringify(initialConfig.deviceIPs)
             };
-            await axiosInstance.post('/logs/config', payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("Configuration saved successfully!");
-            mutate('/logs/config');
+            await axiosInstance.post('/logs/config/ips', payload, { headers: { Authorization: `Bearer ${token}` } });
+            toast.success("Device IPs saved successfully!");
+            mutate();
         } catch (err) {
-            toast.error("Failed to save configuration.", { description: err.response?.data?.message || err.message });
+            toast.error("Failed to save Device IPs.", { description: err.response?.data?.message || err.message });
         } finally {
-            setIsSaving(false);
+            setIsIpsSaving(false);
+        }
+    };
+
+    const handleSaveSettings = async () => {
+        setIsSettingsSaving(true);
+        try {
+            await axiosInstance.post('/logs/config/settings', settings, { headers: { Authorization: `Bearer ${token}` } });
+            toast.success("Settings saved successfully!");
+            mutate();
+        } catch (err) {
+            toast.error("Failed to save settings.", { description: err.response?.data?.message || err.message });
+        } finally {
+            setIsSettingsSaving(false);
         }
     };
 
     if (isLoading) return <div className="p-4 text-center">Loading configuration...</div>;
-    if (error || !config) return <div className="p-4 text-center text-destructive">Failed to load configuration.</div>;
-
-    if (isLoading) return <div className="p-4 text-center">Loading configuration...</div>;
-    if (error || !config) return <div className="p-4 text-center text-destructive">Failed to load configuration.</div>;
+    if (error || !initialConfig) return <div className="p-4 text-center text-destructive">Failed to load configuration.</div>;
 
     return (
-        <div className="space-y-6 max-w-2xl">
-            <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <Card className="flex flex-col h-full">
                 <CardHeader>
                     <CardTitle>Device IPs</CardTitle>
                     <CardDescription>Manage IP addresses that can send logs to this server. Changes require a service restart.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {config.deviceIPs.map(ip => (
+                <CardContent className="flex-grow">
+                    <div className="space-y-2">
+                        {deviceIPs.map(ip => (
                             <div key={ip} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                 <span className="font-mono">{ip}</span>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeDeviceIp(ip)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIpToDelete(ip)}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                             </div>
                         ))}
-                         {config.deviceIPs.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No device IPs configured.</p>}
+                         {deviceIPs.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No device IPs configured.</p>}
                     </div>
                     <div className="flex gap-2 mt-4">
-                        <Input
-                            placeholder="Enter new IP address"
-                            value={newIp}
-                            onChange={(e) => setNewIp(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && addDeviceIp()}
-                        />
+                        <Input placeholder="Enter new IP address" value={newIp} onChange={(e) => setNewIp(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addDeviceIp()} />
                         <Button onClick={addDeviceIp}>Add IP</Button>
                     </div>
                 </CardContent>
+                <CardFooter className="justify-end bg-slate-50 p-4 border-t mt-auto">
+                    <Button onClick={handleSaveIPs} disabled={!isIpsDirty || isIpsSaving}>
+                        {isIpsSaving ? "Saving..." : "Save IP Changes"}
+                    </Button>
+                </CardFooter>
             </Card>
-            <Card>
+            <Card className="flex flex-col h-full">
                 <CardHeader>
                     <CardTitle>Retention & Failsafe</CardTitle>
                     <CardDescription>Settings for log rotation and disk space protection.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     <div className="space-y-2">
+                    <div className="space-y-2">
                         <Label htmlFor="retentionDays">Retention Days</Label>
-                        <Input id="retentionDays" type="number" value={config.retentionDays || ''} onChange={(e) => handleValueChange('retentionDays', e.target.value)} />
+                        <Input id="retentionDays" type="number" value={settings.retentionDays} onChange={(e) => handleSettingsChange('retentionDays', e.target.value)} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="criticalThreshold">Critical Disk Usage (%)</Label>
-                        <Input id="criticalThreshold" type="number" value={config.failsafe.critical || ''} onChange={(e) => handleValueChange('failsafe.critical', e.target.value)} />
+                        <Input id="criticalThreshold" type="number" value={settings.failsafe.critical} onChange={(e) => handleSettingsChange('failsafe.critical', e.target.value)} />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="targetThreshold">Target Disk Usage (%) after cleanup</Label>
-                        <Input id="targetThreshold" type="number" value={config.failsafe.target || ''} onChange={(e) => handleValueChange('failsafe.target', e.target.value)} />
+                        <Input id="targetThreshold" type="number" value={settings.failsafe.target} onChange={(e) => handleSettingsChange('failsafe.target', e.target.value)} />
                     </div>
                 </CardContent>
+                <CardFooter className="justify-end bg-slate-50 p-4 border-t mt-auto">
+                     <Button onClick={handleSaveSettings} disabled={!isSettingsDirty || isSettingsSaving}>
+                        {isSettingsSaving ? "Saving..." : "Save Settings"}
+                    </Button>
+                </CardFooter>
             </Card>
-             <div className="flex justify-end">
-                <Button onClick={handleSave} disabled={!isDirty || isSaving}>
-                    {isSaving ? "Saving..." : "Save Configuration"}
-                </Button>
-            </div>
+            <AlertDialog open={!!ipToDelete} onOpenChange={() => setIpToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently remove the IP address: <strong>{ipToDelete}</strong> from the configuration.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmRemoveIp}>Confirm Remove</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
+
 
 export default function LogManagementPage() {
     const token = useAuthStore((state) => state.token);
@@ -467,9 +489,7 @@ export default function LogManagementPage() {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                 <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                        <ShieldCheck className="h-6 w-6" /> Log Management
-                    </h1>
+                    <h1 className="text-2xl font-bold flex items-center gap-2"><ShieldCheck className="h-6 w-6" /> Log Management</h1>
                     <p className="text-muted-foreground">Monitor and manage system log archives.</p>
                 </div>
             </div>
@@ -480,18 +500,10 @@ export default function LogManagementPage() {
                     <TabsTrigger value="history">Download History</TabsTrigger>
                     <TabsTrigger value="config">Configuration</TabsTrigger>
                 </TabsList>
-                <TabsContent value="dashboard" className="mt-4">
-                    <DashboardTab token={token} />
-                </TabsContent>
-                <TabsContent value="archive" className="mt-4">
-                    <LogArchiveTab token={token} />
-                </TabsContent>
-                <TabsContent value="history" className="mt-4">
-                    <DownloadHistoryTab token={token} />
-                </TabsContent>
-                <TabsContent value="config" className="mt-4">
-                    <ConfigurationTab token={token} />
-                </TabsContent>
+                <TabsContent value="dashboard" className="mt-4"><DashboardTab token={token} /></TabsContent>
+                <TabsContent value="archive" className="mt-4"><LogArchiveTab token={token} /></TabsContent>
+                <TabsContent value="history" className="mt-4"><DownloadHistoryTab token={token} /></TabsContent>
+                <TabsContent value="config" className="mt-4"><ConfigurationTab token={token} /></TabsContent>
             </Tabs>
         </div>
     );

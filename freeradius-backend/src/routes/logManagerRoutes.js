@@ -7,13 +7,15 @@ const {
     getSystemConfig,
     getDownloadHistory,
     getLogVolumeGraph,
-    updateSystemConfig
+    updateDeviceIps,
+    updateLogSettings
 } = require('../controllers/logManagerController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
 
 const router = express.Router();
 
+// Protect all routes and authorize only superadmins
 router.use(protect);
 router.use(authorize('superadmin'));
 
@@ -23,6 +25,9 @@ router.get('/files/download', downloadLogFile);
 router.get('/config', getSystemConfig);
 router.get('/history', getDownloadHistory);
 router.get('/volume-graph', getLogVolumeGraph);
-router.post('/config', updateSystemConfig);
+
+// --- Routes for updating configuration ---
+router.post('/config/ips', updateDeviceIps);
+router.post('/config/settings', updateLogSettings);
 
 module.exports = router;
