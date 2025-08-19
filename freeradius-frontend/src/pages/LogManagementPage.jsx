@@ -1,6 +1,6 @@
 // src/pages/LogManagementPage.jsx
-import { useState } from 'react';
-import useSWR from 'swr';
+import { useState, useEffect } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
 import axiosInstance from '@/api/axiosInstance';
 import useAuthStore from '@/store/authStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, ShieldCheck } from 'lucide-react';
+import { Download, ShieldCheck, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { Input } from "@/components/ui/input";
@@ -318,7 +318,68 @@ const DownloadHistoryTab = ({ token }) => {
 };
 
 const ConfigurationTab = ({ token }) => {
-    const { data: config, error, isLoading } = useSWR('/logs/config', (url) => fetcher(url, token));
+    const { data: initialConfig, error, isLoading } = useSWR('/logs/config', (url) => fetcher(url, token));
+    const { mutate } = useSWRConfig();
+
+    const [config, setConfig] = useState(null);
+    const [newIp, setNewIp] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
+
+    useEffect(() => {
+        if (initialConfig) {
+            setConfig(JSON.parse(JSON.stringify(initialConfig))); // Deep copy
+            setIsDirty(false);
+        }
+    }, [initialConfig]);
+
+    const handleValueChange = (key, value) => {
+        const keys = key.split('.');
+        setConfig(prev => {
+            const newConfig = { ...prev };
+            let current = newConfig;
+            for (let i = 0; i < keys.length - 1; i++) {
+                current = current[keys[i]];
+            }
+            current[keys[keys.length - 1]] = value;
+            return newConfig;
+        });
+        setIsDirty(true);
+    };
+
+    const addDeviceIp = () => {
+        if (newIp && !config.deviceIPs.includes(newIp)) {
+            const updatedIps = [...config.deviceIPs, newIp];
+            setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
+            setNewIp('');
+            setIsDirty(true);
+        }
+    };
+
+    const removeDeviceIp = (ipToRemove) => {
+        const updatedIps = config.deviceIPs.filter(ip => ip !== ipToRemove);
+        setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
+        setIsDirty(true);
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const payload = {
+                ...config,
+                deviceIPsChanged: JSON.stringify(config.deviceIPs) !== JSON.stringify(initialConfig.deviceIPs)
+            };
+            await axiosInstance.post('/logs/config', payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            toast.success("Configuration saved successfully!");
+            mutate('/logs/config');
+        } catch (err) {
+            toast.error("Failed to save configuration.", { description: err.response?.data?.message || err.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     if (isLoading) return <div className="p-4 text-center">Loading configuration...</div>;
     if (error || !config) return <div className="p-4 text-center text-destructive">Failed to load configuration.</div>;
@@ -328,16 +389,29 @@ const ConfigurationTab = ({ token }) => {
             <Card>
                 <CardHeader>
                     <CardTitle>Device IPs</CardTitle>
-                    <CardDescription>List of IP addresses configured to send logs to this server.</CardDescription>
+                    <CardDescription>Manage IP addresses that can send logs to this server. Changes require a service restart.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {config.deviceIPs && config.deviceIPs.length > 0 ? (
-                        <ul className="list-disc pl-5 space-y-1 font-mono text-sm">
-                            {config.deviceIPs.map(ip => <li key={ip}>{ip}</li>)}
-                        </ul>
-                    ) : (
-                        <p className="text-sm text-muted-foreground">No device IPs configured.</p>
-                    )}
+                    <div className="space-y-4">
+                        {config.deviceIPs.map(ip => (
+                            <div key={ip} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                                <span className="font-mono">{ip}</span>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeDeviceIp(ip)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </div>
+                        ))}
+                         {config.deviceIPs.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No device IPs configured.</p>}
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                        <Input
+                            placeholder="Enter new IP address"
+                            value={newIp}
+                            onChange={(e) => setNewIp(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && addDeviceIp()}
+                        />
+                        <Button onClick={addDeviceIp}>Add IP</Button>
+                    </div>
                 </CardContent>
             </Card>
             <Card>
@@ -345,12 +419,26 @@ const ConfigurationTab = ({ token }) => {
                     <CardTitle>Retention & Failsafe</CardTitle>
                     <CardDescription>Settings for log rotation and disk space protection.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                    <p className="text-sm"><strong>Retention Days:</strong> {config.retentionDays || 'N/A'}</p>
-                    <p className="text-sm"><strong>Critical Disk Usage:</strong> {config.failsafe.critical || 'N/A'}%</p>
-                    <p className="text-sm"><strong>Target Disk Usage:</strong> {config.failsafe.target || 'N/A'}%</p>
+                <CardContent className="space-y-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="retentionDays">Retention Days</Label>
+                        <Input id="retentionDays" type="number" value={config.retentionDays || ''} onChange={(e) => handleValueChange('retentionDays', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="criticalThreshold">Critical Disk Usage (%)</Label>
+                        <Input id="criticalThreshold" type="number" value={config.failsafe.critical || ''} onChange={(e) => handleValueChange('failsafe.critical', e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="targetThreshold">Target Disk Usage (%) after cleanup</Label>
+                        <Input id="targetThreshold" type="number" value={config.failsafe.target || ''} onChange={(e) => handleValueChange('failsafe.target', e.target.value)} />
+                    </div>
                 </CardContent>
             </Card>
+             <div className="flex justify-end">
+                <Button onClick={handleSave} disabled={!isDirty || isSaving}>
+                    {isSaving ? "Saving..." : "Save Configuration"}
+                </Button>
+            </div>
         </div>
     );
 };

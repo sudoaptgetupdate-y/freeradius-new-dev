@@ -318,6 +318,55 @@ const getLogVolumeGraphData = async (period = 'day') => {
     return { chartData, hosts: allHosts };
 };
 
+// Helper to replace a variable value in a script file
+const replaceVarInFile = async (filePath, varName, newValue) => {
+    if (!newValue) return; // Don't update if value is empty
+    const originalContent = await fs.readFile(filePath, 'utf-8');
+    const regex = new RegExp(`(^${varName}=).*`, 'm');
+    const newContent = originalContent.replace(regex, `$1"${newValue}"`);
+    await fs.writeFile(filePath, newContent, 'utf-8');
+};
+
+const updateSystemConfig = async (config) => {
+    if (!IS_PROD) {
+        console.log("--- SIMULATING CONFIGURATION UPDATE ---");
+        console.log("Received new config:", JSON.stringify(config, null, 2));
+        console.log(`SIMULATED: Writing to ${RSYSLOG_CONFIG_FILE}`);
+        console.log(`SIMULATED: Writing to ${MANAGE_SCRIPT_PATH}`);
+        console.log(`SIMULATED: Writing to ${FAILSAFE_SCRIPT_PATH}`);
+        if (config.deviceIPsChanged) { // สมมติว่า Frontend ส่ง flag นี้มา
+            console.log("SIMULATED COMMAND: sudo /bin/systemctl restart rsyslog");
+        }
+        console.log("--- SIMULATION END ---");
+        return { message: "Configuration update simulated successfully." };
+    }
+
+    // Production Logic
+    // 1. Update rsyslog config for device IPs
+    if (config.deviceIPs) {
+        const newRsyslogContent = config.deviceIPs
+            .map(ip => `if $fromhost-ip == '${ip}' then /var/log/devices/%HOSTNAME%/${new Date().toISOString().slice(0, 10)}.log`)
+            .join('\n');
+        await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
+    }
+
+    // 2. Update manage-device-logs.sh
+    await replaceVarInFile(MANAGE_SCRIPT_PATH, 'RETENTION_DAYS', config.retentionDays);
+    
+    // 3. Update clear-oldest-logs-failsafe.sh
+    if (config.failsafe) {
+        await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'CRITICAL_THRESHOLD', config.failsafe.critical);
+        await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'TARGET_THRESHOLD', config.failsafe.target);
+    }
+    
+    // 4. Restart rsyslog if IPs changed (assuming a flag is passed from frontend)
+    if (config.deviceIPsChanged) {
+        await executeCommand('sudo /bin/systemctl restart rsyslog');
+    }
+
+    return { message: "Configuration updated successfully." };
+};
+
 module.exports = {
     getDashboardData,
     getLogFiles,
@@ -325,5 +374,6 @@ module.exports = {
     recordDownloadEvent,
     getDownloadHistory,
     getLogVolumeGraphData,
+    updateSystemConfig,
     LOG_DIR,
 };

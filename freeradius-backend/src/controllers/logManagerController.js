@@ -79,6 +79,15 @@ const getLogVolumeGraph = async (req, res, next) => {
     }
 };
 
+const updateSystemConfig = async (req, res, next) => {
+    try {
+        const result = await logManagerService.updateSystemConfig(req.body);
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardData,
     getLogFiles,
@@ -86,4 +95,5 @@ module.exports = {
     getSystemConfig,
     getDownloadHistory,
     getLogVolumeGraph,
+    updateSystemConfig,
 };
