@@ -320,10 +320,16 @@ const getLogVolumeGraphData = async (period = 'day') => {
 
 // Helper to replace a variable value in a script file
 const replaceVarInFile = async (filePath, varName, newValue) => {
-    if (!newValue) return; // Don't update if value is empty
+    // ไม่ต้องเช็คค่าว่าง เพื่อให้สามารถล้างค่าได้
     const originalContent = await fs.readFile(filePath, 'utf-8');
     const regex = new RegExp(`(^${varName}=).*`, 'm');
-    const newContent = originalContent.replace(regex, `$1"${newValue}"`);
+    // ถ้าหาบรรทัดเจอ ให้แทนที่ค่า, ถ้าไม่เจอ ให้เพิ่มเข้าไปใหม่ท้ายไฟล์
+    let newContent;
+    if (originalContent.match(regex)) {
+        newContent = originalContent.replace(regex, `$1"${newValue}"`);
+    } else {
+        newContent = `${originalContent}\n${varName}="${newValue}"`;
+    }
     await fs.writeFile(filePath, newContent, 'utf-8');
 };
 
@@ -331,40 +337,60 @@ const updateSystemConfig = async (config) => {
     if (!IS_PROD) {
         console.log("--- SIMULATING CONFIGURATION UPDATE ---");
         console.log("Received new config:", JSON.stringify(config, null, 2));
-        console.log(`SIMULATED: Writing to ${RSYSLOG_CONFIG_FILE}`);
-        console.log(`SIMULATED: Writing to ${MANAGE_SCRIPT_PATH}`);
-        console.log(`SIMULATED: Writing to ${FAILSAFE_SCRIPT_PATH}`);
-        if (config.deviceIPsChanged) { // สมมติว่า Frontend ส่ง flag นี้มา
+        if (config.deviceIPsChanged) {
             console.log("SIMULATED COMMAND: sudo /bin/systemctl restart rsyslog");
         }
         console.log("--- SIMULATION END ---");
         return { message: "Configuration update simulated successfully." };
     }
 
-    // Production Logic
-    // 1. Update rsyslog config for device IPs
-    if (config.deviceIPs) {
-        const newRsyslogContent = config.deviceIPs
-            .map(ip => `if $fromhost-ip == '${ip}' then /var/log/devices/%HOSTNAME%/${new Date().toISOString().slice(0, 10)}.log`)
-            .join('\n');
-        await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
-    }
+    // --- Production Logic with Detailed Logging ---
+    console.log('[Config Update] Starting update process...');
+    try {
+        // 1. Update rsyslog config for device IPs
+        if (config.deviceIPs) {
+            console.log(`[Config Update] Writing ${config.deviceIPs.length} IPs to ${RSYSLOG_CONFIG_FILE}`);
+            // สร้าง rsyslog rules ที่ถูกต้อง
+            const newRsyslogContent = config.deviceIPs
+                .map(ip => `if $fromhost-ip == '${ip}' then /var/log/devices/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log`)
+                .join('\n') + '\n& stop\n'; // เพิ่ม & stop เพื่อประสิทธิภาพ
+            await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
+            console.log('[Config Update] Successfully wrote to rsyslog config.');
+        }
 
-    // 2. Update manage-device-logs.sh
-    await replaceVarInFile(MANAGE_SCRIPT_PATH, 'RETENTION_DAYS', config.retentionDays);
-    
-    // 3. Update clear-oldest-logs-failsafe.sh
-    if (config.failsafe) {
-        await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'CRITICAL_THRESHOLD', config.failsafe.critical);
-        await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'TARGET_THRESHOLD', config.failsafe.target);
-    }
-    
-    // 4. Restart rsyslog if IPs changed (assuming a flag is passed from frontend)
-    if (config.deviceIPsChanged) {
-        await executeCommand('sudo /bin/systemctl restart rsyslog');
-    }
+        // 2. Update manage-device-logs.sh
+        console.log(`[Config Update] Updating RETENTION_DAYS in ${MANAGE_SCRIPT_PATH}`);
+        await replaceVarInFile(MANAGE_SCRIPT_PATH, 'RETENTION_DAYS', config.retentionDays);
+        console.log('[Config Update] Successfully updated retention days.');
 
-    return { message: "Configuration updated successfully." };
+        // 3. Update clear-oldest-logs-failsafe.sh
+        if (config.failsafe) {
+            console.log(`[Config Update] Updating Failsafe settings in ${FAILSAFE_SCRIPT_PATH}`);
+            await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'CRITICAL_THRESHOLD', config.failsafe.critical);
+            await replaceVarInFile(FAILSAFE_SCRIPT_PATH, 'TARGET_THRESHOLD', config.failsafe.target);
+            console.log('[Config Update] Successfully updated failsafe settings.');
+        }
+
+        // 4. Restart rsyslog if IPs changed
+        if (config.deviceIPsChanged) {
+            console.log('[Config Update] IP list changed. Attempting to restart rsyslog service...');
+            const restartOutput = await executeCommand('sudo /bin/systemctl restart rsyslog');
+            console.log('[Config Update] rsyslog service restarted successfully.', restartOutput);
+        }
+
+        console.log('[Config Update] Update process completed successfully.');
+        return { message: "Configuration updated successfully." };
+
+    } catch (error) {
+        // **ส่วนที่สำคัญที่สุด: แสดง Error ที่แท้จริงออกมา**
+        console.error('--- [CONFIG UPDATE FAILED] ---');
+        console.error('An error occurred during the configuration update process.');
+        console.error('Timestamp:', new Date().toISOString());
+        console.error('Error Details:', error);
+        console.error('--- END OF ERROR ---');
+        // ส่ง Error กลับไปให้ Frontend แสดงผล
+        throw new Error(`Update failed: ${error.message}`);
+    }
 };
 
 module.exports = {
