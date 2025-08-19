@@ -1,7 +1,7 @@
 // src/controllers/logManagerController.js
 const logManagerService = require('../services/logManagerService');
 const path = require('path');
-const fs = require('fs'); 
+const fs = require('fs');
 
 const getDashboardData = async (req, res, next) => {
     try {
@@ -24,7 +24,7 @@ const getLogFiles = async (req, res, next) => {
 const downloadLogFile = async (req, res, next) => {
     try {
         const filePath = Buffer.from(req.query.id, 'base64').toString('ascii');
-        
+
         const normalizedPath = path.normalize(filePath);
         if (!normalizedPath.startsWith(path.normalize(logManagerService.LOG_DIR))) {
             return res.status(403).json({ success: false, message: 'Forbidden: Access denied.' });
@@ -42,7 +42,7 @@ const downloadLogFile = async (req, res, next) => {
 
         res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
         res.setHeader('Content-Type', 'application/octet-stream');
-        
+
         const fileStream = fs.createReadStream(normalizedPath);
         fileStream.pipe(res);
 

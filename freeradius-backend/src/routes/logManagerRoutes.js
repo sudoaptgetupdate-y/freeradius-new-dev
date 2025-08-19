@@ -1,11 +1,12 @@
 // src/routes/logManagerRoutes.js
 const express = require('express');
-const { 
-    getDashboardData, 
-    getLogFiles, 
-    downloadLogFile, 
-    getSystemConfig, 
-    getDownloadHistory 
+const {
+    getDashboardData,
+    getLogFiles,
+    downloadLogFile,
+    getSystemConfig,
+    getDownloadHistory,
+    getLogVolumeGraph
 } = require('../controllers/logManagerController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
