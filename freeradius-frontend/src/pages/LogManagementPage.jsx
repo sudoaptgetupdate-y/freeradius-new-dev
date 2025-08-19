@@ -328,12 +328,13 @@ const ConfigurationTab = ({ token }) => {
 
     useEffect(() => {
         if (initialConfig) {
-            setConfig(JSON.parse(JSON.stringify(initialConfig))); // Deep copy
+            setConfig(JSON.parse(JSON.stringify(initialConfig)));
             setIsDirty(false);
         }
     }, [initialConfig]);
 
     const handleValueChange = (key, value) => {
+        if (!config) return; // ป้องกัน Error ถ้า config ยังเป็น null
         const keys = key.split('.');
         setConfig(prev => {
             const newConfig = { ...prev };
@@ -348,21 +349,34 @@ const ConfigurationTab = ({ token }) => {
     };
 
     const addDeviceIp = () => {
-        if (newIp && !config.deviceIPs.includes(newIp)) {
-            const updatedIps = [...config.deviceIPs, newIp];
-            setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
-            setNewIp('');
-            setIsDirty(true);
+        // เพิ่มการตรวจสอบให้ครอบคลุมมากขึ้น
+        if (!newIp || !config || !config.deviceIPs) {
+            toast.warning("Cannot add IP", { description: "Configuration is not loaded or IP is empty."});
+            return;
         }
+        if (config.deviceIPs.includes(newIp)) {
+            toast.info("IP address already exists.");
+            return;
+        }
+
+        const updatedIps = [...config.deviceIPs, newIp];
+        setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
+        setNewIp('');
+        setIsDirty(true);
     };
 
     const removeDeviceIp = (ipToRemove) => {
+        if (!config || !config.deviceIPs) return; // ป้องกัน Error
         const updatedIps = config.deviceIPs.filter(ip => ip !== ipToRemove);
         setConfig(prev => ({ ...prev, deviceIPs: updatedIps }));
         setIsDirty(true);
     };
 
     const handleSave = async () => {
+        if (!config) { // ป้องกัน Error
+            toast.error("Cannot save", { description: "Configuration data is not available."});
+            return;
+        }
         setIsSaving(true);
         try {
             const payload = {
@@ -380,6 +394,9 @@ const ConfigurationTab = ({ token }) => {
             setIsSaving(false);
         }
     };
+
+    if (isLoading) return <div className="p-4 text-center">Loading configuration...</div>;
+    if (error || !config) return <div className="p-4 text-center text-destructive">Failed to load configuration.</div>;
 
     if (isLoading) return <div className="p-4 text-center">Loading configuration...</div>;
     if (error || !config) return <div className="p-4 text-center text-destructive">Failed to load configuration.</div>;
