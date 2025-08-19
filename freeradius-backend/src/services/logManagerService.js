@@ -12,13 +12,16 @@ const RSYSLOG_CONFIG_FILE = '/etc/rsyslog.d/50-devices.conf';
 const MANAGE_SCRIPT_PATH = '/usr/local/bin/manage-device-logs.sh';
 const FAILSAFE_SCRIPT_PATH = '/usr/local/bin/clear-oldest-logs-failsafe.sh';
 
+// --- Mock Data Functions ---
 const getMockDashboardData = () => ({
     diskUsage: { size: '50G', used: '25G', available: '25G', usePercent: '50%' },
     gpgKey: { recipient: 'local-dev-admin@example.com' },
-    topLogSources: [
-        { host: 'firewall-01', size: 8123456789 },
-        { host: 'switch-core', size: 5456789123 },
-        { host: 'wifi-controller', size: 3234567890 },
+    top5LargestLogDays: [
+        { host: 'firewall-01', name: '2025-08-18.log.gz.gpg', size: 19123456789 },
+        { host: 'switch-core', name: '2025-08-19.log.gz.gpg', size: 18456789123 },
+        { host: 'firewall-01', name: '2025-08-19.log.gz.gpg', size: 17234567890 },
+        { host: 'server-db-01', name: '2025-08-17.log.gz.gpg', size: 15234567890 },
+        { host: 'wifi-controller', name: '2025-08-18.log.gz.gpg', size: 14234567890 },
     ],
 });
 
@@ -66,6 +69,31 @@ const getMockSystemConfig = () => ({
     gpgKey: { recipient: 'local-dev-admin@example.com' }
 });
 
+const getMockLogVolumeGraphData = (period) => {
+    const hosts = ['firewall-01', 'switch-core'];
+    let chartData = [];
+    if (period === 'day') {
+        chartData = [
+            { date: '2025-08-17', 'firewall-01': 8e9, 'switch-core': 6e9 },
+            { date: '2025-08-18', 'firewall-01': 9e9, 'switch-core': 7e9 },
+            { date: '2025-08-19', 'firewall-01': 7.5e9, 'switch-core': 8e9 },
+        ];
+    } else if (period === 'week') {
+        chartData = [
+            { date: '2025-08-11', 'firewall-01': 45e9, 'switch-core': 40e9 },
+            { date: '2025-08-18', 'firewall-01': 50e9, 'switch-core': 42e9 },
+        ];
+    } else { // month & year for simplicity
+         chartData = [
+            { date: '2025-07-01', 'firewall-01': 180e9, 'switch-core': 160e9 },
+            { date: '2025-08-01', 'firewall-01': 200e9, 'switch-core': 170e9 },
+        ];
+    }
+    return { chartData, hosts };
+};
+
+
+// --- Helper Functions ---
 const executeCommand = (command) => {
   if (!IS_PROD) {
     console.log(`SIMULATING command on non-linux OS: "${command}"`);
@@ -94,34 +122,50 @@ const readVarFromScript = async (filePath, varName) => {
     }
 };
 
+// --- Main Service Functions ---
 const getDashboardData = async () => {
     if (!IS_PROD) return getMockDashboardData();
+    
     const dfOutput = await executeCommand(`df -h ${LOG_DIR}`);
     const lines = dfOutput.trim().split('\n');
     const lastLine = lines[lines.length - 1];
     const [, size, used, available, usePercent] = lastLine.split(/\s+/);
+    
     const gpgRecipient = await readVarFromScript(MANAGE_SCRIPT_PATH, 'GPG_RECIPIENT');
-    const hosts = await fs.readdir(LOG_DIR);
-    const hostSizes = [];
-    for (const host of hosts) {
-        const hostPath = path.join(LOG_DIR, host);
-        try {
+
+    const allIndividualFiles = [];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        for (const host of hosts) {
+            const hostPath = path.join(LOG_DIR, host);
             if ((await fs.stat(hostPath)).isDirectory()) {
-                const files = await fs.readdir(hostPath);
-                let currentHostSize = 0;
-                for (const file of files) {
+                const filesInHost = await fs.readdir(hostPath);
+                for (const file of filesInHost) {
                     if (file.endsWith('.log.gz.gpg')) {
-                        currentHostSize += (await fs.stat(path.join(hostPath, file))).size;
+                        const filePath = path.join(hostPath, file);
+                        const fileStat = await fs.stat(filePath);
+                        allIndividualFiles.push({
+                            host,
+                            name: file,
+                            size: fileStat.size,
+                        });
                     }
                 }
-                hostSizes.push({ host, size: currentHostSize });
             }
-        } catch (error) {
-            console.error(`Could not process directory ${hostPath}:`, error);
         }
+    } catch (error) {
+        console.error("Error reading log files for dashboard:", error);
     }
-    const topLogSources = hostSizes.sort((a, b) => b.size - a.size).slice(0, 5);
-    return { diskUsage: { size, used, available, usePercent }, gpgKey: { recipient: gpgRecipient }, topLogSources };
+    
+    const top5LargestLogDays = allIndividualFiles
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 5);
+
+    return {
+        diskUsage: { size, used, available, usePercent },
+        gpgKey: { recipient: gpgRecipient },
+        top5LargestLogDays,
+    };
 };
 
 const getLogFiles = async (filters = {}) => {
@@ -211,33 +255,32 @@ const getDownloadHistory = async (filters = {}) => {
 };
 
 const getLogVolumeGraphData = async (period = 'day') => {
+    if (!IS_PROD) {
+        return getMockLogVolumeGraphData(period);
+    }
+    
     let allFiles = [];
-    if (!IS_PROD) { // Mock data for local development
-        const mockFiles = getMockLogFiles({pageSize: 1000}).files;
-        allFiles = mockFiles.map(f => ({ host: f.host, date: f.name.split('.')[0], size: f.size }));
-    } else {
-        try {
-            const hosts = await fs.readdir(LOG_DIR);
-            for (const host of hosts) {
-                const hostPath = path.join(LOG_DIR, host);
-                if ((await fs.stat(hostPath)).isDirectory()) {
-                    const filesInHost = await fs.readdir(hostPath);
-                    for (const file of filesInHost) {
-                        if (file.endsWith('.log.gz.gpg')) {
-                            const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})/);
-                            if (dateMatch) {
-                                const filePath = path.join(hostPath, file);
-                                const fileStat = await fs.stat(filePath);
-                                allFiles.push({ host, date: dateMatch[1], size: fileStat.size });
-                            }
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        for (const host of hosts) {
+            const hostPath = path.join(LOG_DIR, host);
+            if ((await fs.stat(hostPath)).isDirectory()) {
+                const filesInHost = await fs.readdir(hostPath);
+                for (const file of filesInHost) {
+                    if (file.endsWith('.log.gz.gpg')) {
+                        const dateMatch = file.match(/^(\d{4}-\d{2}-\d{2})/);
+                        if (dateMatch) {
+                            const filePath = path.join(hostPath, file);
+                            const fileStat = await fs.stat(filePath);
+                            allFiles.push({ host, date: dateMatch[1], size: fileStat.size });
                         }
                     }
                 }
             }
-        } catch (error) {
-            console.error("Error reading log files for graph:", error);
-            return { chartData: [], hosts: [] };
         }
+    } catch (error) {
+        console.error("Error reading log files for graph:", error);
+        return { chartData: [], hosts: [] };
     }
 
     const aggregated = allFiles.reduce((acc, { host, date, size }) => {

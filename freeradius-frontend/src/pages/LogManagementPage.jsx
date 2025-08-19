@@ -53,19 +53,22 @@ const DashboardTab = ({ token }) => {
                     </CardContent>
                 </Card>
                  <Card className="md:col-span-2">
-                    <CardHeader><CardTitle className="text-base">Top 5 Log Sources by Size</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-base">Top 5 Largest Log Days</CardTitle></CardHeader>
                     <CardContent>
-                        {data.topLogSources && data.topLogSources.length > 0 ? (
+                        {data.top5LargestLogDays && data.top5LargestLogDays.length > 0 ? (
                             <ul className="space-y-2">
-                                {data.topLogSources.map(source => (
-                                    <li key={source.host} className="text-sm text-muted-foreground flex justify-between items-center">
-                                        <span className="font-mono">{source.host}</span>
-                                        <span className="font-medium text-foreground">{formatBytes(source.size)}</span>
+                                {data.top5LargestLogDays.map(day => (
+                                    <li key={`${day.host}-${day.name}`} className="text-sm text-muted-foreground flex justify-between items-center">
+                                        <div className="font-mono">
+                                            <span>{day.host}</span>
+                                            <span className="text-xs opacity-70 ml-2">{day.name.replace('.log.gz.gpg', '')}</span>
+                                        </div>
+                                        <span className="font-medium text-foreground">{formatBytes(day.size)}</span>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-sm text-muted-foreground">No log sources found.</p>
+                            <p className="text-sm text-muted-foreground">No log files found.</p>
                         )}
                     </CardContent>
                 </Card>
