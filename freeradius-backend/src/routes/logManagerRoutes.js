@@ -8,7 +8,8 @@ const {
     getDownloadHistory,
     getLogVolumeGraph,
     updateDeviceIps,
-    updateLogSettings
+    updateLogSettings,
+    getHostnames
 } = require('../controllers/logManagerController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
@@ -24,6 +25,7 @@ router.get('/files', getLogFiles);
 router.get('/files/download', downloadLogFile);
 router.get('/config', getSystemConfig);
 router.get('/history', getDownloadHistory);
+router.get('/hostnames', getHostnames);
 router.get('/volume-graph', getLogVolumeGraph);
 
 // --- Routes for updating configuration ---

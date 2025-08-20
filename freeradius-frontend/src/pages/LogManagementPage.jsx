@@ -220,9 +220,10 @@ const LogArchiveTab = ({ token }) => {
 };
 
 const DownloadHistoryTab = ({ token }) => {
-    const [filters, setFilters] = useState({ adminId: '', startDate: '', endDate: '' });
+    const [filters, setFilters] = useState({ adminId: '', startDate: '', endDate: '', hostname: '' });
     
     const { data: admins } = useSWR('/admins', (url) => fetcher(url, token));
+    const { data: hostnames } = useSWR('/logs/hostnames', (url) => fetcher(url, token));
 
     const {
         data: history,
@@ -243,7 +244,7 @@ const DownloadHistoryTab = ({ token }) => {
         <Card>
             <CardHeader><CardTitle>Download History</CardTitle><CardDescription>An audit trail of all log file downloads.</CardDescription></CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div className="space-y-2">
                         <Label htmlFor="adminFilter">Administrator</Label>
                         <Select value={filters.adminId} onValueChange={(value) => handleFilterChange('adminId', value === 'all' ? '' : value)}>
@@ -261,6 +262,20 @@ const DownloadHistoryTab = ({ token }) => {
                         </Select>
                     </div>
                     <div className="space-y-2">
+                        <Label htmlFor="hostnameFilter">Hostname</Label>
+                        <Select value={filters.hostname} onValueChange={(value) => handleFilterChange('hostname', value === 'all' ? '' : value)}>
+                            <SelectTrigger id="hostnameFilter">
+                                <SelectValue placeholder="Filter by hostname..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Hostnames</SelectItem>
+                                {hostnames?.map(host => (
+                                    <SelectItem key={host} value={host}>{host}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
                         <Label htmlFor="startDateHistory">Start Date</Label>
                         <Input id="startDateHistory" type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
                     </div>
@@ -273,6 +288,7 @@ const DownloadHistoryTab = ({ token }) => {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Hostname</TableHead>
                                 <TableHead>Timestamp</TableHead>
                                 <TableHead>Administrator</TableHead>
                                 <TableHead>Filename</TableHead>
@@ -282,6 +298,7 @@ const DownloadHistoryTab = ({ token }) => {
                         <TableBody>
                              {history.length > 0 ? history.map(entry => (
                                 <TableRow key={entry.id}>
+                                    <TableCell className="font-mono text-sm">{entry.hostname}</TableCell>
                                     <TableCell>{format(new Date(entry.createdAt), 'Pp')}</TableCell>
                                     <TableCell>{entry.admin.fullName || entry.admin.username}</TableCell>
                                     <TableCell className="font-mono">{entry.fileName}</TableCell>
@@ -289,7 +306,7 @@ const DownloadHistoryTab = ({ token }) => {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                     <TableCell colSpan={4} className="text-center h-24">No download history found for the selected criteria.</TableCell>
+                                     <TableCell colSpan={5} className="text-center h-24">No download history found for the selected criteria.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -489,7 +506,9 @@ export default function LogManagementPage() {
     const navigate = useNavigate();
 
     const getCurrentTab = () => location.hash.replace('#', '') || 'dashboard';
+
     const [activeTab, setActiveTab] = useState(getCurrentTab());
+
     const handleTabChange = (tabValue) => {
         setActiveTab(tabValue);
         navigate(`#${tabValue}`, { replace: true });

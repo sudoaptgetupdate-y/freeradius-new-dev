@@ -218,16 +218,18 @@ const getLogFiles = async (filters = {}) => {
     return { files: paginatedFiles, totalRecords, totalPages, currentPage: parseInt(page) };
 };
 
-const recordDownloadEvent = async (adminId, fileName, ipAddress) => {
+const recordDownloadEvent = async (adminId, hostname, fileName, ipAddress) => { // <-- เพิ่ม hostname
     try {
-        if (!adminId) {
-            console.error('[Audit Log Error] Admin ID is missing.');
-            return;
-        }
-        await prisma.logDownloadHistory.create({ data: { fileName, ipAddress, adminId } });
-        console.log(`[Audit Log Success] Recorded download for Admin ID: ${adminId}`);
+        await prisma.logDownloadHistory.create({
+            data: {
+                hostname: hostname, // <-- เพิ่ม
+                fileName: fileName,
+                ipAddress: ipAddress,
+                adminId: adminId,
+            },
+        });
     } catch (error) {
-        console.error('--- [Audit Log Error] Failed to record log download event ---', { adminId, fileName, ipAddress, error });
+        console.error('Failed to record log download event:', error);
     }
 };
 
@@ -249,13 +251,15 @@ const getSystemConfig = async () => {
 };
 
 const getDownloadHistory = async (filters = {}) => {
-    const { page = 1, pageSize = 15, adminId, startDate, endDate } = filters;
+    const { page = 1, pageSize = 15, adminId, startDate, endDate, hostname } = filters;
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
     const take = parseInt(pageSize);
+
     const whereClause = {};
     if (adminId) whereClause.adminId = parseInt(adminId);
     if (startDate) whereClause.createdAt = { ...whereClause.createdAt, gte: new Date(new Date(startDate).setHours(0,0,0,0)) };
     if (endDate) whereClause.createdAt = { ...whereClause.createdAt, lte: new Date(new Date(endDate).setHours(23,59,59,999)) };
+    if (hostname) whereClause.hostname = hostname;
     const [history, totalRecords] = await prisma.$transaction([
         prisma.logDownloadHistory.findMany({ where: whereClause, orderBy: { createdAt: 'desc' }, include: { admin: { select: { fullName: true, username: true } } }, skip, take }),
         prisma.logDownloadHistory.count({ where: whereClause }),
@@ -377,12 +381,23 @@ const updateLogSettings = async (config) => {
     }
 };
 
+const getHostnames = async () => {
+    if (!IS_PROD) return ['firewall-01', 'switch-core', 'router-branch-A', 'server-db-01'];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        return hosts.filter(async host => (await fs.stat(path.join(LOG_DIR, host))).isDirectory());
+    } catch {
+        return [];
+    }
+}
+
 module.exports = {
     getDashboardData,
     getLogFiles,
     getSystemConfig,
     recordDownloadEvent,
     getDownloadHistory,
+    getHostnames,
     getLogVolumeGraphData,
     updateDeviceIps,
     updateLogSettings,

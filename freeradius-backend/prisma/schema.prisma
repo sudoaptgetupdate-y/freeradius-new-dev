@@ -265,6 +265,7 @@ model Advertisement {
 }
 
 model LogDownloadHistory {
+  hostname  String   @db.VarChar(255)
   id        Int      @id @default(autoincrement())
   fileName  String   @db.VarChar(255)
   ipAddress String   @db.VarChar(45)
@@ -273,4 +274,5 @@ model LogDownloadHistory {
   createdAt DateTime @default(now())
 
   @@index([adminId])
+  @@index([hostname])
 }

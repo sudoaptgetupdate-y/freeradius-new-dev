@@ -35,10 +35,11 @@ const downloadLogFile = async (req, res, next) => {
         }
 
         const fileName = path.basename(filePath);
-
+        const hostname = path.basename(path.dirname(filePath));
         const adminId = req.admin.id;
         const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        await logManagerService.recordDownloadEvent(adminId, fileName, ipAddress);
+
+        await logManagerService.recordDownloadEvent(adminId, hostname, fileName, ipAddress);
 
         res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
         res.setHeader('Content-Type', 'application/octet-stream');
@@ -99,10 +100,20 @@ const updateLogSettings = async (req, res, next) => {
     }
 };
 
+const getHostnames = async (req, res, next) => {
+    try {
+        const hosts = await logManagerService.getHostnames();
+        res.status(200).json({ success: true, data: hosts });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getDashboardData,
     getLogFiles,
     downloadLogFile,
+    getHostnames,
     getSystemConfig,
     getDownloadHistory,
     getLogVolumeGraph,
