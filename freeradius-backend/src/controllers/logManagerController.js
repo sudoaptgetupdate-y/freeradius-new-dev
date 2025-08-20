@@ -113,10 +113,10 @@ module.exports = {
     getDashboardData,
     getLogFiles,
     downloadLogFile,
-    getHostnames,
     getSystemConfig,
     getDownloadHistory,
     getLogVolumeGraph,
     updateDeviceIps,
     updateLogSettings,
+    getHostnames,
 };

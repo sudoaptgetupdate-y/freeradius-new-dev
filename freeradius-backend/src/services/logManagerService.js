@@ -83,7 +83,7 @@ const getMockLogVolumeGraphData = (period) => {
             { date: '2025-08-11', 'firewall-01': 45e9, 'switch-core': 40e9 },
             { date: '2025-08-18', 'firewall-01': 50e9, 'switch-core': 42e9 },
         ];
-    } else {
+    } else { // month & year for simplicity
          chartData = [
             { date: '2025-07-01', 'firewall-01': 180e9, 'switch-core': 160e9 },
             { date: '2025-08-01', 'firewall-01': 200e9, 'switch-core': 170e9 },
@@ -218,18 +218,16 @@ const getLogFiles = async (filters = {}) => {
     return { files: paginatedFiles, totalRecords, totalPages, currentPage: parseInt(page) };
 };
 
-const recordDownloadEvent = async (adminId, hostname, fileName, ipAddress) => { // <-- เพิ่ม hostname
+const recordDownloadEvent = async (adminId, hostname, fileName, ipAddress) => {
     try {
-        await prisma.logDownloadHistory.create({
-            data: {
-                hostname: hostname, // <-- เพิ่ม
-                fileName: fileName,
-                ipAddress: ipAddress,
-                adminId: adminId,
-            },
-        });
+        if (!adminId) {
+            console.error('[Audit Log Error] Admin ID is missing.');
+            return;
+        }
+        await prisma.logDownloadHistory.create({ data: { hostname, fileName, ipAddress, adminId } });
+        console.log(`[Audit Log Success] Recorded download for Admin ID: ${adminId}`);
     } catch (error) {
-        console.error('Failed to record log download event:', error);
+        console.error('--- [Audit Log Error] Failed to record log download event ---', { adminId, hostname, fileName, ipAddress, error });
     }
 };
 
@@ -254,17 +252,33 @@ const getDownloadHistory = async (filters = {}) => {
     const { page = 1, pageSize = 15, adminId, startDate, endDate, hostname } = filters;
     const skip = (parseInt(page) - 1) * parseInt(pageSize);
     const take = parseInt(pageSize);
-
     const whereClause = {};
     if (adminId) whereClause.adminId = parseInt(adminId);
     if (startDate) whereClause.createdAt = { ...whereClause.createdAt, gte: new Date(new Date(startDate).setHours(0,0,0,0)) };
     if (endDate) whereClause.createdAt = { ...whereClause.createdAt, lte: new Date(new Date(endDate).setHours(23,59,59,999)) };
     if (hostname) whereClause.hostname = hostname;
+    
     const [history, totalRecords] = await prisma.$transaction([
         prisma.logDownloadHistory.findMany({ where: whereClause, orderBy: { createdAt: 'desc' }, include: { admin: { select: { fullName: true, username: true } } }, skip, take }),
         prisma.logDownloadHistory.count({ where: whereClause }),
     ]);
     return { history, totalRecords, totalPages: Math.ceil(totalRecords / take), currentPage: parseInt(page) };
+};
+
+const getHostnames = async () => {
+    if (!IS_PROD) return ['firewall-01', 'switch-core', 'router-branch-A', 'server-db-01'];
+    try {
+        const hosts = await fs.readdir(LOG_DIR);
+        const directories = [];
+        for (const host of hosts) {
+            if ((await fs.stat(path.join(LOG_DIR, host))).isDirectory()) {
+                directories.push(host);
+            }
+        }
+        return directories;
+    } catch {
+        return [];
+    }
 };
 
 const getLogVolumeGraphData = async (period = 'day') => {
@@ -381,25 +395,15 @@ const updateLogSettings = async (config) => {
     }
 };
 
-const getHostnames = async () => {
-    if (!IS_PROD) return ['firewall-01', 'switch-core', 'router-branch-A', 'server-db-01'];
-    try {
-        const hosts = await fs.readdir(LOG_DIR);
-        return hosts.filter(async host => (await fs.stat(path.join(LOG_DIR, host))).isDirectory());
-    } catch {
-        return [];
-    }
-}
-
 module.exports = {
     getDashboardData,
     getLogFiles,
     getSystemConfig,
     recordDownloadEvent,
     getDownloadHistory,
-    getHostnames,
     getLogVolumeGraphData,
     updateDeviceIps,
     updateLogSettings,
+    getHostnames,
     LOG_DIR,
 };
