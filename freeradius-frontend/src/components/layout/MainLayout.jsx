@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
+import Footer from "./Footer";
 
 const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     <NavLink
@@ -103,7 +104,7 @@ export default function MainLayout() {
                         "text-lg font-bold text-slate-800 whitespace-nowrap transition-opacity",
                         (isSidebarCollapsed && !isMobileMenuOpen) && "opacity-0 hidden"
                     )}>
-                        Freeradius UI
+                        NT@AuthRadius
                     </h1>
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
@@ -207,6 +208,7 @@ export default function MainLayout() {
                         </motion.div>
                     </AnimatePresence>
                 </main>
+                <Footer />
             </div>
         </div>
     );
