@@ -1,5 +1,5 @@
-// src/pages/LoginPage.jsx
-import { useState } from 'react';
+// freeradius-frontend/src/pages/LoginPage.jsx
+import { useState, useEffect } from 'react'; // --- เพิ่ม useEffect ---
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
@@ -16,6 +16,22 @@ export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // --- START: เพิ่ม State สำหรับ appName ---
+    const [appName, setAppName] = useState('Freeradius UI');
+
+    useEffect(() => {
+        axiosInstance.get('/settings')
+            .then(response => {
+                if (response.data.data.appName) {
+                    setAppName(response.data.data.appName);
+                }
+            })
+            .catch(() => {
+                // ไม่ต้องแสดง error หากโหลดชื่อไม่สำเร็จ ก็ใช้ชื่อ default ไป
+                console.warn("Could not load app name setting.");
+            });
+    }, []);
+    // --- END ---
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -41,9 +57,11 @@ export default function LoginPage() {
 
     return (
         <>
-            <CardContent className="pt-0"> {/* เพิ่ม pt-0 เพื่อให้ชิดกับ Header */}
-                <div className="text-center mb-6"> {/* เพิ่ม Div ครอบ Title และ Description */}
-                    <CardTitle>Freeradius UI</CardTitle>
+            <CardContent className="pt-0">
+                <div className="text-center mb-6">
+                    {/* --- START: แก้ไข CardTitle --- */}
+                    <CardTitle>{appName}</CardTitle>
+                    {/* --- END --- */}
                     <CardDescription>Please log in to continue.</CardDescription>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">

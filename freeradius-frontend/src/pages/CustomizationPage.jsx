@@ -1,4 +1,4 @@
-// src/pages/CustomizationPage.jsx
+// freeradius-frontend/src/pages/CustomizationPage.jsx
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,19 +16,27 @@ export default function CustomizationPage() {
     const token = useAuthStore((state) => state.token);
     
     // States for data
+    // --- START: เพิ่ม State สำหรับ appName ---
+    const [appName, setAppName] = useState('');
+    // --- END ---
     const [logo, setLogo] = useState(null);
     const [logoPreview, setLogoPreview] = useState('');
     const [background, setBackground] = useState(null);
     const [backgroundPreview, setBackgroundPreview] = useState('');
     const [terms, setTerms] = useState('');
     
-    const [isLoading, setIsLoading] = useState({ logo: false, background: false, terms: false });
+    // --- START: แก้ไข State ---
+    const [isLoading, setIsLoading] = useState({ appName: false, logo: false, background: false, terms: false });
+    // --- END ---
 
     // Load initial settings
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => {
               const settings = response.data.data;
+              // --- START: เพิ่มการ set appName ---
+              setAppName(settings.appName || "Freeradius UI");
+              // --- END ---
               setTerms(settings.terms || "");
               setLogoPreview(settings.logoUrl || '');
               setBackgroundPreview(settings.backgroundUrl || '');
@@ -45,6 +53,26 @@ export default function CustomizationPage() {
             reader.readAsDataURL(file);
         }
     };
+
+    // --- START: เพิ่มฟังก์ชัน handleSaveAppName ---
+    const handleSaveAppName = async () => {
+        setIsLoading(prev => ({ ...prev, appName: true }));
+        const formData = new FormData();
+        formData.append('appName', appName);
+
+        toast.promise(
+            axiosInstance.post('/settings', formData, {
+                headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
+            }),
+            {
+                loading: 'Saving application name...',
+                success: 'Application name saved successfully!',
+                error: (err) => err.response?.data?.message || "Failed to save application name.",
+                finally: () => setIsLoading(prev => ({ ...prev, appName: false }))
+            }
+        );
+    };
+    // --- END ---
 
     // --- Save handler for LOGO ---
     const handleLogoSave = async () => {
@@ -119,7 +147,25 @@ export default function CustomizationPage() {
             </div>
 
             {/* --- Content for "Appearance" Tab --- */}
-            <TabsContent value="appearance">
+            <TabsContent value="appearance" className="space-y-6">
+                {/* --- START: เพิ่ม Card สำหรับ App Name --- */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Application Name</CardTitle>
+                        <CardDescription>This name will appear on the login page and in the sidebar header.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Input id="app-name" value={appName} onChange={(e) => setAppName(e.target.value)} />
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleSaveAppName} disabled={isLoading.appName} className="ml-auto">
+                            <Save className="mr-2 h-4 w-4" />
+                            {isLoading.appName ? 'Saving...' : 'Save Name'}
+                        </Button>
+                    </CardFooter>
+                </Card>
+                {/* --- END --- */}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Logo Card */}
                     <Card>

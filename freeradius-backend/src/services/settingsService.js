@@ -1,4 +1,4 @@
-// src/services/settingsService.js
+// freeradius-backend/src/services/settingsService.js
 const prisma = require('../prisma');
 const fs = require('fs');
 const path = require('path');
@@ -21,13 +21,16 @@ const getSettings = async () => {
 };
 
 const saveSettings = async (files, body) => {
-  const { 
+  // --- START: เพิ่ม appName ---
+  const {
+    appName,
+    // --- END ---
     terms,
     voucherSsid,
     voucherHeaderText,
     voucherFooterText,
     registrationEnabled,
-    externalLoginEnabled 
+    externalLoginEnabled
   } = body;
 
   const deleteOldFile = async (settingKey) => {
@@ -60,6 +63,12 @@ const saveSettings = async (files, body) => {
     const voucherLogoPath = `/uploads/${voucherLogoFile.filename}`;
     await upsertSetting('voucherLogoUrl', voucherLogoPath);
   }
+
+  // --- START: เพิ่ม logic บันทึก appName ---
+  if (appName !== undefined) {
+    await upsertSetting('appName', appName);
+  }
+  // --- END ---
 
   if (terms !== undefined) {
     await upsertSetting('terms', terms);

@@ -1,4 +1,4 @@
-// prisma/seed.js
+// freeradius-backend/prisma/seed.js
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { COMMON_ATTRIBUTES } = require('../src/config/radiusAttributes');
@@ -87,6 +87,9 @@ async function main() {
   // --- 4. Seed Default Settings ---
   console.log('Seeding default settings...');
   const settingsToSeed = [
+      // --- START: เพิ่ม appName ---
+      { key: 'appName', value: 'Freeradius UI' },
+      // --- END ---
       { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
       { key: 'logoUrl', value: '/uploads/nt-logo.png' },
       { key: 'backgroundUrl', value: '/uploads/nt-background.png' },

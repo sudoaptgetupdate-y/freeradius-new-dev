@@ -1,4 +1,4 @@
-// src/components/layout/MainLayout.jsx
+// freeradius-frontend/src/components/layout/MainLayout.jsx
 import { useState, useEffect, useCallback } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import Footer from "./Footer";
+import axiosInstance from '@/api/axiosInstance';
 
 const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     <NavLink
@@ -53,6 +54,20 @@ export default function MainLayout() {
     const isSuperAdmin = user?.role === 'superadmin';
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [appName, setAppName] = useState('Freeradius UI');
+
+    useEffect(() => {
+        axiosInstance.get('/settings')
+            .then(response => {
+                const fetchedAppName = response.data.data.appName;
+                if (fetchedAppName) {
+                    setAppName(fetchedAppName);
+                    // อัปเดต Title ของหน้าเว็บ
+                    document.title = fetchedAppName;
+                }
+            })
+            .catch(() => console.warn("Could not load app name setting."));
+    }, []);
 
     const handleIdle = useCallback(() => {
         toast.warning("Logged out due to inactivity", {
@@ -96,19 +111,22 @@ export default function MainLayout() {
                 isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full",
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
-                <div className="p-4 border-b flex items-center gap-3 h-[65px]">
-                    <div className="bg-primary p-2 rounded-lg">
+                <div className="p-4 border-b flex items-center gap-3 h-[65px] overflow-hidden">
+                    <div className="bg-primary p-2 rounded-lg flex-shrink-0">
                         <Server className="text-primary-foreground" size={24} />
                     </div>
                     <h1 className={cn(
-                        "text-lg font-bold text-slate-800 whitespace-nowrap transition-opacity",
+                        "text-lg font-bold text-slate-800 transition-opacity truncate",
                         (isSidebarCollapsed && !isMobileMenuOpen) && "opacity-0 hidden"
                     )}>
-                        Freeradius UI
+                        {/* --- START: 1. เปลี่ยนเป็นชื่อตายตัว --- */}
+                        NT Auth Manager
+                        {/* --- END --- */}
                     </h1>
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
-                    <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    {/* ... (NavItems remain the same) ... */}
+                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/online-users" icon={<Wifi size={18} />} text="Online Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/history" icon={<History size={18} />} text="History" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     
@@ -156,13 +174,18 @@ export default function MainLayout() {
 
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b flex justify-between items-center px-4 h-[65px] flex-shrink-0">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
                             <Menu className="h-6 w-6" />
                         </Button>
                         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(true)}>
                             <Menu className="h-6 w-6" />
                         </Button>
+                        {/* --- START: 2. เพิ่ม h2 สำหรับแสดง appName --- */}
+                        <h2 className="font-semibold text-slate-700 hidden sm:block">
+                            {appName}
+                        </h2>
+                        {/* --- END --- */}
                     </div>
                     <div className="flex items-center gap-4">
                         <DropdownMenu>
@@ -208,7 +231,7 @@ export default function MainLayout() {
                         </motion.div>
                     </AnimatePresence>
                 </main>
-                <Footer />
+                <Footer appName={appName} />
             </div>
         </div>
     );
