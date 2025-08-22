@@ -155,6 +155,7 @@ model Administrator {
   updatedAt      DateTime       @updatedAt
   createdUsers   User[]         @relation("AdminCreatedUsers")
   createdBatches VoucherBatch[] @relation("AdminCreatedBatches")
+  logDownloads   LogDownloadHistory[]
 }
 
 model RadiusProfile {
@@ -256,11 +257,22 @@ model Advertisement {
   headerText  String?
   bodyText    String?  @db.Text
   buttonText  String   @default("Continue to Internet")
-  buttonUrl   String   @default("https://www.ntplc.co.th")
   countdown   Int?     @default(5)
   status      String   @default("active")
   createdAt   DateTime @default(now())
 
   organizations Organization[]
 }
-// --- END ---
+
+model LogDownloadHistory {
+  hostname  String   @db.VarChar(255)
+  id        Int      @id @default(autoincrement())
+  fileName  String   @db.VarChar(255)
+  ipAddress String   @db.VarChar(45)
+  adminId   Int
+  admin     Administrator @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([hostname])
+}
