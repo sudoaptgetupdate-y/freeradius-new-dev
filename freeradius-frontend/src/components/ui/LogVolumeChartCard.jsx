@@ -7,12 +7,13 @@ import axiosInstance from '@/api/axiosInstance';
 import useAuthStore from '@/store/authStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
 
 const timePeriods = [
-    { key: 'day', label: 'Daily' },
-    { key: 'week', label: 'Weekly' },
-    { key: 'month', label: 'Monthly' },
-    { key: 'year', label: 'Yearly' },
+    { key: 'day', labelKey: 'periods.daily' },
+    { key: 'week', labelKey: 'periods.weekly' },
+    { key: 'month', labelKey: 'periods.monthly' },
+    { key: 'year', labelKey: 'periods.yearly' },
 ];
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
@@ -26,26 +27,24 @@ const formatBytes = (bytes) => {
 };
 
 export default function LogVolumeChartCard() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const [data, setData] = useState({ chartData: [], hosts: [] });
     const [loading, setLoading] = useState(true);
     const [activePeriod, setActivePeriod] = useState('day');
     const token = useAuthStore((state) => state.token);
-    
-    // --- START: 1. เพิ่ม State สำหรับจัดการการซ่อนกราฟ ---
     const [hiddenHosts, setHiddenHosts] = useState({});
-    // --- END ---
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            setHiddenHosts({}); // Reset การซ่อนทุกครั้งที่เปลี่ยนช่วงเวลา
+            setHiddenHosts({});
             try {
                 const response = await axiosInstance.get(`/logs/volume-graph?period=${activePeriod}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setData(response.data.data);
             } catch (error) {
-                toast.error(`Failed to load graph data for period: ${activePeriod}`);
+                toast.error(t('toast.chart_load_failed', { period: activePeriod }));
                 setData({ chartData: [], hosts: [] });
             } finally {
                 setLoading(false);
@@ -53,24 +52,23 @@ export default function LogVolumeChartCard() {
         };
 
         if (token) fetchData();
-    }, [activePeriod, token]);
+    }, [activePeriod, token, t]); // <-- เพิ่ม t ใน dependency array
 
-    // --- START: 2. สร้างฟังก์ชันสำหรับจัดการการคลิก Legend ---
     const handleLegendClick = (dataKey) => {
         setHiddenHosts(prev => ({
             ...prev,
-            [dataKey]: !prev[dataKey] // สลับค่า true/false
+            [dataKey]: !prev[dataKey]
         }));
     };
-    // --- END ---
-
+    
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                        <CardTitle>Log Volume Trend</CardTitle>
-                        <CardDescription>Total log size per device over time. Click legend to toggle.</CardDescription>
+                        <CardTitle>{t('log_management_page.charts.volume_trend.title')}</CardTitle>
+                        <CardDescription>{t('log_management_page.charts.volume_trend.description')}</CardDescription>
                     </div>
                     <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
                         {timePeriods.map((period) => (
@@ -80,7 +78,7 @@ export default function LogVolumeChartCard() {
                                 className={cn("flex-1", activePeriod === period.key ? "bg-background text-foreground shadow" : "bg-transparent text-muted-foreground hover:bg-muted/50")}
                                 onClick={() => setActivePeriod(period.key)}
                             >
-                                {period.label}
+                                {t(period.labelKey)}
                             </Button>
                         ))}
                     </div>
@@ -88,9 +86,9 @@ export default function LogVolumeChartCard() {
             </CardHeader>
             <CardContent className="flex-1 -ml-2">
                 {loading ? (
-                    <div className="flex items-center justify-center h-full"><p>Loading chart data...</p></div>
+                    <div className="flex items-center justify-center h-full"><p>{t('charts.loading')}</p></div>
                 ) : data.chartData.length === 0 ? (
-                    <div className="flex items-center justify-center h-full"><p>No data to display for this period.</p></div>
+                    <div className="flex items-center justify-center h-full"><p>{t('charts.no_data_for_period')}</p></div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={data.chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -98,11 +96,7 @@ export default function LogVolumeChartCard() {
                             <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                             <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatBytes} />
                             <Tooltip formatter={(value) => formatBytes(value)} contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }} />
-                            
-                            {/* --- START: 3. เพิ่ม onClick ให้กับ Legend --- */}
                             <Legend onClick={(e) => handleLegendClick(e.dataKey)} wrapperStyle={{ cursor: 'pointer' }} />
-                            {/* --- END --- */}
-                            
                             {data.hosts.map((host, index) => (
                                 <Line 
                                     key={host} 
@@ -111,9 +105,7 @@ export default function LogVolumeChartCard() {
                                     stroke={COLORS[index % COLORS.length]} 
                                     strokeWidth={2} 
                                     dot={false}
-                                    // --- START: 4. ซ่อนกราฟตาม State ---
                                     hide={hiddenHosts[host]}
-                                    // --- END ---
                                 />
                             ))}
                         </LineChart>

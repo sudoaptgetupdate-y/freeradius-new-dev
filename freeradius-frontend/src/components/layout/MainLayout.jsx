@@ -4,12 +4,12 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-import { 
-    LogOut, LayoutDashboard, Server, Building, Users, Settings, 
+import {
+    LogOut, LayoutDashboard, Server, Building, Users, Settings,
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal,
-    Megaphone,ShieldCheck
-} from "lucide-react";
+    Megaphone, ShieldCheck 
+} from "lucide-react"; // <-- 1. ลบไอคอน Languages ออก
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,11 +18,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator"; // <-- 2. Import Separator
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import Footer from "./Footer";
 import axiosInstance from '@/api/axiosInstance';
+import { useTranslation } from 'react-i18next';
 
 const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
     <NavLink
@@ -55,6 +57,8 @@ export default function MainLayout() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [appName, setAppName] = useState('Freeradius UI');
+    
+    const { t, i18n } = useTranslation();
 
     useEffect(() => {
         axiosInstance.get('/settings')
@@ -62,7 +66,6 @@ export default function MainLayout() {
                 const fetchedAppName = response.data.data.appName;
                 if (fetchedAppName) {
                     setAppName(fetchedAppName);
-                    // อัปเดต Title ของหน้าเว็บ
                     document.title = fetchedAppName;
                 }
             })
@@ -119,53 +122,50 @@ export default function MainLayout() {
                         "text-lg font-bold text-slate-800 transition-opacity truncate",
                         (isSidebarCollapsed && !isMobileMenuOpen) && "opacity-0 hidden"
                     )}>
-                        {/* --- START: 1. เปลี่ยนเป็นชื่อตายตัว --- */}
                         NT Auth Manager
-                        {/* --- END --- */}
                     </h1>
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
-                    {/* ... (NavItems remain the same) ... */}
-                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text="Dashboard" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    <NavItem to="/online-users" icon={<Wifi size={18} />} text="Online Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    <NavItem to="/history" icon={<History size={18} />} text="History" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text={t('nav.dashboard')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    <NavItem to="/online-users" icon={<Wifi size={18} />} text={t('nav.online_users')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    <NavItem to="/history" icon={<History size={18} />} text={t('nav.history')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                           USERS
+                           {t('nav.section_users')}
                         </p>
                         <div className="space-y-1">
-                             <NavItem to="/users" icon={<Users size={18} />} text="All Users" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                             <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text="Voucher Batches" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                             <NavItem to="/users" icon={<Users size={18} />} text={t('nav.all_users')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                             <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text={t('nav.voucher_batches')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                         </div>
                     </div>
                     
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                           CONFIGURATION
+                           {t('nav.section_config')}
                         </p>
                          <div className="space-y-1">
-                            <NavItem to="/organizations" icon={<Building size={18} />} text="Organizations" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/radius-profiles" icon={<Settings size={18} />} text="Radius Profiles" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/organizations" icon={<Building size={18} />} text={t('nav.organizations')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             {isSuperAdmin && (
-                               <NavItem to="/nas" icon={<Server size={18} />} text="NAS" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                               <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             )}
-                            <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text="Voucher Packages" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/advertisements" icon={<Megaphone size={18} />} text="Advertisements" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/customization" icon={<Palette size={18} />} text="Customization" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text={t('nav.voucher_packages')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/advertisements" icon={<Megaphone size={18} />} text={t('nav.advertisements')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/customization" icon={<Palette size={18} />} text={t('nav.customization')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>
 
                     {isSuperAdmin && (
                          <div className="pt-2">
                             <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                                SYSTEM
+                                {t('nav.section_system')}
                             </p>
                             <div className="space-y-1">
-                                <NavItem to="/admins" icon={<UserCog size={18} />} text="Admins" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text="Attributes" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text="System Settings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                <NavItem to="/log-management" icon={<ShieldCheck size={18} />} text="Log Management" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                <NavItem to="/log-management" icon={<ShieldCheck size={18} />} text={t('nav.log_management')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             </div>
                         </div>
                     )}
@@ -181,13 +181,36 @@ export default function MainLayout() {
                         <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileMenuOpen(true)}>
                             <Menu className="h-6 w-6" />
                         </Button>
-                        {/* --- START: 2. เพิ่ม h2 สำหรับแสดง appName --- */}
                         <h2 className="font-semibold text-slate-700 hidden sm:block">
                             {appName}
                         </h2>
-                        {/* --- END --- */}
                     </div>
                     <div className="flex items-center gap-4">
+                        
+                        {/* --- 3. เปลี่ยน Dropdown เป็นปุ่ม 2 ปุ่ม --- */}
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={i18n.language === 'th'}
+                                onClick={() => i18n.changeLanguage('th')}
+                                className="disabled:opacity-100 disabled:font-semibold disabled:text-primary"
+                            >
+                                ภาษาไทย
+                            </Button>
+                            <Separator orientation="vertical" className="h-4" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={i18n.language === 'en'}
+                                onClick={() => i18n.changeLanguage('en')}
+                                className="disabled:opacity-100 disabled:font-semibold disabled:text-primary"
+                            >
+                                English
+                            </Button>
+                        </div>
+                        {/* --- สิ้นสุดส่วนที่แก้ไข --- */}
+
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="flex items-center gap-2 h-10 px-3">
@@ -205,12 +228,12 @@ export default function MainLayout() {
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => navigate('/account-settings')}>
                                     <UserIcon className="mr-2 h-4 w-4" />
-                                    <span>Account Settings</span>
+                                    <span>{t('account_settings')}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
                                     <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Log Out</span>
+                                    <span>{t('logout')}</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

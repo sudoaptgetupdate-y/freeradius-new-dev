@@ -9,24 +9,22 @@ import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import useSWR from 'swr';
-
-const initialFormData = {
-    name: '',
-    durationDays: 1,
-    price: 0,
-    radiusProfileId: '',
-};
+import { useTranslation } from "react-i18next"; // <-- Import
 
 export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
-    const [formData, setFormData] = useState(initialFormData);
+    const [formData, setFormData] = useState({
+        name: '',
+        durationDays: 1,
+        price: 0,
+        radiusProfileId: '',
+    });
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!pkg;
 
-    // --- START: แก้ไข API Endpoint ---
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     const { data: profiles, error: profilesError } = useSWR('/radius-profiles', fetcher);
-    // --- END ---
 
     useEffect(() => {
         if (isOpen) {
@@ -38,7 +36,7 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
                     radiusProfileId: pkg.radiusProfileId ? String(pkg.radiusProfileId) : '',
                 });
             } else {
-                setFormData(initialFormData);
+                setFormData({ name: '', durationDays: 1, price: 0, radiusProfileId: '' });
             }
         }
     }, [pkg, isEditMode, isOpen]);
@@ -65,19 +63,19 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
         };
 
         toast.promise(axiosInstance[method](url, payload, { headers: { Authorization: `Bearer ${token}` } }), {
-            loading: `Saving package...`,
+            loading: t('toast.saving_package'),
             success: () => {
                 onSave();
                 setIsOpen(false);
-                return `Package ${isEditMode ? 'updated' : 'created'} successfully!`;
+                return t(isEditMode ? 'toast.package_update_success' : 'toast.package_create_success');
             },
-            error: (err) => err.response?.data?.message || "An error occurred.",
+            error: (err) => err.response?.data?.message || t('toast.generic_error'),
             finally: () => setIsLoading(false)
         });
     };
 
     if (profilesError) {
-        toast.error("Failed to load Radius Profiles.");
+        toast.error(t('toast.profile_load_failed'));
         setIsOpen(false);
         return null;
     }
@@ -86,28 +84,28 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit Voucher Package' : 'Add New Voucher Package'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? t('package_form_dialog.edit_title') : t('package_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Package Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., 24-Hour Access" required />
+                        <Label htmlFor="name">{t('form_labels.package_name')}</Label>
+                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder={t('form_labels.package_name_placeholder')} required />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="durationDays">Duration (Days)</Label>
+                            <Label htmlFor="durationDays">{t('form_labels.duration_days')}</Label>
                             <Input id="durationDays" type="number" value={formData.durationDays} onChange={handleInputChange} required min="1" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="price">Price (Optional)</Label>
+                            <Label htmlFor="price">{t('form_labels.price')}</Label>
                             <Input id="price" type="number" value={formData.price} onChange={handleInputChange} />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="radiusProfileId">Radius Profile</Label>
+                        <Label htmlFor="radiusProfileId">{t('form_labels.radius_profile')}</Label>
                         <Select value={formData.radiusProfileId} onValueChange={handleSelectChange} required>
                             <SelectTrigger id="radiusProfileId" disabled={!profiles}>
-                                <SelectValue placeholder={!profiles ? "Loading profiles..." : "Select a profile..."} />
+                                <SelectValue placeholder={!profiles ? t('loading_profiles') : t('form_labels.select_profile_placeholder')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {profiles?.map(p => (
@@ -117,8 +115,8 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
                         </Select>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? t('saving') : t('save')}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

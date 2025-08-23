@@ -10,16 +10,16 @@ import { toast } from "sonner";
 import { Save } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
-
-const initialSettings = {
-    voucherSsid: 'Free-WiFi',
-    voucherHeaderText: 'WiFi Voucher',
-    voucherFooterText: 'Enjoy your connection!'
-};
+import { useTranslation } from 'react-i18next'; // <-- Import
 
 export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
-    const [settings, setSettings] = useState(initialSettings);
+    const [settings, setSettings] = useState({
+        voucherSsid: 'Free-WiFi',
+        voucherHeaderText: 'WiFi Voucher',
+        voucherFooterText: 'Enjoy your connection!'
+    });
     const [isLoading, setIsLoading] = useState(false);
     
     const [voucherLogo, setVoucherLogo] = useState(null);
@@ -32,16 +32,16 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
               .then(response => {
                   const fetchedSettings = response.data.data;
                   setSettings({
-                      voucherSsid: fetchedSettings.voucherSsid || initialSettings.voucherSsid,
-                      voucherHeaderText: fetchedSettings.voucherHeaderText || initialSettings.voucherHeaderText,
-                      voucherFooterText: fetchedSettings.voucherFooterText || initialSettings.voucherFooterText,
+                      voucherSsid: fetchedSettings.voucherSsid || settings.voucherSsid,
+                      voucherHeaderText: fetchedSettings.voucherHeaderText || settings.voucherHeaderText,
+                      voucherFooterText: fetchedSettings.voucherFooterText || settings.voucherFooterText,
                   });
                   setVoucherLogoPreview(fetchedSettings.voucherLogoUrl || fetchedSettings.logoUrl || '');
               })
-              .catch(() => toast.error("Could not load settings."))
+              .catch(() => toast.error(t('toast.settings_load_failed')))
               .finally(() => setIsLoading(false));
         }
-    }, [isOpen, token]);
+    }, [isOpen, token, t, settings.voucherSsid, settings.voucherHeaderText, settings.voucherFooterText]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -72,12 +72,12 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
                 }
             }),
             {
-                loading: 'Saving settings...',
+                loading: t('toast.saving_settings'),
                 success: () => {
                     setIsOpen(false);
-                    return 'Voucher settings saved successfully!';
+                    return t('toast.settings_save_success');
                 },
-                error: (err) => err.response?.data?.message || "Failed to save settings.",
+                error: (err) => err.response?.data?.message || t('toast.settings_save_failed'),
                 finally: () => setIsLoading(false),
             }
         );
@@ -88,45 +88,45 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
             <DialogContent className="sm:max-w-4xl grid-cols-1 md:grid-cols-2">
                 <div>
                     <DialogHeader>
-                        <DialogTitle>Voucher Customization</DialogTitle>
-                        <DialogDescription>Customize the appearance of printed vouchers.</DialogDescription>
+                        <DialogTitle>{t('voucher_settings_dialog.title')}</DialogTitle>
+                        <DialogDescription>{t('voucher_settings_dialog.description')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
                         <div>
-                            <Label htmlFor="voucherLogo">Voucher Logo (Optional)</Label>
+                            <Label htmlFor="voucherLogo">{t('voucher_settings_dialog.logo_label')}</Label>
                             <Input id="voucherLogo" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} />
-                            <p className="text-xs text-muted-foreground pt-1">If empty, the main logo from Customization will be used.</p>
+                            <p className="text-xs text-muted-foreground pt-1">{t('voucher_settings_dialog.logo_desc')}</p>
                         </div>
                         <div>
-                            <Label htmlFor="voucherSsid">WiFi Name (SSID)</Label>
+                            <Label htmlFor="voucherSsid">{t('voucher_settings_dialog.ssid_label')}</Label>
                             <Input id="voucherSsid" value={settings.voucherSsid} onChange={(e) => setSettings({...settings, voucherSsid: e.target.value})} />
                         </div>
                         <div>
-                            <Label htmlFor="voucherHeaderText">Header Text</Label>
+                            <Label htmlFor="voucherHeaderText">{t('voucher_settings_dialog.header_label')}</Label>
                             <Input id="voucherHeaderText" value={settings.voucherHeaderText} onChange={(e) => setSettings({...settings, voucherHeaderText: e.target.value})} />
                         </div>
                         <div>
-                            <Label htmlFor="voucherFooterText">Footer Text</Label>
+                            <Label htmlFor="voucherFooterText">{t('voucher_settings_dialog.footer_label')}</Label>
                             <Textarea id="voucherFooterText" value={settings.voucherFooterText} onChange={(e) => setSettings({...settings, voucherFooterText: e.target.value})} />
                         </div>
                     </div>
                     <DialogFooter>
-                         <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                         <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
                          <Button onClick={handleSave} disabled={isLoading}>
                             <Save className="mr-2 h-4 w-4" /> 
-                            {isLoading ? 'Saving...' : 'Save Settings'}
+                            {isLoading ? t('saving') : t('save_settings')}
                         </Button>
                     </DialogFooter>
                 </div>
                 <div className="hidden md:block">
                      <Card className="h-full">
-                        <CardHeader><CardTitle>Live Preview</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>{t('voucher_settings_dialog.preview_title')}</CardTitle></CardHeader>
                         <CardContent>
                             <div className="p-4 border-2 border-dashed rounded-lg text-center">
                                 {voucherLogoPreview ? (
                                     <img src={voucherLogoPreview} alt="logo preview" className="mx-auto h-12 mb-2"/>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground mb-2">(No Logo Set)</p>
+                                    <p className="text-sm text-muted-foreground mb-2">{t('voucher_settings_dialog.no_logo')}</p>
                                 )}
                                 <h3 className="font-bold">{settings.voucherHeaderText}</h3>
                                 <p className="text-sm">SSID: {settings.voucherSsid}</p>

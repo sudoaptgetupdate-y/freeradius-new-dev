@@ -16,8 +16,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
 
 export default function RadiusProfilesPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     
     const { 
@@ -39,9 +41,6 @@ export default function RadiusProfilesPage() {
     const [profileToDelete, setProfileToDelete] = useState(null);
     const [attrDialogData, setAttrDialogData] = useState({ type: '', name: '' });
 
-    // The usePaginatedFetch hook handles filtering on the backend via searchTerm,
-    // so client-side filtering with useMemo is no longer needed if the backend supports it.
-    // If the backend doesn't filter, this useMemo is still correct.
     const filteredProfiles = useMemo(() => {
         if (!searchTerm) return profiles;
         return profiles.filter(p => 
@@ -65,7 +64,7 @@ export default function RadiusProfilesPage() {
                 });
                 setDetailedProfile(response.data.data);
             } catch (error) {
-                toast.error("Failed to fetch profile attributes.");
+                toast.error(t('toast.profile_attrs_load_failed'));
                 setSelectedProfile(null);
             } finally {
                 setIsAttrLoading(false);
@@ -73,7 +72,7 @@ export default function RadiusProfilesPage() {
         };
 
         fetchDetailedProfile();
-    }, [selectedProfile, token]);
+    }, [selectedProfile, token, t]);
 
     const handleAddNewProfile = () => {
         setEditingProfile(null);
@@ -94,15 +93,15 @@ export default function RadiusProfilesPage() {
         toast.promise(
             axiosInstance.delete(`/radius-profiles/${profileToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: 'Deleting profile...',
+                loading: t('toast.deleting_profile'),
                 success: () => {
                     if (selectedProfile?.id === profileToDelete.id) {
                         setSelectedProfile(null);
                     }
                     refreshData();
-                    return `Profile '${profileToDelete.name}' deleted successfully!`;
+                    return t('toast.delete_profile_success', { name: profileToDelete.name });
                 },
-                error: (err) => err.response?.data?.message || "Failed to delete profile.",
+                error: (err) => err.response?.data?.message || t('toast.delete_profile_failed'),
                 finally: () => setProfileToDelete(null)
             }
         );
@@ -119,7 +118,7 @@ export default function RadiusProfilesPage() {
         if (selectedProfile) {
             const tempProfile = { ...selectedProfile };
             setSelectedProfile(null); 
-            setTimeout(() => setSelectedProfile(tempProfile), 50); // Force re-trigger of useEffect
+            setTimeout(() => setSelectedProfile(tempProfile), 50);
         }
     }
 
@@ -127,40 +126,41 @@ export default function RadiusProfilesPage() {
         toast.promise(
             axiosInstance.delete(`/attributes/${type}/${attributeId}`, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: 'Deleting attribute...',
+                loading: t('toast.deleting_attribute'),
                 success: () => {
                     refreshAttributes();
-                    return "Attribute deleted successfully!";
+                    return t('toast.delete_attribute_success');
                 },
-                error: (err) => err.response?.data?.message || "Failed to delete attribute."
+                error: (err) => err.response?.data?.message || t('toast.delete_attribute_failed')
             }
         );
     };
-
+    
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
-                            <CardTitle>Radius Profiles</CardTitle>
+                            <CardTitle>{t('radius_profiles_page.title')}</CardTitle>
                             <Button size="sm" onClick={handleAddNewProfile}>
                                 <PlusCircle className="h-4 w-4 mr-2" />
-                                Add New
+                                {t('add_new')}
                             </Button>
                         </div>
                         <div className="pt-4">
                             <Input 
-                                placeholder="Search profiles..."
+                                placeholder={t('radius_profiles_page.search_placeholder')}
                                 value={searchTerm}
                                 onChange={(e) => handleSearchChange(e.target.value)}
                             />
                         </div>
                     </CardHeader>
                     <CardContent className="max-h-[60vh] overflow-y-auto">
-                        {isLoading && <p className="text-center text-muted-foreground py-4">Loading profiles...</p>}
+                        {isLoading && <p className="text-center text-muted-foreground py-4">{t('loading_profiles')}</p>}
                         <div className="space-y-2">
-                           {profiles.map(profile => (
+                           {filteredProfiles.map(profile => (
                                 <div 
                                     key={profile.id}
                                     className={`p-3 rounded-lg cursor-pointer transition-colors ${selectedProfile?.id === profile.id ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-accent'}`}
@@ -177,11 +177,11 @@ export default function RadiusProfilesPage() {
                                             </Button>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">{profile.description || 'No description'}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{profile.description || t('no_description')}</p>
                                 </div>
                            ))}
-                           {!isLoading && profiles.length === 0 && (
-                                <p className="text-center text-muted-foreground py-4">No profiles found.</p>
+                           {!isLoading && filteredProfiles.length === 0 && (
+                                <p className="text-center text-muted-foreground py-4">{t('radius_profiles_page.no_profiles_found')}</p>
                            )}
                         </div>
                     </CardContent>
@@ -193,47 +193,47 @@ export default function RadiusProfilesPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                            <Settings className="h-6 w-6" />
-                           Profile Attributes
+                           {t('radius_profiles_page.attributes_title')}
                         </CardTitle>
                         <CardDescription>
-                           {selectedProfile ? `Managing attributes for "${selectedProfile.name}"` : "Select a profile to manage its attributes."}
+                           {selectedProfile ? t('radius_profiles_page.attributes_desc_selected', { name: selectedProfile.name }) : t('radius_profiles_page.attributes_desc_none')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isAttrLoading ? (
                              <div className="flex items-center justify-center h-64">
-                               <p className="text-muted-foreground">Loading attributes...</p>
+                               <p className="text-muted-foreground">{t('loading_attributes')}</p>
                             </div>
                         ) : !selectedProfile || !detailedProfile ? (
                             <div className="flex items-center justify-center h-64">
-                               <p className="text-muted-foreground">Please select a profile from the list.</p>
+                               <p className="text-muted-foreground">{t('radius_profiles_page.select_profile_prompt')}</p>
                             </div>
                         ) : (
                             <Tabs value={activeTab} onValueChange={setActiveTab}>
                                 <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="reply">Reply Attributes</TabsTrigger>
-                                    <TabsTrigger value="check">Check Attributes</TabsTrigger>
+                                    <TabsTrigger value="reply">{t('reply_attributes')}</TabsTrigger>
+                                    <TabsTrigger value="check">{t('check_attributes')}</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="reply" className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
-                                        <h3 className="font-semibold">Reply Attributes ({detailedProfile.replyAttributes.length})</h3>
+                                        <h3 className="font-semibold">{t('reply_attributes')} ({detailedProfile.replyAttributes.length})</h3>
                                         <Button variant="outline" size="sm" onClick={() => openAttributeDialog('reply')}>
-                                            <PlusCircle className="h-4 w-4 mr-2" /> Add Reply
+                                            <PlusCircle className="h-4 w-4 mr-2" /> {t('add_reply')}
                                         </Button>
                                     </div>
                                     <div className="max-h-[50vh] overflow-y-auto">
-                                        <AttributeTable attributes={detailedProfile.replyAttributes} type="reply" onDelete={handleDeleteAttribute} />
+                                        <AttributeTable attributes={detailedProfile.replyAttributes} type="reply" onDelete={handleDeleteAttribute} t={t} />
                                     </div>
                                 </TabsContent>
                                 <TabsContent value="check" className="mt-4">
                                     <div className="flex justify-between items-center mb-2">
-                                        <h3 className="font-semibold">Check Attributes ({detailedProfile.checkAttributes.length})</h3>
+                                        <h3 className="font-semibold">{t('check_attributes')} ({detailedProfile.checkAttributes.length})</h3>
                                         <Button variant="outline" size="sm" onClick={() => openAttributeDialog('check')}>
-                                            <PlusCircle className="h-4 w-4 mr-2" /> Add Check
+                                            <PlusCircle className="h-4 w-4 mr-2" /> {t('add_check')}
                                         </Button>
                                     </div>
                                      <div className="max-h-[50vh] overflow-y-auto">
-                                        <AttributeTable attributes={detailedProfile.checkAttributes} type="check" onDelete={handleDeleteAttribute} />
+                                        <AttributeTable attributes={detailedProfile.checkAttributes} type="check" onDelete={handleDeleteAttribute} t={t} />
                                     </div>
                                 </TabsContent>
                             </Tabs>
@@ -262,14 +262,14 @@ export default function RadiusProfilesPage() {
             <AlertDialog open={!!profileToDelete} onOpenChange={(isOpen) => !isOpen && setProfileToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the profile: <strong>{profileToDelete?.name}</strong>.
+                           {t('delete_profile_dialog.description', { name: profileToDelete?.name })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDeleteProfile} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteProfile} className="bg-destructive hover:bg-destructive/90">{t('delete_profile_dialog.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -277,19 +277,19 @@ export default function RadiusProfilesPage() {
     );
 }
 
-const AttributeTable = ({ attributes, type, onDelete }) => {
+const AttributeTable = ({ attributes, type, onDelete, t }) => {
     if (!attributes || attributes.length === 0) {
-        return <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">No attributes defined.</p>;
+        return <p className="text-sm text-muted-foreground text-center py-4 border rounded-md">{t('no_attributes_defined')}</p>;
     }
     return (
         <div className="border rounded-md">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Attribute</TableHead>
-                        <TableHead>Operator</TableHead>
-                        <TableHead>Value</TableHead>
-                        <TableHead className="w-[50px] text-right">Action</TableHead>
+                        <TableHead>{t('table_headers.attribute')}</TableHead>
+                        <TableHead>{t('table_headers.operator')}</TableHead>
+                        <TableHead>{t('table_headers.value')}</TableHead>
+                        <TableHead className="w-[50px] text-right">{t('table_headers.action')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

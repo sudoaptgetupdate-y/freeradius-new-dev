@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import { useTranslation } from "react-i18next"; // <-- Import
 
 const RequiredLabel = ({ htmlFor, children }) => (
     <Label htmlFor={htmlFor}>
@@ -15,9 +16,9 @@ const RequiredLabel = ({ htmlFor, children }) => (
     </Label>
 );
 
-const OrganizationCombobox = ({ selectedValue, onSelect, organizations }) => (
+const OrganizationCombobox = ({ selectedValue, onSelect, organizations, placeholder }) => (
     <Select value={selectedValue ? String(selectedValue) : ""} onValueChange={onSelect}>
-        <SelectTrigger><SelectValue placeholder="Select an organization..." /></SelectTrigger>
+        <SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger>
         <SelectContent>
             {organizations.length > 0 ? (
                 organizations.map(org => (
@@ -43,6 +44,7 @@ const initialFormData = {
 };
 
 export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState(initialFormData);
     const [allOrganizations, setAllOrganizations] = useState([]);
@@ -57,9 +59,7 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
             setIsDataReady(false);
             axiosInstance.get('/organizations', { headers: { Authorization: `Bearer ${token}` } })
                 .then(response => {
-                    // --- START: แก้ไขส่วนนี้ ---
                     const fetchedOrgs = response.data.data.organizations;
-                    // --- END ---
                     setAllOrganizations(fetchedOrgs);
 
                     if (user) {
@@ -81,11 +81,11 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                     setIsDataReady(true);
                 })
                 .catch(error => {
-                    toast.error("Failed to load organizations.");
+                    toast.error(t('toast.org_load_failed'));
                     setIsOpen(false);
                 });
         }
-    }, [isOpen, user, token, setIsOpen]);
+    }, [isOpen, user, token, setIsOpen, t]);
 
     const compatibleOrgs = useMemo(() => {
         if (!isDataReady) return [];
@@ -134,11 +134,11 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
 
         try {
             await axiosInstance[method](url, payload, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success(`User ${isEditMode ? 'updated' : 'created'} successfully!`);
+            toast.success(t(isEditMode ? 'toast.user_update_success' : 'toast.user_create_success'));
             onSave();
             setIsOpen(false);
         } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred.");
+            toast.error(error.response?.data?.message || t('toast.generic_error'));
         } finally {
             setIsSaving(false);
         }
@@ -148,71 +148,72 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit User' : 'Add New User'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? t('user_form_dialog.edit_title') : t('user_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 {!isDataReady ? (
-                    <div className="py-12 flex justify-center items-center"><span>Loading form data...</span></div>
+                    <div className="py-12 flex justify-center items-center"><span>{t('loading_form_data')}</span></div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <RequiredLabel htmlFor="organizationId">Organization</RequiredLabel>
+                            <RequiredLabel htmlFor="organizationId">{t('form_labels.organization')}</RequiredLabel>
                             <OrganizationCombobox
                                 selectedValue={formData.organizationId}
                                 onSelect={handleOrgChange}
                                 organizations={compatibleOrgs}
+                                placeholder={t('form_labels.select_org_placeholder')}
                             />
                         </div>
                         <div className="space-y-2">
-                            <RequiredLabel htmlFor="full_name">Full Name</RequiredLabel>
-                            <Input id="full_name" value={formData.full_name} onChange={handleInputChange} placeholder="e.g., John Doe" required disabled={isFieldsDisabled} />
+                            <RequiredLabel htmlFor="full_name">{t('form_labels.full_name')}</RequiredLabel>
+                            <Input id="full_name" value={formData.full_name} onChange={handleInputChange} placeholder={t('form_labels.full_name_placeholder')} required disabled={isFieldsDisabled} />
                         </div>
 
                         {loginIdentifierType === 'manual' && (
                             <div className="space-y-2">
-                                <RequiredLabel htmlFor="username">Username</RequiredLabel>
-                                <Input id="username" value={formData.username} onChange={handleInputChange} placeholder="e.g., johndoe" required disabled={isEditMode || isFieldsDisabled} />
+                                <RequiredLabel htmlFor="username">{t('form_labels.username')}</RequiredLabel>
+                                <Input id="username" value={formData.username} onChange={handleInputChange} placeholder={t('form_labels.username_placeholder')} required disabled={isEditMode || isFieldsDisabled} />
                             </div>
                         )}
                         {loginIdentifierType === 'employee_id' && (
                             <div className="space-y-2">
-                                <RequiredLabel htmlFor="employee_id">Employee ID</RequiredLabel>
-                                <Input id="employee_id" value={formData.employee_id} onChange={handleInputChange} placeholder="e.g., EMP001" required disabled={isEditMode || isFieldsDisabled} />
+                                <RequiredLabel htmlFor="employee_id">{t('form_labels.employee_id')}</RequiredLabel>
+                                <Input id="employee_id" value={formData.employee_id} onChange={handleInputChange} placeholder={t('form_labels.employee_id_placeholder')} required disabled={isEditMode || isFieldsDisabled} />
                             </div>
                         )}
                         {loginIdentifierType === 'student_id' && (
                             <div className="space-y-2">
-                                <RequiredLabel htmlFor="student_id">Student ID</RequiredLabel>
-                                <Input id="student_id" value={formData.student_id} onChange={handleInputChange} placeholder="e.g., 6601001" required disabled={isEditMode || isFieldsDisabled} />
+                                <RequiredLabel htmlFor="student_id">{t('form_labels.student_id')}</RequiredLabel>
+                                <Input id="student_id" value={formData.student_id} onChange={handleInputChange} placeholder={t('form_labels.student_id_placeholder')} required disabled={isEditMode || isFieldsDisabled} />
                             </div>
                         )}
                         
                         <div className="space-y-2">
                             {loginIdentifierType === 'national_id' ? (
-                                <RequiredLabel htmlFor="national_id">National ID</RequiredLabel>
+                                <RequiredLabel htmlFor="national_id">{t('form_labels.national_id')}</RequiredLabel>
                             ) : (
-                                <Label htmlFor="national_id">National ID (Optional)</Label>
+                                <Label htmlFor="national_id">{t('form_labels.national_id_optional')}</Label>
                             )}
-                            <Input id="national_id" value={formData.national_id} onChange={handleInputChange} placeholder="13-digit ID number" required={loginIdentifierType === 'national_id'} disabled={isEditMode || isFieldsDisabled}/>
+                            <Input id="national_id" value={formData.national_id} onChange={handleInputChange} placeholder={t('form_labels.national_id_placeholder')} required={loginIdentifierType === 'national_id'} disabled={isEditMode || isFieldsDisabled}/>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="e.g., user@example.com" disabled={isFieldsDisabled} />
+                                <Label htmlFor="email">{t('form_labels.email')}</Label>
+                                <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder={t('form_labels.email_placeholder')} disabled={isFieldsDisabled} />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="phoneNumber">Phone Number</Label>
-                                <Input id="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} placeholder="e.g., 0812345678" disabled={isFieldsDisabled} />
+                                <Label htmlFor="phoneNumber">{t('form_labels.phone_number')}</Label>
+                                <Input id="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} placeholder={t('form_labels.phone_number_placeholder')} disabled={isFieldsDisabled} />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <RequiredLabel htmlFor="password">Password</RequiredLabel>
-                            <Input id="password" type="password" onChange={handleInputChange} placeholder={isEditMode ? "Leave blank to keep current password" : "Enter a strong password"} required={!isEditMode} disabled={isFieldsDisabled} />
+                            <RequiredLabel htmlFor="password">{t('form_labels.password')}</RequiredLabel>
+                            <Input id="password" type="password" onChange={handleInputChange} placeholder={isEditMode ? t('form_labels.password_edit_placeholder') : t('form_labels.password_add_placeholder')} required={!isEditMode} disabled={isFieldsDisabled} />
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-                            <Button type="submit" disabled={isSaving || isFieldsDisabled}>{isSaving ? 'Saving...' : 'Save'}</Button>
+                            <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                            <Button type="submit" disabled={isSaving || isFieldsDisabled}>{isSaving ? t('saving') : t('save')}</Button>
                         </DialogFooter>
                     </form>
                 )}

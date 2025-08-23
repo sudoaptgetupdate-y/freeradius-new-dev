@@ -7,14 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import { useTranslation } from "react-i18next"; // <-- Import
 
 export default function UserMoveDialog({ isOpen, setIsOpen, selectedUsers, onMoveSuccess }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
     const [allOrganizations, setAllOrganizations] = useState([]);
     const [targetOrgId, setTargetOrgId] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    // ดึงข้อมูลองค์กรทั้งหมดเมื่อ Dialog เปิด
     useEffect(() => {
         if (isOpen) {
             const fetchOrgs = async () => {
@@ -22,19 +23,15 @@ export default function UserMoveDialog({ isOpen, setIsOpen, selectedUsers, onMov
                     const response = await axiosInstance.get('/organizations', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
-                    // --- START: แก้ไขส่วนนี้ ---
-                    // ดึง Array ที่อยู่ใน key "organizations" ออกมา
                     setAllOrganizations(response.data.data.organizations);
-                    // --- END ---
                 } catch (error) {
-                    toast.error("Failed to load organizations.");
+                    toast.error(t('toast.org_load_failed'));
                 }
             };
             fetchOrgs();
         }
-    }, [isOpen, token]);
+    }, [isOpen, token, t]);
 
-    // กรองรายชื่อองค์กรให้แสดงเฉพาะ Type เดียวกันกับผู้ใช้ที่ถูกเลือกคนแรก
     const compatibleOrgs = useMemo(() => {
         if (selectedUsers.length === 0 || !Array.isArray(allOrganizations) || allOrganizations.length === 0) {
             return [];
@@ -46,42 +43,45 @@ export default function UserMoveDialog({ isOpen, setIsOpen, selectedUsers, onMov
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!targetOrgId) {
-            toast.warning("Please select a target organization.");
+            toast.warning(t('toast.select_target_org'));
             return;
         }
         setIsLoading(true);
-        try {
-            await axiosInstance.post('/users/bulk-move', {
+        toast.promise(
+            axiosInstance.post('/users/bulk-move', {
                 userIds: selectedUsers.map(u => u.id),
                 targetOrganizationId: parseInt(targetOrgId)
             }, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`${selectedUsers.length} user(s) moved successfully!`);
-            onMoveSuccess(); // เรียกฟังก์ชันจากแม่เพื่อ refresh ข้อมูล
-            setIsOpen(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred during the move.");
-        } finally {
-            setIsLoading(false);
-        }
+            }),
+            {
+                loading: t('toast.moving_users'),
+                success: () => {
+                    onMoveSuccess();
+                    setIsOpen(false);
+                    return t('toast.move_success', { count: selectedUsers.length });
+                },
+                error: (err) => err.response?.data?.message || t('toast.move_failed'),
+                finally: () => setIsLoading(false),
+            }
+        );
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Move Users</DialogTitle>
+                    <DialogTitle>{t('move_users_dialog.title')}</DialogTitle>
                     <DialogDescription>
-                        You have selected {selectedUsers.length} user(s). Please choose a target organization.
+                        {t('move_users_dialog.description', { count: selectedUsers.length })}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="targetOrg">Target Organization</Label>
+                        <Label htmlFor="targetOrg">{t('move_users_dialog.target_org_label')}</Label>
                         <Select value={targetOrgId} onValueChange={setTargetOrgId} required>
                             <SelectTrigger id="targetOrg">
-                                <SelectValue placeholder="Select a compatible organization..." />
+                                <SelectValue placeholder={t('move_users_dialog.select_org_placeholder')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {compatibleOrgs.map(org => (
@@ -90,13 +90,13 @@ export default function UserMoveDialog({ isOpen, setIsOpen, selectedUsers, onMov
                             </SelectContent>
                         </Select>
                          <p className="text-xs text-muted-foreground pt-1">
-                            Only organizations with the same login type are shown.
+                            {t('move_users_dialog.note')}
                         </p>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
                         <Button type="submit" disabled={isLoading || !targetOrgId}>
-                            {isLoading ? 'Moving...' : 'Confirm Move'}
+                            {isLoading ? t('moving') : t('move_users_dialog.confirm_move')}
                         </Button>
                     </DialogFooter>
                 </form>

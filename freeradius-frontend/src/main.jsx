@@ -1,16 +1,17 @@
 // src/main.jsx
-import React from 'react';
+import React, { Suspense } from 'react'; 
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import './i18n'; 
 
 // Import components
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
 import ProtectedRouteUser from './components/auth/ProtectedRouteUser.jsx';
 
-// Import pages
+
 import AuthLayout from './pages/AuthLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -38,7 +39,9 @@ import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx';
 import LoggedOutPage from './pages/LoggedOutPage.jsx';
 import LogManagementPage from './pages/LogManagementPage.jsx';
 
+
 const router = createBrowserRouter([
+  // ... (โค้ด router ของคุณยังคงเหมือนเดิม)
   {
     path: '/',
     element: <App />,
@@ -99,8 +102,11 @@ const router = createBrowserRouter([
   }
 ]);
 
+// --- 3. แก้ไขส่วน render ---
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Suspense fallback="Loading...">
+      <RouterProvider router={router} />
+    </Suspense>
   </React.StrictMode>,
 );

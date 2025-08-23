@@ -16,6 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next'; // <-- 1. Import useTranslation
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -33,8 +34,9 @@ const formatBytes = (bytes, decimals = 2) => {
     return `${parseFloat((Number(b) / Number(k ** BigInt(i))).toFixed(dm))} ${sizes[i]}`;
 };
 
-const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor }) => (
-    <Card 
+// --- 2. อัปเดต StatCard component ให้รับ t function ---
+const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor, t }) => (
+    <Card
         className="shadow-sm border-subtle cursor-pointer hover:bg-muted/50 transition-colors"
         onClick={onClick}
     >
@@ -46,29 +48,30 @@ const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor }) => (
         </CardHeader>
         <CardContent>
             <p className="text-3xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground">Click to view details</p>
+            <p className="text-xs text-muted-foreground">{t('click_to_view_details')}</p>
         </CardContent>
     </Card>
 );
 
-const StatusCard = ({ status, onRestart, isSuperAdmin }) => {
+// --- 3. อัปเดต StatusCard component ให้รับ t function ---
+const StatusCard = ({ status, onRestart, isSuperAdmin, t }) => {
     const getStatusInfo = () => {
         switch (status) {
             case 'active':
-                return { variant: 'success', text: 'Active', Icon: CheckCircle2 };
+                return { variant: 'success', text: t('status.active'), Icon: CheckCircle2 };
             case 'inactive':
-                return { variant: 'secondary', text: 'Inactive', Icon: PauseCircle };
+                return { variant: 'secondary', text: t('status.inactive'), Icon: PauseCircle };
             case 'failed':
-                return { variant: 'destructive', text: 'Failed', Icon: XCircle };
+                return { variant: 'destructive', text: t('status.failed'), Icon: XCircle };
             default:
-                return { variant: 'secondary', text: 'Unknown', Icon: PauseCircle };
+                return { variant: 'secondary', text: t('status.unknown'), Icon: PauseCircle };
         }
     };
     const { variant, text, Icon } = getStatusInfo();
     return (
         <Card className="shadow-sm border-subtle flex flex-col">
             <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">FreeRADIUS Status</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t('freeradius_status')}</CardTitle>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col justify-center items-center">
                 <Badge variant={variant} className="text-sm h-10 px-4">
@@ -79,7 +82,7 @@ const StatusCard = ({ status, onRestart, isSuperAdmin }) => {
             {isSuperAdmin && (
                 <CardFooter>
                     <Button variant="outline" size="sm" className="w-full" onClick={onRestart}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> Restart Service
+                        <RefreshCw className="mr-2 h-4 w-4" /> {t('restart_service')}
                     </Button>
                 </CardFooter>
             )}
@@ -138,6 +141,7 @@ const RecentActivityTable = ({ title, description, data, columns, viewAllLink, v
 
 
 export default function DashboardPage() {
+    const { t } = useTranslation(); // <-- 4. เรียกใช้ useTranslation hook
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuthStore();
@@ -155,7 +159,7 @@ export default function DashboardPage() {
             });
             setStats(response.data.data);
         } catch (error) {
-            toast.error("Failed to load dashboard data.");
+            toast.error(t('toast.dashboard_load_failed'));
         } finally {
             setLoading(false);
         }
@@ -171,15 +175,15 @@ export default function DashboardPage() {
             await axiosInstance.post('/status/restart', {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.info("Restart command sent.", {
-                description: "It may take a moment for the service to restart. Refreshing data in 5 seconds...",
+            toast.info(t('toast.restart_sent_title'), {
+                description: t('toast.restart_sent_desc'),
             });
             setTimeout(() => {
                 fetchStats();
             }, 5000);
         } catch (error) {
-            toast.error("Failed to restart service.", {
-                description: error.response?.data?.message || "Please check server logs.",
+            toast.error(t('toast.restart_failed_title'), {
+                description: error.response?.data?.message || t('toast.restart_failed_desc'),
             });
         } finally {
             setIsRestarting(false);
@@ -188,67 +192,72 @@ export default function DashboardPage() {
     };
 
     if (loading) {
-        return <p>Loading dashboard...</p>;
+        return <p>{t('loading_dashboard')}</p>;
     }
     if (!stats) {
-        return <p>Could not load dashboard data.</p>;
+        return <p>{t('dashboard_load_error')}</p>;
     }
 
+    // --- 5. แปลภาษาในส่วนของ Columns ---
     const recentLoginsColumns = [
-        { key: 'user', header: 'User', render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
-        { key: 'ip', header: 'IP Address', render: (row) => row.framedipaddress, className: "font-mono" },
-        // --- START: แก้ไขส่วนนี้ ---
-        { key: 'time', header: 'Time', render: (row) => format(new Date(row.acctstarttime), 'dd/MM/yyyy HH:mm'), className: "text-right" },
-        // --- END ---
+        { key: 'user', header: t('table_headers.user'), render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
+        { key: 'ip', header: t('table_headers.ip_address'), render: (row) => row.framedipaddress, className: "font-mono" },
+        { key: 'time', header: t('table_headers.time'), render: (row) => format(new Date(row.acctstarttime), 'dd/MM/yyyy HH:mm'), className: "text-right" },
     ];
     
     const topUsersColumns = [
-        { key: 'user', header: 'User', render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
-        { key: 'org', header: 'Organization', render: (row) => row.org_name },
-        { key: 'data', header: 'Data Usage', render: (row) => formatBytes(row.total_data), className: "text-right font-medium" },
+        { key: 'user', header: t('table_headers.user'), render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
+        { key: 'org', header: t('table_headers.organization'), render: (row) => row.org_name },
+        { key: 'data', header: t('table_headers.data_usage'), render: (row) => formatBytes(row.total_data), className: "text-right font-medium" },
     ];
 
+    // --- 6. แปลภาษาในส่วนของ JSX ---
     return (
         <>
             <div className="space-y-8">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Welcome back, {user?.fullName?.split(' ')[0] || user?.username}!</h1>
-                    <p className="text-muted-foreground">Here's a summary of your FreeRADIUS server.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('welcome_back', { name: user?.fullName?.split(' ')[0] || user?.username })}</h1>
+                    <p className="text-muted-foreground">{t('dashboard_subtitle')}</p>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
                     <StatCard 
-                        title="Online Users"
+                        title={t('online_users')}
                         value={stats.summary.onlineUsers || 0}
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
                         iconBgColor="bg-blue-500"
+                        t={t} // ส่ง t function ไปให้ component ลูก
                     />
                     <StatCard 
-                        title="Total Users"
+                        title={t('total_users')}
                         value={stats.summary.totalUsers || 0}
                         icon={Users}
                         onClick={() => navigate('/users')}
                         iconBgColor="bg-emerald-500"
+                        t={t}
                     />
                     <StatCard 
-                        title="Organizations"
+                        title={t('organizations')}
                         value={stats.summary.totalOrgs || 0}
                         icon={Building}
                         onClick={() => navigate('/organizations')}
                         iconBgColor="bg-orange-500"
+                        t={t}
                     />
                     <StatCard 
-                        title="NAS / Clients"
+                        title={t('nas_clients')}
                         value={stats.summary.totalNas || 0}
                         icon={Server}
                         onClick={() => navigate('/nas')}
                         iconBgColor="bg-purple-500"
+                        t={t}
                     />
                     <StatusCard 
                         status={stats.summary.serviceStatus} 
                         isSuperAdmin={isSuperAdmin}
                         onRestart={() => setIsRestartDialogOpen(true)} 
+                        t={t}
                     />
                 </div>
 
@@ -261,22 +270,22 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="lg:col-span-1">
                         <RecentActivityTable
-                            title="Recent Logins"
-                            description="The 5 most recent user authentications."
+                            title={t('recent_logins.title')}
+                            description={t('recent_logins.description')}
                             data={stats.recentLogins}
                             columns={recentLoginsColumns}
                             viewAllLink="/history"
-                            viewAllText="View all history"
+                            viewAllText={t('view_all_history')}
                         />
                     </div>
                     <div className="lg:col-span-1">
                          <RecentActivityTable
-                            title="Top 5 Users (Today)"
-                            description="Users with the highest data usage today."
+                            title={t('top_users.title')}
+                            description={t('top_users.description')}
                             data={stats.topUsersToday}
                             columns={topUsersColumns}
                             viewAllLink="/history"
-                            viewAllText="View all history"
+                            viewAllText={t('view_all_history')}
                         />
                     </div>
                 </div>
@@ -285,15 +294,15 @@ export default function DashboardPage() {
             <AlertDialog open={isRestartDialogOpen} onOpenChange={setIsRestartDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('restart_dialog.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will restart the FreeRADIUS service. All active user sessions may be disconnected.
+                            {t('restart_dialog.description')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleRestartService} disabled={isRestarting}>
-                            {isRestarting ? 'Restarting...' : 'Confirm Restart'}
+                            {isRestarting ? t('restarting') : t('confirm_restart')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

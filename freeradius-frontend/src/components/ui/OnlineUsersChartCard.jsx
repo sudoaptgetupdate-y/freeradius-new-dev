@@ -7,15 +7,17 @@ import axiosInstance from '@/api/axiosInstance';
 import useAuthStore from '@/store/authStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next'; // <-- 1. Import useTranslation
 
 const timePeriods = [
-    { key: 'day', label: 'Today' },
-    { key: 'week', label: 'Week' },
-    { key: 'month', label: 'Month' },
-    { key: 'year', label: 'Year' },
+    { key: 'day', labelKey: 'periods.today' },
+    { key: 'week', labelKey: 'periods.week' },
+    { key: 'month', labelKey: 'periods.month' },
+    { key: 'year', labelKey: 'periods.year' },
 ];
 
 export default function OnlineUsersChartCard() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activePeriod, setActivePeriod] = useState('day');
@@ -30,7 +32,7 @@ export default function OnlineUsersChartCard() {
                 });
                 setData(response.data.data);
             } catch (error) {
-                toast.error(`Failed to load graph data for period: ${activePeriod}`);
+                toast.error(t('toast.chart_load_failed', { period: activePeriod }));
                 setData([]);
             } finally {
                 setLoading(false);
@@ -40,15 +42,16 @@ export default function OnlineUsersChartCard() {
         if (token) {
             fetchData();
         }
-    }, [activePeriod, token]);
+    }, [activePeriod, token, t]); // <-- 3. เพิ่ม t เข้าไปใน dependency array
 
     return (
         <Card className="shadow-sm border-subtle h-full flex flex-col">
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                        <CardTitle>Online Users Trend</CardTitle>
-                        <CardDescription>Peak concurrent users over time.</CardDescription>
+                        {/* --- 4. แปลภาษาในส่วน Title และ Description --- */}
+                        <CardTitle>{t('charts.online_users_trend.title')}</CardTitle>
+                        <CardDescription>{t('charts.online_users_trend.description')}</CardDescription>
                     </div>
                     <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
                         {timePeriods.map((period) => (
@@ -61,7 +64,7 @@ export default function OnlineUsersChartCard() {
                                 )}
                                 onClick={() => setActivePeriod(period.key)}
                             >
-                                {period.label}
+                                {t(period.labelKey)}
                             </Button>
                         ))}
                     </div>
@@ -70,7 +73,7 @@ export default function OnlineUsersChartCard() {
             <CardContent className="flex-1 -ml-2">
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
-                        <p className="text-muted-foreground">Loading chart data...</p>
+                        <p className="text-muted-foreground">{t('charts.loading')}</p>
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height="100%">
@@ -84,7 +87,7 @@ export default function OnlineUsersChartCard() {
                                     borderColor: "hsl(var(--border))"
                                 }}
                             />
-                            <Line type="monotone" dataKey="value" name="Online Users" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                            <Line type="monotone" dataKey="value" name={t('online_users')} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                         </LineChart>
                     </ResponsiveContainer>
                 )}

@@ -7,10 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, X } from 'lucide-react'; // 1. Import icons
+import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
 
-// --- START: เพิ่ม Component สำหรับแสดงผลการตรวจสอบรหัสผ่าน ---
 const PasswordRequirement = ({ met, text }) => (
     <div className={cn("flex items-center text-sm", met ? "text-emerald-600" : "text-muted-foreground")}>
         {met ? <Check className="h-4 w-4 mr-2" /> : <X className="h-4 w-4 mr-2 text-red-500" />}
@@ -18,18 +18,18 @@ const PasswordRequirement = ({ met, text }) => (
     </div>
 );
 
-const PasswordValidation = ({ checks }) => (
+const PasswordValidation = ({ checks, t }) => (
     <div className="space-y-1 p-3 bg-muted/50 rounded-md">
-        <PasswordRequirement met={checks.length} text="At least 8 characters long" />
-        <PasswordRequirement met={checks.lowercase} text="At least one lowercase letter (a-z)" />
-        <PasswordRequirement met={checks.uppercase} text="At least one uppercase letter (A-Z)" />
-        <PasswordRequirement met={checks.number} text="At least one number (0-9)" />
-        <PasswordRequirement met={checks.special} text="At least one special character (!@#$%^*)" />
+        <PasswordRequirement met={checks.length} text={t('password_reqs.length')} />
+        <PasswordRequirement met={checks.lowercase} text={t('password_reqs.lowercase')} />
+        <PasswordRequirement met={checks.uppercase} text={t('password_reqs.uppercase')} />
+        <PasswordRequirement met={checks.number} text={t('password_reqs.number')} />
+        <PasswordRequirement met={checks.special} text={t('password_reqs.special')} />
     </div>
 );
-// --- END: สิ้นสุด Component ---
 
 export default function AdminProfilePage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const { user, token, login } = useAuthStore();
     const [formData, setFormData] = useState({
         fullName: user?.fullName || '',
@@ -39,22 +39,15 @@ export default function AdminProfilePage() {
     });
     const [isLoading, setIsLoading] = useState(false);
 
-    // --- START: เพิ่ม State สำหรับการตรวจสอบรหัสผ่าน ---
     const [passwordValidation, setPasswordValidation] = useState({
-        length: false,
-        lowercase: false,
-        uppercase: false,
-        number: false,
-        special: false,
+        length: false, lowercase: false, uppercase: false, number: false, special: false,
     });
     const [showValidation, setShowValidation] = useState(false);
-    // --- END: สิ้นสุด State ---
 
     const handleInputChange = (e) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
 
-        // --- START: เพิ่ม Logic การตรวจสอบรหัสผ่าน ---
         if (id === 'password') {
             setShowValidation(value.length > 0);
             const checks = {
@@ -66,24 +59,21 @@ export default function AdminProfilePage() {
             };
             setPasswordValidation(checks);
         }
-        // --- END: สิ้นสุด Logic ---
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // --- START: เพิ่มเงื่อนไขการตรวจสอบก่อน Submit ---
         if (formData.password) {
             if (Object.values(passwordValidation).some(met => !met)) {
-                toast.error("Password does not meet all security requirements.");
+                toast.error(t('toast.password_req_not_met'));
                 return;
             }
             if (formData.password !== formData.confirmPassword) {
-                toast.error("Passwords do not match.");
+                toast.error(t('toast.passwords_do_not_match'));
                 return;
             }
         }
-        // --- END: สิ้นสุดเงื่อนไข ---
 
         setIsLoading(true);
         const payload = {
@@ -94,58 +84,56 @@ export default function AdminProfilePage() {
             payload.password = formData.password;
         }
 
-        try {
-            const response = await axiosInstance.put(`/admins/${user.id}`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const { password, ...updatedUser } = response.data.data;
-            login(token, updatedUser);
-            toast.success("Profile updated successfully!");
-            setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
-            setShowValidation(false); // ซ่อน Checklist เมื่อสำเร็จ
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to update profile.");
-        } finally {
-            setIsLoading(false);
-        }
+        toast.promise(
+            axiosInstance.put(`/admins/${user.id}`, payload, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: t('toast.updating_profile'),
+                success: (response) => {
+                    const { password, ...updatedUser } = response.data.data;
+                    login(token, updatedUser);
+                    setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+                    setShowValidation(false);
+                    return t('toast.update_profile_success');
+                },
+                error: (err) => err.response?.data?.message || t('toast.update_profile_failed'),
+                finally: () => setIsLoading(false)
+            }
+        );
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <Card className="max-w-2xl mx-auto">
             <CardHeader>
-                <CardTitle>My Profile</CardTitle>
-                <CardDescription>Update your personal information and password.</CardDescription>
+                <CardTitle>{t('admin_profile_page.title')}</CardTitle>
+                <CardDescription>{t('admin_profile_page.description')}</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
-                        <Input id="fullName" value={formData.fullName} onChange={handleInputChange} required />
+                        <Label htmlFor="fullName">{t('form_labels.full_name')}</Label>
+                        <Input id="fullName" value={formData.fullName} onChange={handleInputChange} placeholder={t('form_labels.full_name_placeholder_admin')} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" value={formData.email} onChange={handleInputChange} required />
+                        <Label htmlFor="email">{t('form_labels.email')}</Label>
+                        <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder={t('form_labels.email_placeholder')} required />
                     </div>
-                    <hr />
-                    <p className="text-sm text-muted-foreground">Leave password fields blank to keep your current password.</p>
                     <div className="space-y-2">
-                        <Label htmlFor="password">New Password</Label>
-                        <Input id="password" type="password" value={formData.password} onChange={handleInputChange} />
+                        <Label htmlFor="password">{t('form_labels.new_password')}</Label>
+                        <Input id="password" type="password" value={formData.password} onChange={handleInputChange} placeholder={t('form_labels.new_password_placeholder')} />
                     </div>
                     
-                    {/* --- START: แสดงผล Checklist --- */}
                     {showValidation && (
-                        <PasswordValidation checks={passwordValidation} />
+                        <PasswordValidation checks={passwordValidation} t={t} />
                     )}
-                    {/* --- END: สิ้นสุดการแสดงผล --- */}
 
                     <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                        <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleInputChange} />
+                        <Label htmlFor="confirmPassword">{t('form_labels.confirm_new_password')}</Label>
+                        <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleInputChange} placeholder={t('form_labels.confirm_new_password_placeholder')} />
                     </div>
                     <div className="flex justify-end">
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save Changes'}
+                            {isLoading ? t('saving') : t('save_changes')}
                         </Button>
                     </div>
                 </form>

@@ -13,11 +13,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-// --- START: เพิ่มการ import Tooltip ---
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// --- END ---
+import { useTranslation } from "react-i18next"; // <-- 1. Import hook
 
 export default function NasPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const { data: nasList, isLoading, refreshData } = usePaginatedFetch("/nas");
 
@@ -41,19 +41,23 @@ export default function NasPage() {
 
     const confirmDelete = async () => {
         if (!nasToDelete) return;
-        try {
-            await axiosInstance.delete(`/nas/${nasToDelete.id}`, {
+        toast.promise(
+            axiosInstance.delete(`/nas/${nasToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`NAS '${nasToDelete.nasname}' deleted successfully!`);
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete NAS.");
-        } finally {
-            setNasToDelete(null);
-        }
+            }),
+            {
+                loading: t('toast.deleting_nas'),
+                success: () => {
+                    refreshData();
+                    return t('toast.delete_nas_success', { name: nasToDelete.nasname });
+                },
+                error: (err) => err.response?.data?.message || t('toast.delete_nas_failed'),
+                finally: () => setNasToDelete(null)
+            }
+        );
     };
-
+    
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -62,26 +66,25 @@ export default function NasPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Server className="h-6 w-6" />
-                                NAS / Clients
+                                {t('nas_page.title')}
                             </CardTitle>
-                            <CardDescription>Manage all RADIUS clients (Network Access Servers).</CardDescription>
+                            <CardDescription>{t('nas_page.description')}</CardDescription>
                         </div>
                         <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                            <PlusCircle className="mr-2 h-4 w-4" /> {t('add_new')}
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md">
-                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
                         <TooltipProvider delayDuration={0}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>NAS Name (IP/Hostname)</TableHead>
-                                        <TableHead>Short Name</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
+                                        <TableHead>{t('table_headers.nas_name')}</TableHead>
+                                        <TableHead>{t('table_headers.short_name')}</TableHead>
+                                        <TableHead>{t('table_headers.description')}</TableHead>
+                                        <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -97,7 +100,6 @@ export default function NasPage() {
                                                 <TableCell className="font-medium font-mono">{nas.nasname}</TableCell>
                                                 <TableCell>{nas.shortname}</TableCell>
                                                 <TableCell>{nas.description}</TableCell>
-                                                {/* --- START: แก้ไขปุ่ม Action --- */}
                                                 <TableCell className="text-center">
                                                     <div className="inline-flex items-center justify-center gap-1">
                                                         <Tooltip>
@@ -106,7 +108,7 @@ export default function NasPage() {
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Edit NAS</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.edit_nas')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -114,22 +116,20 @@ export default function NasPage() {
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Delete NAS</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.delete_nas')}</p></TooltipContent>
                                                         </Tooltip>
                                                     </div>
                                                 </TableCell>
-                                                {/* --- END --- */}
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">No NAS clients found.</TableCell>
+                                            <TableCell colSpan={4} className="h-24 text-center">{t('nas_page.no_nas_found')}</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
                         </TooltipProvider>
-                         {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>
@@ -146,15 +146,14 @@ export default function NasPage() {
             <AlertDialog open={!!nasToDelete} onOpenChange={(isOpen) => !isOpen && setNasToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the NAS client: <strong>{nasToDelete?.nasname}</strong>.
-                            This action cannot be undone.
+                            {t('delete_nas_dialog.description', { name: nasToDelete?.nasname })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_nas_dialog.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

@@ -13,6 +13,7 @@ import { Wifi, ZapOff, ArrowUpDown, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from 'date-fns';
+import { useTranslation } from "react-i18next"; // <-- 1. Import useTranslation
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -59,6 +60,7 @@ const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
 
 
 export default function OnlineUsersPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const [sortConfig, setSortConfig] = useState({ key: 'logintime', direction: 'desc' });
     const [organizations, setOrganizations] = useState([]);
@@ -73,7 +75,7 @@ export default function OnlineUsersPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData 
-    } = usePaginatedFetch("/online-users", 5, {
+    } = usePaginatedFetch("/online-users", 15, { // <-- เพิ่มจำนวนแถวเริ่มต้นเป็น 15
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
         organizationId: orgFilter,
@@ -90,12 +92,12 @@ export default function OnlineUsersPage() {
                 });
                 setOrganizations(response.data.data.organizations);
             } catch (error) {
-                toast.error("Failed to load organizations for filtering.");
+                toast.error(t('toast.org_load_failed'));
             }
         };
 
         fetchOrgs();
-    }, [token]);
+    }, [token, t]);
 
     const handleOrgFilterChange = (value) => {
         setOrgFilter(value === "all" ? "" : value);
@@ -106,21 +108,19 @@ export default function OnlineUsersPage() {
     const confirmKickUser = async () => {
         if (!userToKick) return;
         try {
-            // --- START: แก้ไขส่วนนี้ ---
             const payload = {
                 username: userToKick.username,
                 nasipaddress: userToKick.nasipaddress,
                 acctsessionid: userToKick.acctsessionid,
-                framedipaddress: userToKick.framedipaddress, // <-- เพิ่ม IP ของ User เข้าไป
+                framedipaddress: userToKick.framedipaddress,
             };
-            // --- END ---
             await axiosInstance.post('/online-users/kick', payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success(`Kick command sent for user '${userToKick.username}'.`);
+            toast.success(t('toast.kick_sent', { username: userToKick.username }));
             refreshData();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to kick user.");
+            toast.error(t('toast.kick_failed'), { description: error.response?.data?.message });
         } finally {
             setUserToKick(null);
         }
@@ -132,48 +132,49 @@ export default function OnlineUsersPage() {
                 headers: { Authorization: `Bearer ${token}` }
             }),
             {
-                loading: 'Clearing stale sessions...',
+                loading: t('toast.clearing_stale'),
                 success: (res) => {
                     refreshData();
-                    return res.data.message || 'Stale sessions cleared.';
+                    return res.data.message || t('toast.clear_stale_success');
                 },
-                error: (err) => err.response?.data?.message || "Failed to clear stale sessions.",
+                error: (err) => err.response?.data?.message || t('toast.clear_stale_failed'),
                 finally: () => setIsClearStaleDialogOpen(false)
             }
         );
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Wifi className="h-6 w-6" />Online Users</CardTitle>
-                            <CardDescription>Showing currently active user sessions.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Wifi className="h-6 w-6" />{t('online_users_page.title')}</CardTitle>
+                            <CardDescription>{t('online_users_page.description')}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
                              <Button onClick={() => setIsClearStaleDialogOpen(true)} variant="outline">
-                                <Trash2 className="mr-2 h-4 w-4" /> Clear Stale Sessions
+                                <Trash2 className="mr-2 h-4 w-4" /> {t('online_users_page.clear_stale_sessions')}
                             </Button>
-                            <Button onClick={refreshData} variant="outline">Refresh</Button>
+                            <Button onClick={refreshData} variant="outline">{t('refresh')}</Button>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Input
-                            placeholder="Search by username, IP, or MAC..."
+                            placeholder={t('online_users_page.search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="flex-grow"
                         />
                         <Select onValueChange={handleOrgFilterChange} value={orgFilter || "all"}>
                             <SelectTrigger className="w-full sm:w-[250px]">
-                                <SelectValue placeholder="Filter by organization..." />
+                                <SelectValue placeholder={t('online_users_page.filter_org_placeholder')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Organizations</SelectItem>
+                                <SelectItem value="all">{t('all_organizations')}</SelectItem>
                                 {organizations.map((org) => (
                                     <SelectItem key={org.id} value={String(org.id)}>
                                         {org.name}
@@ -186,15 +187,15 @@ export default function OnlineUsersPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Username</TableHead>
-                                    <TableHead>Client IP</TableHead>
-                                    <SortableHeader columnKey="logintime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Login Time</SortableHeader>
-                                    <SortableHeader columnKey="duration" sortConfig={sortConfig} setSortConfig={setSortConfig}>Duration</SortableHeader>
-                                    <TableHead>MAC Address</TableHead>
-                                    <SortableHeader columnKey="dataup" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Up</SortableHeader>
-                                    <SortableHeader columnKey="datadown" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Down</SortableHeader>
-                                    <SortableHeader columnKey="totaldata" sortConfig={sortConfig} setSortConfig={setSortConfig}>Total Data</SortableHeader>
-                                    <TableHead className="text-center">Actions</TableHead>
+                                    <TableHead>{t('table_headers.user')}</TableHead>
+                                    <TableHead>{t('table_headers.client_ip')}</TableHead>
+                                    <SortableHeader columnKey="logintime" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.login_time')}</SortableHeader>
+                                    <SortableHeader columnKey="duration" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.duration')}</SortableHeader>
+                                    <TableHead>{t('table_headers.mac_address')}</TableHead>
+                                    <SortableHeader columnKey="dataup" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.data_up')}</SortableHeader>
+                                    <SortableHeader columnKey="datadown" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.data_down')}</SortableHeader>
+                                    <SortableHeader columnKey="totaldata" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.total_data')}</SortableHeader>
+                                    <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -220,7 +221,7 @@ export default function OnlineUsersPage() {
                                                 <TableCell className="font-semibold">{formatBytes(totalData)}</TableCell>
                                                 <TableCell className="text-center">
                                                     <Button variant="destructive" size="sm" onClick={() => handleKickUser(user)}>
-                                                        <ZapOff className="h-4 w-4 mr-2" /> Kick
+                                                        <ZapOff className="h-4 w-4 mr-2" /> {t('kick')}
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>
@@ -228,7 +229,7 @@ export default function OnlineUsersPage() {
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center">No online users found.</TableCell>
+                                        <TableCell colSpan={9} className="h-24 text-center">{t('online_users_page.no_users_found')}</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -237,23 +238,23 @@ export default function OnlineUsersPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Label htmlFor="rows-per-page">{t('pagination.rows_per_page')}</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                                {[15, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
+                        {t('pagination.page_info', { currentPage: pagination.currentPage, totalPages: pagination.totalPages, totalItems: pagination.totalRecords || 0 })}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
-                            Previous
+                            {t('pagination.previous')}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
-                            Next
+                            {t('pagination.next')}
                         </Button>
                     </div>
                 </CardFooter>
@@ -262,14 +263,14 @@ export default function OnlineUsersPage() {
             <AlertDialog open={!!userToKick} onOpenChange={(isOpen) => !isOpen && setUserToKick(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Kick User</AlertDialogTitle>
+                        <AlertDialogTitle>{t('kick_dialog.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to disconnect the user: <strong>{userToKick?.username}</strong>? They might be able to reconnect immediately.
+                            {t('kick_dialog.description', { username: userToKick?.username })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmKickUser} className="bg-destructive hover:bg-destructive/90">Confirm Kick</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmKickUser} className="bg-destructive hover:bg-destructive/90">{t('kick_dialog.confirm_kick')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -277,14 +278,14 @@ export default function OnlineUsersPage() {
             <AlertDialog open={isClearStaleDialogOpen} onOpenChange={setIsClearStaleDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Clear Stale Sessions</AlertDialogTitle>
+                        <AlertDialogTitle>{t('clear_stale_dialog.title')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action will close any sessions that have been open for more than 24 hours. It will not affect users who are actively online. Are you sure you want to continue?
+                            {t('clear_stale_dialog.description')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmClearStaleSessions}>Confirm Clear</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmClearStaleSessions}>{t('clear_stale_dialog.confirm_clear')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

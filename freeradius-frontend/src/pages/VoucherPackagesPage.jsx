@@ -13,11 +13,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import PackageFormDialog from "@/components/dialogs/PackageFormDialog";
-// --- START: เพิ่มการ import Tooltip ---
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// --- END ---
+import { useTranslation } from "react-i18next"; // <-- 1. Import hook
 
 export default function VoucherPackagesPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
@@ -46,20 +46,21 @@ export default function VoucherPackagesPage() {
         toast.promise(
             axiosInstance.delete(`/vouchers/packages/${packageToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: 'Deleting package...',
+                loading: t('toast.deleting_package'),
                 success: () => {
                     mutate();
                     setPackageToDelete(null);
-                    return `Package '${packageToDelete.name}' deleted successfully!`;
+                    return t('toast.delete_package_success', { name: packageToDelete.name });
                 },
                 error: (err) => {
                     setPackageToDelete(null);
-                    return err.response?.data?.message || 'Failed to delete package.';
+                    return err.response?.data?.message || t('toast.delete_package_failed');
                 },
             }
         );
     };
     
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -68,42 +69,40 @@ export default function VoucherPackagesPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Ticket className="h-6 w-6" />
-                                Voucher Packages
+                                {t('voucher_packages_page.title')}
                             </CardTitle>
-                            <CardDescription>Manage packages for voucher generation.</CardDescription>
+                            <CardDescription>{t('voucher_packages_page.description')}</CardDescription>
                         </div>
-                        <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Add New Package</Button>
+                        <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> {t('voucher_packages_page.add_new_button')}</Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md">
-                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
                         <TooltipProvider delayDuration={0}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Package Name</TableHead>
-                                        <TableHead className="text-center">Duration (Days)</TableHead>
-                                        <TableHead>Radius Profile</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
+                                        <TableHead>{t('table_headers.package_name')}</TableHead>
+                                        <TableHead className="text-center">{t('table_headers.duration_days')}</TableHead>
+                                        <TableHead>{t('table_headers.radius_profile')}</TableHead>
+                                        <TableHead className="text-right">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading && (
-                                        <TableRow><TableCell colSpan={4} className="text-center h-24">Loading packages...</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24">{t('loading_packages')}</TableCell></TableRow>
                                     )}
                                     {error && (
-                                        <TableRow><TableCell colSpan={4} className="text-center h-24 text-red-500">Failed to load packages.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24 text-red-500">{t('load_packages_failed')}</TableCell></TableRow>
                                     )}
                                     {packages && packages.length === 0 && (
-                                        <TableRow><TableCell colSpan={4} className="text-center h-24">No packages found. Click "Add New Package" to start.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={4} className="text-center h-24">{t('voucher_packages_page.no_packages_found')}</TableCell></TableRow>
                                     )}
                                     {packages?.map((pkg) => (
                                         <TableRow key={pkg.id}>
                                             <TableCell className="font-medium">{pkg.name}</TableCell>
                                             <TableCell className="text-center">{pkg.durationDays}</TableCell>
                                             <TableCell>{pkg.radiusProfile?.name || 'N/A'}</TableCell>
-                                            {/* --- START: แก้ไขปุ่ม Action --- */}
                                             <TableCell className="text-right">
                                                  <div className="inline-flex items-center justify-end gap-1">
                                                     <Tooltip>
@@ -112,7 +111,7 @@ export default function VoucherPackagesPage() {
                                                                 <Edit className="h-4 w-4" />
                                                             </Button>
                                                         </TooltipTrigger>
-                                                        <TooltipContent><p>Edit Package</p></TooltipContent>
+                                                        <TooltipContent><p>{t('actions.edit_package')}</p></TooltipContent>
                                                     </Tooltip>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
@@ -120,17 +119,15 @@ export default function VoucherPackagesPage() {
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </TooltipTrigger>
-                                                        <TooltipContent><p>Delete Package</p></TooltipContent>
+                                                        <TooltipContent><p>{t('actions.delete_package')}</p></TooltipContent>
                                                     </Tooltip>
                                                  </div>
                                             </TableCell>
-                                            {/* --- END --- */}
                                         </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </TooltipProvider>
-                        {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>
@@ -147,14 +144,14 @@ export default function VoucherPackagesPage() {
             <AlertDialog open={!!packageToDelete} onOpenChange={() => setPackageToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the package: <strong>{packageToDelete?.name}</strong>. This action cannot be undone.
+                            {t('delete_package_dialog.description', { name: packageToDelete?.name })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_package_dialog.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

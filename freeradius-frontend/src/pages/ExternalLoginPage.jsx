@@ -20,8 +20,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Separator } from '@/components/ui/separator';
+import { useTranslation } from 'react-i18next';
 
 export default function ExternalLoginPage() {
+    const { t, i18n } = useTranslation();
     const location = useLocation();
     const { login } = useUserAuthStore();
     const formRef = useRef(null);
@@ -37,11 +39,11 @@ export default function ExternalLoginPage() {
         axiosInstance.get('/settings')
           .then(response => setSettings(response.data.data))
           .catch(() => {
-              toast.error("Could not load page settings.");
+              toast.error(t('toast.settings_load_failed'));
               setSettings({ externalLoginEnabled: 'true', terms: '' });
           })
           .finally(() => setIsPageLoading(false));
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -59,20 +61,18 @@ export default function ExternalLoginPage() {
         e.preventDefault();
 
         if (!agreed) {
-            toast.error("You must agree to the terms and conditions to log in.");
+            toast.error(t('toast.must_agree_terms'));
             return;
         }
         setIsLoading(true);
 
         try {
             const response = await axiosInstance.post('/external-auth/login', formData);
-            // ดึง advertisement ออกมาจาก response
             const { token, user, advertisement } = response.data.data;
             
-            // ส่ง advertisement ไปพร้อมกับข้อมูล user ตอน login
             login(token, user, advertisement);
 
-            toast.success("Authentication successful!", { description: "Redirecting via FortiGate..." });
+            toast.success(t('toast.auth_successful_title'), { description: t('toast.auth_successful_desc') });
             
             setTimeout(() => {
                 if (formRef.current) {
@@ -81,15 +81,15 @@ export default function ExternalLoginPage() {
             }, 100);
 
         } catch (error) {
-            toast.error("Login Failed", {
-                description: error.response?.data?.message || "Please check your credentials.",
+            toast.error(t('toast.login_failed_title'), {
+                description: error.response?.data?.message || t('toast.login_failed_desc'),
             });
             setIsLoading(false);
         }
     };
     
     if (isPageLoading) {
-        return <div className="flex items-center justify-center p-8">Loading...</div>;
+        return <div className="flex items-center justify-center p-8">{t('loading')}</div>;
     }
 
     return (
@@ -97,13 +97,13 @@ export default function ExternalLoginPage() {
             <div className="text-center mb-6 px-6">
                 {settings.externalLoginEnabled === 'true' ? (
                     <>
-                        <CardTitle className="text-2xl">User Login</CardTitle>
-                        <CardDescription>Please enter your credentials to access the network.</CardDescription>
+                        <CardTitle className="text-2xl">{t('external_login_page.user_login_title')}</CardTitle>
+                        <CardDescription>{t('external_login_page.description')}</CardDescription>
                     </>
                 ) : (
                      <>
-                        <CardTitle className="text-2xl">Login Disabled</CardTitle>
-                        <CardDescription>Login is currently unavailable.</CardDescription>
+                        <CardTitle className="text-2xl">{t('external_login_page.login_disabled_title')}</CardTitle>
+                        <CardDescription>{t('external_login_page.login_disabled_desc')}</CardDescription>
                     </>
                 )}
             </div>
@@ -121,51 +121,68 @@ export default function ExternalLoginPage() {
                             <input type="hidden" name="magic" value={magic} />
                             
                             <div className="space-y-2">
-                                <Label htmlFor="username">Username</Label>
-                                <Input id="username" name="username" value={formData.username} onChange={handleInputChange} placeholder="Enter your username" required autoFocus/>
+                                <Label htmlFor="username">{t('form_labels.username')}</Label>
+                                <Input id="username" name="username" value={formData.username} onChange={handleInputChange} placeholder={t('form_labels.username_placeholder')} required autoFocus/>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder="Enter your password" required />
+                                <Label htmlFor="password">{t('form_labels.password')}</Label>
+                                <Input id="password" name="password" type="password" value={formData.password} onChange={handleInputChange} placeholder={t('form_labels.password_placeholder')} required />
                             </div>
                             <Dialog>
                                 <div className="space-y-2 pt-2">
                                     <div className="flex items-center space-x-2">
                                         <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
                                         <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
-                                            I have read and agree to the terms
+                                            {t('external_login_page.agree_terms_checkbox')}
                                         </Label>
                                     </div>
                                     <p className="text-xs text-muted-foreground pl-6">
-                                        You must agree to our
+                                        {t('external_login_page.must_agree_prefix')}
                                         <DialogTrigger asChild>
-                                            <Button variant="link" className="p-1 h-auto text-xs">Terms and Conditions</Button>
+                                            <Button variant="link" className="p-1 h-auto text-xs">{t('external_login_page.terms_and_conditions')}</Button>
                                         </DialogTrigger>
-                                        to continue.
+                                        {t('external_login_page.must_agree_suffix')}
                                     </p>
                                 </div>
                                 <DialogContent className="sm:max-w-[625px]">
-                                    <DialogHeader><DialogTitle>Terms of Service and Privacy Policy</DialogTitle></DialogHeader>
+                                    <DialogHeader><DialogTitle>{t('terms_dialog.title')}</DialogTitle></DialogHeader>
                                     <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">{settings.terms}</div>
-                                    <DialogFooter><DialogClose asChild><Button type="button">Close</Button></DialogClose></DialogFooter>
+                                    <DialogFooter><DialogClose asChild><Button type="button">{t('close')}</Button></DialogClose></DialogFooter>
                                 </DialogContent>
                             </Dialog>
                             <Button type="submit" className="w-full !mt-6" disabled={isLoading || !agreed || !magic}>
-                                {isLoading ? 'Authenticating...' : 'Login'}
+                                {isLoading ? t('authenticating') : t('log_in')}
                             </Button>
                         </form>
                     </CardContent>
                     
                     <CardFooter className="flex flex-col gap-4 pt-4">
+                        <div className="w-full flex justify-center text-sm text-muted-foreground">
+                            <Button
+                                variant="link"
+                                className={`p-1 h-auto ${i18n.language === 'th' ? 'font-bold text-primary' : ''}`}
+                                onClick={() => i18n.changeLanguage('th')}
+                            >
+                                ภาษาไทย
+                            </Button>
+                            <span className="mx-1">|</span>
+                            <Button
+                                variant="link"
+                                className={`p-1 h-auto ${i18n.language === 'en' ? 'font-bold text-primary' : ''}`}
+                                onClick={() => i18n.changeLanguage('en')}
+                            >
+                                English
+                            </Button>
+                        </div>
                         <Separator />
                         <div className="w-full flex justify-between items-center text-xs">
                            <Button variant="link" asChild className="p-0 h-auto text-muted-foreground">
-                               <Link to="/register">Don't have an account?</Link>
+                               <Link to="/register">{t('external_login_page.no_account_link')}</Link>
                            </Button>
                            <Button variant="link" asChild className="p-0 h-auto text-muted-foreground">
                                <Link to="/portal/login">
                                    <HelpCircle className="mr-1 h-3 w-3" />
-                                   Account Management
+                                   {t('external_login_page.account_management_link')}
                                </Link>
                            </Button>
                         </div>
@@ -175,11 +192,11 @@ export default function ExternalLoginPage() {
                 <>
                     <CardContent className="text-center">
                         <Info className="mx-auto h-12 w-12 text-blue-500 mb-4" />
-                        <p className="text-muted-foreground">Please contact an administrator for assistance.</p>
+                        <p className="text-muted-foreground">{t('external_login_page.contact_admin')}</p>
                     </CardContent>
                     <CardFooter>
                          <Button asChild className="w-full">
-                           <Link to="/register">Go to Registration</Link>
+                           <Link to="/register">{t('external_login_page.go_to_registration_button')}</Link>
                         </Button>
                     </CardFooter>
                 </>

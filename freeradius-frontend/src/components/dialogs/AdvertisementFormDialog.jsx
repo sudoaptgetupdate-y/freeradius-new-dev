@@ -10,39 +10,31 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
-
-const initialFormData = {
-    name: '',
-    type: 'A',
-    imageUrl: '',
-    headerText: '',
-    bodyText: '',
-    buttonText: 'Continue to Internet',
-    // buttonUrl is no longer needed
-    countdown: 5,
-    status: 'active',
-};
+import { useTranslation } from "react-i18next"; // <-- Import
 
 export default function AdvertisementFormDialog({ isOpen, setIsOpen, ad, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
-    const [formData, setFormData] = useState(initialFormData);
+    const [formData, setFormData] = useState({
+        name: '', type: 'A', imageUrl: '', headerText: '', bodyText: '',
+        buttonText: 'Continue to Internet', countdown: 5, status: 'active',
+    });
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!ad;
 
     useEffect(() => {
         if (ad) {
             setFormData({
-                name: ad.name || '',
-                type: ad.type || 'A',
-                imageUrl: ad.imageUrl || '',
-                headerText: ad.headerText || '',
-                bodyText: ad.bodyText || '',
+                name: ad.name || '', type: ad.type || 'A', imageUrl: ad.imageUrl || '',
+                headerText: ad.headerText || '', bodyText: ad.bodyText || '',
                 buttonText: ad.buttonText || 'Continue to Internet',
-                countdown: ad.countdown === null ? 0 : ad.countdown,
-                status: ad.status || 'active',
+                countdown: ad.countdown === null ? 0 : ad.countdown, status: ad.status || 'active',
             });
         } else {
-            setFormData(initialFormData);
+            setFormData({
+                name: '', type: 'A', imageUrl: '', headerText: '', bodyText: '',
+                buttonText: 'Continue to Internet', countdown: 5, status: 'active',
+            });
         }
     }, [ad, isOpen]);
 
@@ -69,13 +61,13 @@ export default function AdvertisementFormDialog({ isOpen, setIsOpen, ad, onSave 
         toast.promise(
             axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: 'Saving campaign...',
+                loading: t('toast.saving_ad'),
                 success: () => {
                     onSave();
                     setIsOpen(false);
-                    return `Campaign ${isEditMode ? 'updated' : 'created'} successfully!`;
+                    return t(isEditMode ? 'toast.update_ad_success' : 'toast.create_ad_success');
                 },
-                error: (err) => err.response?.data?.message || "An error occurred.",
+                error: (err) => err.response?.data?.message || t('toast.generic_error'),
                 finally: () => setIsLoading(false),
             }
         );
@@ -85,63 +77,23 @@ export default function AdvertisementFormDialog({ isOpen, setIsOpen, ad, onSave 
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit Advertisement' : 'Add New Advertisement'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? t('ad_form_dialog.edit_title') : t('ad_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 <form id="ad-form" onSubmit={handleSubmit} className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Campaign Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., Summer Promotion" required />
-                    </div>
+                    <div className="space-y-2"><Label htmlFor="name">{t('form_labels.campaign_name')}</Label><Input id="name" value={formData.name} onChange={handleInputChange} placeholder={t('form_labels.campaign_name_placeholder')} required /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="type">Template Type</Label>
-                            <Select value={formData.type} onValueChange={(val) => handleSelectChange('type', val)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="A">Hero Page (รูปแนวนอน)</SelectItem>
-                                    <SelectItem value="B">Split-Screen (รูปแนวนอน)</SelectItem>
-                                    <SelectItem value="C">Image Focused (รูปแนวตั้ง)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                           <Label htmlFor="status">Status</Label>
-                           <div className="flex items-center space-x-2 pt-2">
-                                <Switch 
-                                    id="status" 
-                                    checked={formData.status === 'active'} 
-                                    onCheckedChange={(checked) => handleSwitchChange('status', checked)}
-                                />
-                                <Label htmlFor="status">{formData.status === 'active' ? 'Active' : 'Inactive'}</Label>
-                           </div>
-                        </div>
+                        <div className="space-y-2"><Label htmlFor="type">{t('form_labels.template_type')}</Label><Select value={formData.type} onValueChange={(val) => handleSelectChange('type', val)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="A">{t('ad_templates.hero')}</SelectItem><SelectItem value="B">{t('ad_templates.split')}</SelectItem><SelectItem value="C">{t('ad_templates.image_focused')}</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-2"><Label htmlFor="status">{t('form_labels.status')}</Label><div className="flex items-center space-x-2 pt-2"><Switch id="status" checked={formData.status === 'active'} onCheckedChange={(checked) => handleSwitchChange('status', checked)} /><Label htmlFor="status">{formData.status === 'active' ? t('status.active') : t('status.inactive')}</Label></div></div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="imageUrl">Image URL</Label>
-                        <Input id="imageUrl" value={formData.imageUrl} onChange={handleInputChange} placeholder="https://example.com/image.jpg" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="headerText">Header Text (สำหรับ A, B)</Label>
-                        <Input id="headerText" value={formData.headerText} onChange={handleInputChange} placeholder="Welcome to Our WiFi!" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="bodyText">Body Text (สำหรับ A, B)</Label>
-                        <Textarea id="bodyText" value={formData.bodyText} onChange={handleInputChange} placeholder="Enjoy high-speed internet access." />
-                    </div>
-                    {/* --- START: แก้ไขส่วนนี้ --- */}
-                    <div className="space-y-2">
-                        <Label htmlFor="buttonText">Button Text</Label>
-                        <Input id="buttonText" value={formData.buttonText} onChange={handleInputChange} required />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="countdown">Countdown (seconds)</Label>
-                        <Input id="countdown" type="number" value={formData.countdown ?? ''} onChange={handleInputChange} placeholder="e.g., 5. Leave blank for no countdown." />
-                    </div>
-                    {/* --- END --- */}
+                    <div className="space-y-2"><Label htmlFor="imageUrl">{t('form_labels.image_url')}</Label><Input id="imageUrl" value={formData.imageUrl} onChange={handleInputChange} placeholder={t('form_labels.image_url_placeholder')} /></div>
+                    <div className="space-y-2"><Label htmlFor="headerText">{t('form_labels.header_text')}</Label><Input id="headerText" value={formData.headerText} onChange={handleInputChange} placeholder={t('form_labels.header_text_placeholder')} /></div>
+                    <div className="space-y-2"><Label htmlFor="bodyText">{t('form_labels.body_text')}</Label><Textarea id="bodyText" value={formData.bodyText} onChange={handleInputChange} placeholder={t('form_labels.body_text_placeholder')} /></div>
+                    <div className="space-y-2"><Label htmlFor="buttonText">{t('form_labels.button_text')}</Label><Input id="buttonText" value={formData.buttonText} onChange={handleInputChange} required /></div>
+                    <div className="space-y-2"><Label htmlFor="countdown">{t('form_labels.countdown')}</Label><Input id="countdown" type="number" value={formData.countdown ?? ''} onChange={handleInputChange} placeholder={t('form_labels.countdown_placeholder')} /></div>
                 </form>
                 <DialogFooter className="mt-4">
-                    <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="ad-form" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</Button>
+                    <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                    <Button type="submit" form="ad-form" disabled={isLoading}>{isLoading ? t('saving') : t('save')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

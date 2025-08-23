@@ -16,11 +16,11 @@ import {
 import { toast } from "sonner";
 import AttributeDefinitionFormDialog from "@/components/dialogs/AttributeDefinitionFormDialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-// --- START: เพิ่มการ import Tooltip ---
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// --- END ---
+import { useTranslation } from "react-i18next"; // <-- 1. Import hook
 
 export default function AttributeManagementPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const { data: attributes, isLoading, refreshData } = usePaginatedFetch("/attribute-definitions");
 
@@ -59,19 +59,23 @@ export default function AttributeManagementPage() {
 
     const confirmDelete = async () => {
         if (!attributeToDelete) return;
-        try {
-            await axiosInstance.delete(`/attribute-definitions/${attributeToDelete.id}`, {
+        toast.promise(
+            axiosInstance.delete(`/attribute-definitions/${attributeToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Attribute '${attributeToDelete.name}' deleted successfully!`);
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete attribute.");
-        } finally {
-            setAttributeToDelete(null);
-        }
+            }),
+            {
+                loading: t('toast.deleting_attribute'),
+                success: () => {
+                    refreshData();
+                    return t('toast.delete_attribute_success_def', { name: attributeToDelete.name });
+                },
+                error: (err) => err.response?.data?.message || t('toast.delete_attribute_failed_def'),
+                finally: () => setAttributeToDelete(null),
+            }
+        );
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -80,19 +84,19 @@ export default function AttributeManagementPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <ListChecks className="h-6 w-6" />
-                                Attribute Management
+                                {t('attribute_management_page.title')}
                             </CardTitle>
-                            <CardDescription>Manage RADIUS attribute definitions for selection in profiles.</CardDescription>
+                            <CardDescription>{t('attribute_management_page.description')}</CardDescription>
                         </div>
                         <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New Attribute
+                            <PlusCircle className="mr-2 h-4 w-4" /> {t('attribute_management_page.add_new_button')}
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col sm:flex-row gap-4 mb-4">
                         <Input 
-                            placeholder="Search by name or description..."
+                            placeholder={t('attribute_management_page.search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="flex-grow"
@@ -103,21 +107,20 @@ export default function AttributeManagementPage() {
                             onValueChange={(value) => value && setFilterType(value)}
                             className="w-full sm:w-auto"
                         >
-                            <ToggleGroupItem value="all" className="flex-1">All</ToggleGroupItem>
-                            <ToggleGroupItem value="reply" className="flex-1">Reply</ToggleGroupItem>
-                            <ToggleGroupItem value="check" className="flex-1">Check</ToggleGroupItem>
+                            <ToggleGroupItem value="all" className="flex-1">{t('all')}</ToggleGroupItem>
+                            <ToggleGroupItem value="reply" className="flex-1">{t('reply')}</ToggleGroupItem>
+                            <ToggleGroupItem value="check" className="flex-1">{t('check')}</ToggleGroupItem>
                         </ToggleGroup>
                     </div>
                     <div className="border rounded-md">
-                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
                         <TooltipProvider delayDuration={0}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Attribute Name</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
+                                        <TableHead>{t('table_headers.attribute_name')}</TableHead>
+                                        <TableHead>{t('table_headers.type')}</TableHead>
+                                        <TableHead>{t('table_headers.description')}</TableHead>
+                                        <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -137,7 +140,6 @@ export default function AttributeManagementPage() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>{attr.description}</TableCell>
-                                                {/* --- START: แก้ไขปุ่ม Action --- */}
                                                 <TableCell className="text-center">
                                                     <div className="inline-flex items-center justify-center gap-1">
                                                         <Tooltip>
@@ -146,7 +148,7 @@ export default function AttributeManagementPage() {
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Edit Attribute</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.edit_attribute')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -154,22 +156,20 @@ export default function AttributeManagementPage() {
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Delete Attribute</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.delete_attribute')}</p></TooltipContent>
                                                         </Tooltip>
                                                     </div>
                                                 </TableCell>
-                                                {/* --- END --- */}
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">No attribute definitions found.</TableCell>
+                                            <TableCell colSpan={4} className="h-24 text-center">{t('attribute_management_page.no_attributes_found')}</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
                         </TooltipProvider>
-                        {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>
@@ -186,14 +186,14 @@ export default function AttributeManagementPage() {
             <AlertDialog open={!!attributeToDelete} onOpenChange={(isOpen) => !isOpen && setAttributeToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the attribute: <strong>{attributeToDelete?.name}</strong>.
+                            {t('delete_attribute_dialog.description', { name: attributeToDelete?.name })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_attribute_dialog.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

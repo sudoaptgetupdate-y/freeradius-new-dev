@@ -13,6 +13,7 @@ import { History, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { format, formatDistanceStrict } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next"; // <-- 1. Import useTranslation
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -66,6 +67,7 @@ const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
 };
 
 export default function HistoryPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const [organizations, setOrganizations] = useState([]);
     const [filters, setFilters] = useState({
@@ -84,7 +86,7 @@ export default function HistoryPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData 
-    } = usePaginatedFetch("/history", 5, {
+    } = usePaginatedFetch("/history", 15, { // <-- เพิ่มจำนวนแถวเริ่มต้นเป็น 15
         ...filters,
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
@@ -98,39 +100,40 @@ export default function HistoryPage() {
                 });
                 setOrganizations(response.data.data.organizations);
             } catch (error) {
-                toast.error("Failed to load organizations for filtering.");
+                toast.error(t('toast.org_load_failed'));
             }
         };
         fetchOrgs();
-    }, [token]);
+    }, [token, t]);
 
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <Card>
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle className="flex items-center gap-2"><History className="h-6 w-6" />Connection History</CardTitle>
-                        <CardDescription>Review past user sessions and connection details.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><History className="h-6 w-6" />{t('history_page.title')}</CardTitle>
+                        <CardDescription>{t('history_page.description')}</CardDescription>
                     </div>
-                    <Button onClick={refreshData} variant="outline">Refresh</Button>
+                    <Button onClick={refreshData} variant="outline">{t('refresh')}</Button>
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <Input
-                        placeholder="Search user, IP, MAC..."
+                        placeholder={t('history_page.search_placeholder')}
                         value={searchTerm}
                         onChange={(e) => handleSearchChange(e.target.value)}
                         className="sm:col-span-2 lg:col-span-1"
                     />
                      <Select value={filters.organizationId || "all"} onValueChange={(value) => handleFilterChange('organizationId', value === 'all' ? '' : value)}>
-                        <SelectTrigger><SelectValue placeholder="Filter by organization..." /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t('history_page.filter_org_placeholder')} /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Organizations</SelectItem>
+                            <SelectItem value="all">{t('all_organizations')}</SelectItem>
                             {organizations.map((org) => (
                                 <SelectItem key={org.id} value={String(org.id)}>{org.name}</SelectItem>
                             ))}
@@ -143,16 +146,16 @@ export default function HistoryPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Client IP</TableHead>
-                                <SortableHeader columnKey="logintime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Login Time</SortableHeader>
-                                <SortableHeader columnKey="logouttime" sortConfig={sortConfig} setSortConfig={setSortConfig}>Logout Time</SortableHeader>
-                                <SortableHeader columnKey="duration" sortConfig={sortConfig} setSortConfig={setSortConfig}>Duration</SortableHeader>
-                                <TableHead>MAC Address</TableHead>
-                                <SortableHeader columnKey="dataup" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Up</SortableHeader>
-                                <SortableHeader columnKey="datadown" sortConfig={sortConfig} setSortConfig={setSortConfig}>Data Down</SortableHeader>
-                                <SortableHeader columnKey="totaldata" sortConfig={sortConfig} setSortConfig={setSortConfig}>Total Data</SortableHeader>
-                                <TableHead>Terminate Cause</TableHead>
+                                <TableHead>{t('table_headers.user')}</TableHead>
+                                <TableHead>{t('table_headers.client_ip')}</TableHead>
+                                <SortableHeader columnKey="logintime" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.login_time')}</SortableHeader>
+                                <SortableHeader columnKey="logouttime" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.logout_time')}</SortableHeader>
+                                <SortableHeader columnKey="duration" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.duration')}</SortableHeader>
+                                <TableHead>{t('table_headers.mac_address')}</TableHead>
+                                <SortableHeader columnKey="dataup" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.data_up')}</SortableHeader>
+                                <SortableHeader columnKey="datadown" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.data_down')}</SortableHeader>
+                                <SortableHeader columnKey="totaldata" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.total_data')}</SortableHeader>
+                                <TableHead>{t('table_headers.terminate_cause')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -168,16 +171,14 @@ export default function HistoryPage() {
                                         <TableRow key={rec.radacctid}>
                                             <TableCell className="font-medium">{rec.full_name}<br/><span className="text-xs text-muted-foreground">{rec.username}</span></TableCell>
                                             <TableCell className="font-mono">{rec.framedipaddress}</TableCell>
-                                            {/* --- START: แก้ไขส่วนนี้ --- */}
                                             <TableCell>{rec.acctstarttime ? format(new Date(rec.acctstarttime), 'dd/MM/yyyy HH:mm:ss') : 'N/A'}</TableCell>
                                             <TableCell>
                                                 {rec.acctstoptime ? (
                                                     format(new Date(rec.acctstoptime), 'dd/MM/yyyy HH:mm:ss')
                                                 ) : (
-                                                    <Badge variant="success" className="w-auto">Still Online</Badge>
+                                                    <Badge variant="success" className="w-auto">{t('status.still_online')}</Badge>
                                                 )}
                                             </TableCell>
-                                            {/* --- END --- */}
                                             <TableCell>{calculateDuration(rec.acctstarttime, rec.acctstoptime)}</TableCell>
                                             <TableCell className="font-mono">{formatMacAddress(rec.callingstationid)}</TableCell>
                                             <TableCell>{formatBytes(dataUp)}</TableCell>
@@ -189,7 +190,7 @@ export default function HistoryPage() {
                                 })
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={10} className="h-24 text-center">No history records found.</TableCell>
+                                    <TableCell colSpan={10} className="h-24 text-center">{t('history_page.no_records_found')}</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -198,23 +199,23 @@ export default function HistoryPage() {
             </CardContent>
             <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Label htmlFor="rows-per-page">Rows per page:</Label>
+                    <Label htmlFor="rows-per-page">{t('pagination.rows_per_page')}</Label>
                     <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                            {[15, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                    Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
+                    {t('pagination.page_info', { currentPage: pagination.currentPage, totalPages: pagination.totalPages, totalItems: pagination.totalRecords || 0 })}
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination.currentPage || pagination.currentPage <= 1}>
-                        Previous
+                        {t('pagination.previous')}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination.totalPages || pagination.currentPage >= pagination.totalPages}>
-                        Next
+                        {t('pagination.next')}
                     </Button>
                 </div>
             </CardFooter>

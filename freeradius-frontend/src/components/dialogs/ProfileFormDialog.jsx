@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import { useTranslation } from "react-i18next"; // <-- Import
 
 export default function ProfileFormDialog({ isOpen, setIsOpen, profile, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState({ name: '', description: '' });
     const [isLoading, setIsLoading] = useState(false);
@@ -34,44 +36,43 @@ export default function ProfileFormDialog({ isOpen, setIsOpen, profile, onSave }
         e.preventDefault();
         setIsLoading(true);
 
-        // --- START: แก้ไข URL ---
         const url = isEditMode ? `/radius-profiles/${profile.id}` : '/radius-profiles';
-        // --- END ---
         const method = isEditMode ? 'put' : 'post';
 
-        try {
-            await axiosInstance[method](url, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Profile ${isEditMode ? 'updated' : 'created'} successfully!`);
-            onSave();
-            setIsOpen(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred.");
-        } finally {
-            setIsLoading(false);
-        }
+        toast.promise(
+            axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: t('toast.saving_profile'),
+                success: () => {
+                    onSave();
+                    setIsOpen(false);
+                    return t(isEditMode ? 'toast.update_profile_success' : 'toast.create_profile_success');
+                },
+                error: (err) => err.response?.data?.message || t('toast.generic_error'),
+                finally: () => setIsLoading(false),
+            }
+        );
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit Profile' : 'Add New Profile'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? t('profile_form_dialog.edit_title') : t('profile_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Profile Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., vip-users" required />
+                        <Label htmlFor="name">{t('form_labels.profile_name')}</Label>
+                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder={t('form_labels.profile_name_placeholder')} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description (Optional)</Label>
-                        <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder="A short description of this profile's purpose." />
+                        <Label htmlFor="description">{t('form_labels.description_optional')}</Label>
+                        <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder={t('form_labels.description_placeholder')} />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save'}
+                            {isLoading ? t('saving') : t('save')}
                         </Button>
                     </DialogFooter>
                 </form>

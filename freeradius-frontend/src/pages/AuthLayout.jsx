@@ -1,5 +1,5 @@
 // src/pages/AuthLayout.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react'; // <-- Import Suspense
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axiosInstance from '@/api/axiosInstance';
@@ -59,7 +59,10 @@ export default function AuthLayout() {
                         exit={{ opacity: 0, x: -50 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                        <Outlet />
+                        {/* ครอบ Outlet ด้วย Suspense  */}
+                        <Suspense fallback={<div>Loading...</div>}>
+                           <Outlet />
+                        </Suspense>
                     </motion.div>
                 </AnimatePresence>
             </Card>

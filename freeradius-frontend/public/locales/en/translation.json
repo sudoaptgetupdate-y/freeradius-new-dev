@@ -1,0 +1,869 @@
+{
+  "account_settings": "Account Settings",
+  "logout": "Log Out",
+  "nav": {
+    "dashboard": "Dashboard",
+    "online_users": "Online Users",
+    "history": "History",
+    "section_users": "USERS",
+    "all_users": "All Users",
+    "voucher_batches": "Voucher Batches",
+    "section_config": "CONFIGURATION",
+    "organizations": "Organizations",
+    "radius_profiles": "Radius Profiles",
+    "nas": "NAS",
+    "voucher_packages": "Voucher Packages",
+    "advertisements": "Advertisements",
+    "customization": "Customization",
+    "section_system": "SYSTEM",
+    "admins": "Admins",
+    "attributes": "Attributes",
+    "system_settings": "System Settings",
+    "log_management": "Log Management"
+  },
+  "dashboard": "Dashboard",
+  "welcome_back": "Welcome back, {{name}}!",
+  "dashboard_subtitle": "Here's a summary of your FreeRADIUS server.",
+  "online_users": "Online Users",
+  "total_users": "Total Users",
+  "organizations": "Organizations",
+  "nas_clients": "NAS / Clients",
+  "freeradius_status": "FreeRADIUS Status",
+  "click_to_view_details": "Click to view details",
+  "restart_service": "Restart Service",
+  "view_all_history": "View all history",
+  "loading_dashboard": "Loading dashboard...",
+  "dashboard_load_error": "Could not load dashboard data.",
+  "cancel": "Cancel",
+  "restarting": "Restarting...",
+  "confirm_restart": "Confirm Restart",
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "failed": "Failed",
+    "unknown": "Unknown",
+    "still_online": "Still Online",
+    "disabled": "Disabled"
+  },
+  "all_packages": "All Packages",
+  "saving": "Saving...",
+  "save": "Save",
+  "generating": "Generating...",
+  "generate_and_preview": "Generate & Preview",
+  "save_settings": "Save Settings",
+  "loading_profiles": "Loading profiles...",
+  "add_new": "Add New",
+  "no_description": "No description",
+  "loading_attributes": "Loading attributes...",
+  "reply_attributes": "Reply Attributes",
+  "check_attributes": "Check Attributes",
+  "add_reply": "Add Reply",
+  "add_check": "Add Check",
+  "no_attributes_defined": "No attributes defined.",
+  "save_attribute": "Save Attribute",
+  "table_headers": {
+    "user": "User",
+    "ip_address": "IP Address",
+    "time": "Time",
+    "organization": "Organization",
+    "data_usage": "Data Usage",
+    "client_ip": "Client IP",
+    "login_time": "Login Time",
+    "logout_time": "Logout Time",
+    "duration": "Duration",
+    "mac_address": "MAC Address",
+    "data_up": "Data Up",
+    "data_down": "Data Down",
+    "total_data": "Total Data",
+    "actions": "Actions",
+    "terminate_cause": "Terminate Cause",
+    "date": "Date",
+    "package": "Package",
+    "quantity": "Quantity",
+    "created_by": "Created By",
+    "full_name": "Full Name",
+    "username": "Username",
+    "status": "Status",
+    "created_at": "Created At",
+    "name": "Name",
+    "login_type": "Login Type",
+    "radius_profile": "Radius Profile",
+    "advertisement": "Advertisement",
+    "nas_name": "NAS Name (IP/Hostname)",
+    "short_name": "Short Name",
+    "description": "Description",
+    "attribute": "Attribute",
+    "operator": "Operator",
+    "value": "Value",
+    "action": "Action",
+    "package_name": "Package Name",
+    "duration_days": "Duration (Days)",
+    "campaign_name": "Campaign Name",
+    "type": "Type",
+    "email": "Email",
+    "role": "Role",
+    "attribute_name": "Attribute Name",
+    "hostname": "Hostname",
+    "filename": "Filename",
+    "size": "Size",
+    "modified_date": "Modified Date",
+    "timestamp": "Timestamp",
+    "source_ip": "Source IP"
+  },
+  "recent_logins": {
+    "title": "Recent Logins",
+    "description": "The 5 most recent user authentications."
+  },
+  "top_users": {
+    "title": "Top 5 Users (Today)",
+    "description": "Users with the highest data usage today."
+  },
+  "restart_dialog": {
+    "title": "Are you absolutely sure?",
+    "description": "This will restart the FreeRADIUS service. All active user sessions may be disconnected."
+  },
+  "refresh": "Refresh",
+  "kick": "Kick",
+  "all_organizations": "All Organizations",
+  "pagination": {
+    "rows_per_page": "Rows per page:",
+    "page_info": "Page {{currentPage}} of {{totalPages}} ({{totalItems}} items)",
+    "previous": "Previous",
+    "next": "Next",
+    "page_info_files": "Page {{currentPage}} of {{totalPages}} ({{totalItems}} files)"
+  },
+  "online_users_page": {
+    "title": "Online Users",
+    "description": "Showing currently active user sessions.",
+    "clear_stale_sessions": "Clear Stale Sessions",
+    "search_placeholder": "Search by username, IP, or MAC...",
+    "filter_org_placeholder": "Filter by organization...",
+    "no_users_found": "No online users found."
+  },
+  "kick_dialog": {
+    "title": "Confirm Kick User",
+    "description": "Are you sure you want to disconnect the user: <strong>{{username}}</strong>? They might be able to reconnect immediately.",
+    "confirm_kick": "Confirm Kick"
+  },
+  "clear_stale_dialog": {
+    "title": "Confirm Clear Stale Sessions",
+    "description": "This action will close any sessions that have been open for more than 24 hours. It will not affect users who are actively online. Are you sure you want to continue?",
+    "confirm_clear": "Confirm Clear"
+  },
+  "voucher_batches_page": {
+    "title": "Voucher Batches",
+    "description": "History of all generated voucher batches.",
+    "voucher_settings": "Voucher Settings",
+    "add_package": "Add New Package",
+    "add_batch": "Add New Batch",
+    "search_placeholder": "Search by package, creator...",
+    "filter_package_placeholder": "Filter by package...",
+    "no_batches_found": "No voucher batches found."
+  },
+  "generate_voucher_dialog": {
+    "title": "Generate New Voucher Batch",
+    "description": "Create a new set of voucher users based on a package."
+  },
+  "voucher_settings_dialog": {
+    "title": "Voucher Customization",
+    "description": "Customize the appearance of printed vouchers.",
+    "logo_label": "Voucher Logo (Optional)",
+    "logo_desc": "If empty, the main logo from Customization will be used.",
+    "ssid_label": "WiFi Name (SSID)",
+    "header_label": "Header Text",
+    "footer_label": "Footer Text",
+    "preview_title": "Live Preview",
+    "no_logo": "(No Logo Set)"
+  },
+  "package_form_dialog": {
+    "edit_title": "Edit Voucher Package",
+    "add_title": "Add New Voucher Package"
+  },
+  "organizations_page": {
+    "title": "Organizations",
+    "description": "Manage all organizations in the system.",
+    "add_new_button": "Add New",
+    "search_placeholder": "Search by organization name...",
+    "no_orgs_found": "No organizations found."
+  },
+  "delete_org_dialog": {
+    "description": "This will permanently delete the organization: <strong>{{name}}</strong>. This action cannot be undone.",
+    "confirm": "Confirm Delete"
+  },
+  "org_form_dialog": {
+    "edit_title": "Edit Organization",
+    "add_title": "Add New Organization",
+    "protected_org_name_note": "The name of this critical organization ({{name}}) cannot be changed.",
+    "protected_org_type_note": "The Login Identifier Type for the '{{name}}' organization must always be 'manual'."
+  },
+  "login_types": {
+    "manual": "Manual Username",
+    "national_id": "National ID",
+    "employee_id": "Employee ID",
+    "student_id": "Student ID"
+  },
+  "form_labels": {
+    "quantity": "Quantity",
+    "package": "Package",
+    "select_package_placeholder": "Select a package...",
+    "username_prefix": "Username Prefix",
+    "username_length": "Username Length (random part)",
+    "password_type": "Password Type",
+    "alnum": "Alphanumeric",
+    "numeric": "Numeric Only",
+    "password_length": "Password Length",
+    "package_name": "Package Name",
+    "package_name_placeholder": "e.g., 24-Hour Access",
+    "duration_days": "Duration (Days)",
+    "price": "Price (Optional)",
+    "radius_profile": "Radius Profile",
+    "select_profile_placeholder": "Select a profile...",
+    "organization": "Organization",
+    "select_org_placeholder": "Select an organization...",
+    "full_name": "Full Name",
+    "full_name_placeholder": "e.g., John Doe",
+    "username": "Username",
+    "username_placeholder": "Enter your username",
+    "employee_id": "Employee ID",
+    "employee_id_placeholder": "e.g., EMP001",
+    "student_id": "Student ID",
+    "student_id_placeholder": "e.g., 6601001",
+    "national_id": "National ID",
+    "national_id_optional": "National ID (Optional)",
+    "national_id_placeholder": "13-digit ID number",
+    "email": "Email",
+    "email_placeholder": "e.g., user@example.com",
+    "phone_number": "Phone Number",
+    "phone_number_placeholder": "e.g., 0812345678",
+    "password": "Password",
+    "password_edit_placeholder": "Leave blank to keep current password",
+    "password_add_placeholder": "Enter a strong password",
+    "org_name": "Organization Name",
+    "org_name_placeholder": "e.g., Corporate HQ",
+    "login_type": "Login Identifier Type",
+    "ad_campaign": "Advertisement Campaign",
+    "select_ad_placeholder": "Select a campaign...",
+    "no_ad": "None (Disable Ads)",
+    "nas_name": "NAS Name (IP Address / Hostname)",
+    "nas_name_placeholder": "e.g., 192.168.1.1",
+    "short_name": "Short Name",
+    "short_name_placeholder": "e.g., main-router",
+    "secret": "Secret",
+    "secret_edit_placeholder": "Leave blank to keep current secret",
+    "secret_add_placeholder": "Enter a strong secret",
+    "nas_description_placeholder": "e.g., Main office FortiGate",
+    "profile_name": "Profile Name",
+    "profile_name_placeholder": "e.g., vip-users",
+    "description_optional": "Description (Optional)",
+    "description_placeholder": "A short description of this profile's purpose.",
+    "attribute": "Attribute",
+    "select_attribute_placeholder": "Select an attribute...",
+    "operator": "Operator",
+    "value": "Value",
+    "value_placeholder": "Enter the attribute value",
+    "campaign_name": "Campaign Name",
+    "campaign_name_placeholder": "e.g., Summer Promotion",
+    "template_type": "Template Type",
+    "status": "Status",
+    "image_url": "Image URL",
+    "image_url_placeholder": "https://example.com/image.jpg",
+    "header_text": "Header Text",
+    "header_text_placeholder": "Welcome to Our WiFi!",
+    "body_text": "Body Text",
+    "body_text_placeholder": "Enjoy high-speed internet access.",
+    "button_text": "Button Text",
+    "countdown": "Countdown (seconds)",
+    "countdown_placeholder": "e.g., 5. Leave blank for no countdown.",
+    "full_name_placeholder_admin": "e.g., Jane Smith",
+    "username_placeholder_admin": "e.g., janesmith",
+    "password_add_placeholder_admin": "Enter a strong password",
+    "role": "Role",
+    "attribute_name": "Attribute Name",
+    "attribute_name_placeholder": "e.g., Session-Timeout",
+    "attribute_type": "Attribute Type",
+    "description": "Description",
+    "attribute_description_placeholder": "A short description of this attribute's purpose.",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "retention_days": "Retention Days",
+    "critical_disk_usage": "Critical Disk Usage (%)",
+    "target_disk_usage": "Target Disk Usage (%) after cleanup",
+    "new_password": "New Password",
+    "new_password_placeholder": "Leave blank to keep current password",
+    "confirm_new_password": "Confirm New Password",
+    "confirm_new_password_placeholder": "Confirm your new password",
+    "password_placeholder": "Enter your password",
+    "username_or_identifier": "Username / Identifier",
+    "username_or_identifier_placeholder": "Username, National ID, Employee ID...",
+    "confirm_password": "Confirm Password"
+  },
+  "actions": {
+    "view_details": "View Details",
+    "edit": "Edit",
+    "disable": "Disable",
+    "enable": "Enable",
+    "delete": "Delete",
+    "edit_nas": "Edit NAS",
+    "delete_nas": "Delete NAS",
+    "edit_package": "Edit Package",
+    "delete_package": "Delete Package",
+    "preview": "Preview",
+    "edit_admin": "Edit Admin",
+    "disable_admin": "Disable Admin",
+    "enable_admin": "Enable Admin",
+    "delete_admin": "Delete Admin",
+    "edit_attribute": "Edit Attribute",
+    "delete_attribute": "Delete Attribute",
+    "edit_user": "Edit User"
+  },
+  "users_page": {
+    "title": "Users",
+    "description": "Manage all users in the system.",
+    "move_button": "Move ({{count}})",
+    "delete_button": "Delete ({{count}})",
+    "import_button": "Import Users",
+    "add_new_button": "Add New",
+    "search_placeholder": "Search by username or full name...",
+    "filter_org_placeholder": "Filter by organization...",
+    "filter_status_placeholder": "Filter by status...",
+    "bulk_actions_prompt": "Please select an organization from the filter to enable bulk actions.",
+    "no_users_found": "No users found."
+  },
+  "bulk_delete_dialog": {
+    "description": "This will permanently delete the selected <strong>{{count}} user(s)</strong>. This action cannot be undone.",
+    "confirm": "Confirm Delete"
+  },
+  "toggle_status_dialog": {
+    "title": "Confirm Status Change",
+    "disable_desc": "Are you sure you want to disable the user: <strong>{{username}}</strong>?",
+    "enable_desc": "Are you sure you want to enable the user: <strong>{{username}}</strong>?"
+  },
+  "delete_dialog": {
+    "description": "This will permanently delete the user: <strong>{{username}}</strong>. This action cannot be undone.",
+    "confirm": "Confirm Delete"
+  },
+  "loading_ads": "Loading ads...",
+  "toast": {
+    "dashboard_load_failed": "Failed to load dashboard data.",
+    "restart_sent_title": "Restart command sent.",
+    "restart_sent_desc": "It may take a moment for the service to restart. Refreshing data in 5 seconds...",
+    "restart_failed_title": "Failed to restart service.",
+    "restart_failed_desc": "Please check server logs.",
+    "chart_load_failed": "Failed to load graph data for period: {{period}}",
+    "org_load_failed": "Failed to load organizations for filtering.",
+    "kick_sent": "Kick command sent for user '{{username}}'.",
+    "kick_failed": "Failed to kick user.",
+    "clearing_stale": "Clearing stale sessions...",
+    "clear_stale_success": "Stale sessions cleared.",
+    "clear_stale_failed": "Failed to clear stale sessions.",
+    "filter_load_failed": "Failed to load filter options.",
+    "generating_vouchers": "Generating vouchers...",
+    "generate_vouchers_success": "Vouchers generated successfully! Redirecting...",
+    "generate_vouchers_failed": "Failed to generate vouchers.",
+    "package_load_failed": "Failed to load packages for selection.",
+    "settings_load_failed": "Could not load settings.",
+    "saving_settings": "Saving settings...",
+    "settings_save_success": "Voucher settings saved successfully!",
+    "settings_save_failed": "Failed to save settings.",
+    "saving_package": "Saving package...",
+    "package_update_success": "Package updated successfully!",
+    "package_create_success": "Package created successfully!",
+    "profile_load_failed": "Failed to load Radius Profiles.",
+    "generic_error": "An error occurred.",
+    "deleting_users": "Deleting users...",
+    "bulk_delete_success": "{{count}} user(s) deleted successfully!",
+    "bulk_delete_failed": "Failed to delete users.",
+    "updating_status": "Updating status...",
+    "status_update_success": "User '{{username}}' status updated.",
+    "status_update_failed": "Failed to update status.",
+    "deleting_user": "Deleting user...",
+    "delete_success": "User '{{username}}' deleted successfully!",
+    "delete_failed": "Failed to delete user.",
+    "user_update_success": "User updated successfully!",
+    "user_create_success": "User created successfully!",
+    "select_target_org": "Please select a target organization.",
+    "moving_users": "Moving users...",
+    "move_success": "{{count}} user(s) moved successfully!",
+    "move_failed": "An error occurred during the move.",
+    "select_csv_file": "Please select a valid .csv file.",
+    "please_select_file": "Please select a file to import.",
+    "import_successful": "Import successful!",
+    "import_failed": "Import failed. Please check the errors below.",
+    "deleting_org": "Deleting organization...",
+    "delete_org_success": "Organization '{{name}}' deleted successfully!",
+    "delete_org_failed": "Failed to delete organization.",
+    "form_data_load_failed": "Failed to load required data for the form.",
+    "saving_org": "Saving organization...",
+    "update_org_success": "Organization updated successfully!",
+    "create_org_success": "Organization created successfully!",
+    "deleting_nas": "Deleting NAS...",
+    "delete_nas_success": "NAS '{{name}}' deleted successfully!",
+    "delete_nas_failed": "Failed to delete NAS.",
+    "saving_nas": "Saving NAS...",
+    "update_nas_success": "NAS updated successfully!",
+    "create_nas_success": "NAS created successfully!",
+    "profile_attrs_load_failed": "Failed to fetch profile attributes.",
+    "deleting_profile": "Deleting profile...",
+    "delete_profile_success": "Profile '{{name}}' deleted successfully!",
+    "delete_profile_failed": "Failed to delete profile.",
+    "deleting_attribute": "Deleting attribute...",
+    "delete_attribute_success": "Attribute deleted successfully!",
+    "delete_attribute_failed": "Failed to delete attribute.",
+    "saving_profile": "Saving profile...",
+    "update_profile_success": "Profile updated successfully!",
+    "create_profile_success": "Profile created successfully!",
+    "attribute_list_load_failed": "Failed to load attribute list.",
+    "adding_attribute": "Adding attribute...",
+    "add_attribute_success": "Attribute added successfully!",
+    "add_attribute_failed": "Failed to add attribute.",
+    "deleting_package": "Deleting package...",
+    "delete_package_success": "Package '{{name}}' deleted successfully!",
+    "delete_package_failed": "Failed to delete package.",
+    "deleting_ad": "Deleting advertisement...",
+    "delete_ad_success": "Advertisement '{{name}}' deleted successfully!",
+    "delete_ad_failed": "Failed to delete advertisement.",
+    "saving_ad": "Saving campaign...",
+    "update_ad_success": "Campaign updated successfully!",
+    "create_ad_success": "Campaign created successfully!",
+    "saving_app_name": "Saving application name...",
+    "save_app_name_success": "Application name saved successfully!",
+    "save_app_name_failed": "Failed to save application name.",
+    "select_logo_first": "Please select a new logo file first.",
+    "saving_logo": "Saving logo...",
+    "save_logo_success": "Logo saved successfully!",
+    "save_logo_failed": "Failed to save logo.",
+    "select_background_first": "Please select a new background file first.",
+    "saving_background": "Saving background...",
+    "save_background_success": "Background saved successfully!",
+    "save_background_failed": "Failed to save background.",
+    "saving_terms": "Saving terms...",
+    "save_terms_success": "Terms & Policy saved successfully!",
+    "deleting_admin": "Deleting admin...",
+    "delete_admin_success": "Admin '{{username}}' deleted successfully!",
+    "delete_admin_failed": "Failed to delete admin.",
+    "password_req_not_met": "Password does not meet all security requirements.",
+    "saving_admin": "Saving admin...",
+    "update_admin_success": "Admin updated successfully!",
+    "create_admin_success": "Admin created successfully!",
+    "deleting_attribute_def": "Deleting attribute...",
+    "delete_attribute_def_success": "Attribute '{{name}}' deleted successfully!",
+    "delete_attribute_def_failed": "Failed to delete attribute.",
+    "saving_attribute_def": "Saving attribute...",
+    "update_attribute_def_success": "Attribute updated successfully!",
+    "create_attribute_def_success": "Attribute created successfully!",
+    "settings_save_success_main": "Settings saved successfully!",
+    "preparing_download_title": "Preparing download...",
+    "preparing_download_desc": "Your file will begin downloading shortly.",
+    "download_failed": "Download failed.",
+    "log_files_load_failed": "Failed to load log files.",
+    "history_load_failed": "Failed to load history.",
+    "ip_empty_or_exists": "IP address is empty or already exists.",
+    "saving_ips": "Saving Device IPs...",
+    "save_ips_success": "Device IPs saved successfully!",
+    "save_ips_failed": "Failed to save Device IPs.",
+    "save_settings_success": "Settings saved successfully!",
+    "save_settings_failed": "Failed to save settings.",
+    "config_load_failed": "Failed to load configuration.",
+    "passwords_do_not_match": "Passwords do not match.",
+    "updating_profile": "Updating profile...",
+    "update_profile_failed": "Failed to update profile.",
+    "welcome": "Welcome, {{name}}!",
+    "login_failed_title": "Login Failed",
+    "login_failed_desc": "Please check your credentials.",
+    "must_agree_terms": "You must agree to the terms and conditions to log in.",
+    "auth_successful_title": "Authentication successful!",
+    "auth_successful_desc": "Redirecting via FortiGate...",
+    "portal_settings_load_failed": "Could not load portal settings.",
+    "changing_password": "Changing password...",
+    "change_password_success": "Password changed successfully!",
+    "change_password_failed": "Failed to change password.",
+    "disconnecting_sessions": "Disconnecting other sessions...",
+    "disconnect_sessions_success": "Successfully disconnected other sessions.",
+    "clear_sessions_failed": "Failed to clear sessions.",
+    "must_agree_terms_register": "You must agree to the terms and conditions to register.",
+    "registering": "Registering...",
+    "register_success_title": "Registration Successful!",
+    "register_failed_desc": "An unexpected error occurred.",
+    "user_detail_load_failed": "Failed to fetch user details."
+  },
+  "charts": {
+    "online_users_trend": {
+      "title": "Online Users Trend",
+      "description": "Peak concurrent users over time."
+    },
+    "loading": "Loading chart data...",
+    "no_data_for_period": "No data to display for this period."
+  },
+  "periods": {
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "history_page": {
+    "title": "Connection History",
+    "description": "Review past user sessions and connection details.",
+    "search_placeholder": "Search user, IP, MAC...",
+    "filter_org_placeholder": "Filter by organization...",
+    "no_records_found": "No history records found."
+  },
+  "close": "Close",
+  "moving": "Moving...",
+  "importing": "Importing...",
+  "loading_form_data": "Loading form data...",
+  "all_statuses": "All Statuses",
+  "are_you_sure": "Are you absolutely sure?",
+  "confirm": "Confirm",
+  "user_form_dialog": {
+    "edit_title": "Edit User",
+    "add_title": "Add New User"
+  },
+  "move_users_dialog": {
+    "title": "Move Users",
+    "description": "You have selected {{count}} user(s). Please choose a target organization.",
+    "target_org_label": "Target Organization",
+    "select_org_placeholder": "Select a compatible organization...",
+    "note": "Only organizations with the same login type are shown.",
+    "confirm_move": "Confirm Move"
+  },
+  "import_dialog": {
+    "title": "Import Users from CSV",
+    "description": "Upload a CSV file to add multiple users at once.",
+    "view_format_button": "View Format Examples",
+    "view_csv_example_button": "View CSV Example",
+    "download_template_button": "Download CSV Template",
+    "upload_label": "Upload CSV File",
+    "start_import_button": "Start Import",
+    "success_message": "{{count}} users were imported successfully.",
+    "error_title": "Import failed. Please fix the following errors:",
+    "error_row": "Row {{row}}",
+    "optional_field": "Optional",
+    "empty_field": "Leave blank",
+    "csv_preview": {
+      "title": "CSV Data Example",
+      "description": "This is an example of data and color formats to show what should be filled, what should be left empty, and what is optional."
+    },
+    "format_preview": {
+      "title": "Data Import Format Example",
+      "description": "Please check the organization type and fill in the CSV file correctly according to the format below.",
+      "manual_title": "1. Example for Manual Type",
+      "manual_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>manual</span>, the entered <span class='text-green-600 font-semibold'>username</span> will be used for login.",
+      "national_id_title": "2. Example for National ID Group",
+      "national_id_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>national_id</span>, the <span class='text-green-600 font-semibold'>national_id</span> will be used for login.",
+      "employee_id_title": "3. Example for Employee Group",
+      "employee_id_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>employee_id</span>, the <span class='text-green-600 font-semibold'>employee_id</span> will be used for login.",
+      "student_id_title": "4. Example for Student Group",
+      "student_id_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>student_id</span>, the <span class='text-green-600 font-semibold'>student_id</span> will be used for login."
+    }
+  },
+  "radius_profiles_page": {
+    "title": "Radius Profiles",
+    "search_placeholder": "Search profiles...",
+    "no_profiles_found": "No profiles found.",
+    "attributes_title": "Profile Attributes",
+    "attributes_desc_selected": "Managing attributes for \"{{name}}\"",
+    "attributes_desc_none": "Select a profile to manage its attributes.",
+    "select_profile_prompt": "Please select a profile from the list."
+  },
+  "delete_profile_dialog": {
+    "description": "This will permanently delete the profile: <strong>{{name}}</strong>.",
+    "confirm": "Confirm Delete"
+  },
+  "profile_form_dialog": {
+    "edit_title": "Edit Profile",
+    "add_title": "Add New Profile"
+  },
+  "attribute_form_dialog": {
+    "add_reply_title": "Add Reply Attribute to \"{{name}}\"",
+    "add_check_title": "Add Check Attribute to \"{{name}}\""
+  },
+  "nas_page": {
+    "title": "NAS / Clients",
+    "description": "Manage all RADIUS clients (Network Access Servers).",
+    "no_nas_found": "No NAS clients found."
+  },
+  "delete_nas_dialog": {
+    "description": "This will permanently delete the NAS client: <strong>{{name}}</strong>. This action cannot be undone.",
+    "confirm": "Confirm Delete"
+  },
+  "nas_form_dialog": {
+    "edit_title": "Edit NAS Client",
+    "add_title": "Add New NAS Client"
+  },
+  "loading_packages": "Loading packages...",
+  "load_packages_failed": "Failed to load packages.",
+  "voucher_packages_page": {
+    "title": "Voucher Packages",
+    "description": "Manage packages for voucher generation.",
+    "add_new_button": "Add New Package",
+    "no_packages_found": "No packages found. Click \"Add New Package\" to start."
+  },
+  "delete_package_dialog": {
+    "description": "This will permanently delete the package: <strong>{{name}}</strong>. This action cannot be undone.",
+    "confirm": "Confirm Delete"
+  },
+  "ad_page": {
+    "title": "Advertisement Management",
+    "description": "Manage advertisement campaigns for the login page.",
+    "add_new_button": "Add New Campaign",
+    "no_ads_found": "No advertisement campaigns found."
+  },
+  "ad_templates": {
+    "hero": "Hero Page",
+    "split": "Split-Screen",
+    "image_focused": "Image Focused",
+    "unknown": "Unknown"
+  },
+  "delete_ad_dialog": {
+    "description": "This will permanently delete the campaign: <strong>{{name}}</strong>.",
+    "confirm": "Confirm Delete"
+  },
+  "ad_form_dialog": {
+    "edit_title": "Edit Advertisement",
+    "add_title": "Add New Advertisement"
+  },
+  "ad_preview_dialog": {
+    "title": "Ad Preview: {{name}}",
+    "description": "This is how the advertisement campaign will appear to the user."
+  },
+  "customization_page": {
+    "title": "Customization",
+    "description": "Adjust the look and feel of your login pages.",
+    "tabs": {
+      "appearance": "Appearance",
+      "terms": "Terms & Policy"
+    },
+    "app_name": {
+      "title": "Application Name",
+      "description": "This name will appear on the login page and in the sidebar header.",
+      "save_button": "Save Name"
+    },
+    "logo": {
+      "title": "Company Logo",
+      "description": "Upload a logo to be displayed on login pages.",
+      "recommendations": "• Recommended: SVG or PNG with transparent background.<br/>• Max height: 80px. Max file size: 3MB.",
+      "preview_label": "Logo Preview",
+      "view_full_button": "View Full",
+      "save_button": "Save Logo"
+    },
+    "background": {
+      "title": "Page Background",
+      "description": "Set a background image for login pages.",
+      "recommendations": "• Recommended resolution: 1920x1080px (16:9 aspect ratio).<br/>• Max file size: 3MB.",
+      "preview_label": "Background Preview",
+      "view_full_button": "View Full Image",
+      "save_button": "Save Background"
+    },
+    "terms": {
+      "title": "Terms of Service & Privacy Policy",
+      "description": "This text will be shown to users before they can register or log in.",
+      "placeholder": "Enter the full text of your terms and policy here...",
+      "save_button": "Save Terms"
+    }
+  },
+  "admins_page": {
+    "title": "Admin Management",
+    "description": "Manage all administrator accounts.",
+    "add_new_button": "Add New Admin",
+    "no_admins_found": "No administrators found."
+  },
+  "delete_admin_dialog": {
+    "description": "This will permanently delete the admin: {{username}}."
+  },
+  "toggle_admin_status_dialog": {
+    "disable_desc": "Are you sure you want to deactivate the admin: {{username}}?",
+    "enable_desc": "Are you sure you want to activate the admin: {{username}}?"
+  },
+  "admin_form_dialog": {
+    "edit_title": "Edit Administrator",
+    "add_title": "Add New Administrator"
+  },
+  "roles": {
+    "admin": "Admin",
+    "superadmin": "Super Admin"
+  },
+  "password_reqs": {
+    "length": "At least 8 characters long",
+    "lowercase": "At least one lowercase letter (a-z)",
+    "uppercase": "At least one uppercase letter (A-Z)",
+    "number": "At least one number (0-9)",
+    "special": "At least one special character (!@#$%^*)"
+  },
+  "all": "All",
+  "reply": "Reply",
+  "check": "Check",
+  "attribute_management_page": {
+    "title": "Attribute Management",
+    "description": "Manage RADIUS attribute definitions for selection in profiles.",
+    "add_new_button": "Add New Attribute",
+    "search_placeholder": "Search by name or description...",
+    "no_attributes_found": "No attribute definitions found."
+  },
+  "delete_attribute_dialog": {
+    "description": "This will permanently delete the attribute: <strong>{{name}}</strong>.",
+    "confirm": "Confirm Delete"
+  },
+  "attribute_def_form_dialog": {
+    "edit_title": "Edit Attribute Definition",
+    "add_title": "Add New Attribute Definition"
+  },
+  "settings_page": {
+    "title": "System Settings",
+    "description": "Manage system-wide functionalities like user registration and external login.",
+    "self_registration": {
+      "label": "User Self-Registration",
+      "description": "Allow users to register for an account from the login page."
+    },
+    "external_login": {
+      "label": "External User Login",
+      "description": "Allow end-users (not admins) to log in to the network."
+    }
+  },
+  "total": "Total",
+  "used": "Used",
+  "available": "Available",
+  "recipient": "Recipient",
+  "not_set": "Not Set",
+  "no_log_files_found": "No log files found.",
+  "download": "Download",
+  "loading_log_files": "Loading log files...",
+  "no_log_files_found_criteria": "No log files found for the selected criteria.",
+  "loading_history": "Loading download history...",
+  "administrator": "Administrator",
+  "all_admins": "All Admins",
+  "filter_by_admin": "Filter by admin...",
+  "hostname": "Hostname",
+  "all_hostnames": "All Hostnames",
+  "filter_by_hostname": "Filter by hostname...",
+  "no_history_found_criteria": "No download history found for the selected criteria.",
+  "loading_config": "Loading configuration...",
+  "no_device_ips": "No device IPs configured.",
+  "enter_new_ip": "Enter new IP address",
+  "add_ip": "Add IP",
+  "save_ip_changes": "Save IP Changes",
+  "log_management_page": {
+    "title": "Log Management",
+    "description": "Monitor and manage system log archives.",
+    "tabs": {
+        "archive": "Log Archive",
+        "history": "Download History",
+        "config": "Configuration"
+    },
+    "dashboard": {
+        "disk_usage": "Disk Usage",
+        "gpg_key": "GPG Encryption Key",
+        "top_5_logs": "Top 5 Largest Log Days"
+    },
+    "archive": {
+        "title": "Archived Log Files",
+        "description": "Filter and download encrypted log files for offline analysis."
+    },
+    "history": {
+        "title": "Download History",
+        "description": "An audit trail of all log file downloads."
+    },
+    "config": {
+        "ips_title": "Device IPs",
+        "ips_desc": "Manage IP addresses that can send logs to this server. Changes require a service restart.",
+        "retention_title": "Retention & Failsafe",
+        "retention_desc": "Settings for log rotation and disk space protection."
+    },
+    "charts": {
+      "volume_trend": {
+        "title": "Log Volume Trend",
+        "description": "Total log size per device over time. Click legend to toggle."
+      }
+    }
+  },
+  "delete_ip_dialog": {
+    "description": "This will permanently remove the IP address: <strong>{{ip}}</strong> from the configuration.",
+    "confirm": "Confirm Remove"
+  },
+  "save_changes": "Save Changes",
+  "admin_profile_page": {
+    "title": "My Profile",
+    "description": "Update your personal information and password."
+  },
+  "logging_in": "Logging in...",
+  "log_in": "Log In",
+  "login_page": {
+    "description": "Please log in to continue."
+  },
+  "loading": "Loading...",
+  "authenticating": "Authenticating...",
+  "external_login_page": {
+    "user_login_title": "User Login",
+    "description": "Please enter your credentials to access the network.",
+    "login_disabled_title": "Login Disabled",
+    "login_disabled_desc": "Login is currently unavailable.",
+    "agree_terms_checkbox": "I have read and agree to the terms",
+    "must_agree_prefix": "You must agree to our ",
+    "terms_and_conditions": "Terms and Conditions",
+    "must_agree_suffix": " to continue.",
+    "no_account_link": "Don't have an account?",
+    "account_management_link": "Account Management",
+    "contact_admin": "Please contact an administrator for assistance.",
+    "go_to_registration_button": "Go to Registration"
+  },
+  "terms_dialog": {
+    "title": "Terms of Service and Privacy Policy"
+  },
+  "user_portal_login_page": {
+    "title": "User Portal",
+    "description": "Manage your account and connections."
+  },
+  "user_portal": {
+    "connection_status": "Connection Status",
+    "account_expires": "Account Expires",
+    "no_expiration": "No expiration",
+    "current_session": "Current Session",
+    "not_connected": "You are not currently connected to the network.",
+    "active_connection_details": "Details of your active connection.",
+    "connection_time": "Connection Time",
+    "connected_via": "Connected via",
+    "total_data_used": "Total Data Used",
+    "change_password_button": "Change Password",
+    "change_password_dialog": {
+      "title": "Change Your Password",
+      "description": "Enter your old password and create a new one."
+    },
+    "security_sessions": {
+      "title": "Security & Sessions",
+      "description": "Manage your password and active connections.",
+      "change_password_desc": "It's a good idea to use a strong password that you're not using elsewhere.",
+      "active_connections_title": "Active Connections",
+      "active_connections_desc": "If you're having trouble logging in on a new device, you can disconnect all your other sessions.",
+      "disconnect_button": "Disconnect All Other Devices",
+      "disconnect_dialog_desc": "This will disconnect all devices currently logged in with your account. You will remain logged in on this device.",
+      "disconnect_dialog_confirm": "Confirm & Disconnect"
+    }
+  },
+  "registering": "Registering...",
+  "register_button": "Register",
+  "register_page": {
+    "create_account_title": "Create an Account",
+    "create_account_desc": "Enter your details to register for network access.",
+    "disabled_title": "Registration Disabled",
+    "disabled_desc": "Registration is currently unavailable.",
+    "success_title": "Registration Successful",
+    "success_desc": "Your account has been created. Please wait for an administrator to approve it.",
+    "redirecting_in": "Redirecting in {{count}} seconds...",
+    "already_have_account": "Already have an account?",
+    "log_in_here": "Log in here"
+  },
+  "not_provided": "Not provided",
+  "user_detail_page": {
+    "loading": "Loading user details...",
+    "not_found": "User not found.",
+    "back_link": "Back to All Users",
+    "history": {
+      "title": "Connection History",
+      "description": "Reviewing past sessions for this user.",
+      "no_records": "No history records found for this user."
+    }
+  }
+}

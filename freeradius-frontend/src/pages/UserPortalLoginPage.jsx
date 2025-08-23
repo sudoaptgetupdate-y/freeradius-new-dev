@@ -4,12 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import useUserAuthStore from '@/store/userAuthStore';
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
-import { CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
+import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
 
 export default function UserPortalLoginPage() {
+    const { t, i18n } = useTranslation(); // <-- 2. เรียกใช้ hook
     const navigate = useNavigate();
     const { login, token, _hasHydrated } = useUserAuthStore();
     const [username, setUsername] = useState('');
@@ -17,7 +19,6 @@ export default function UserPortalLoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [loginData, setLoginData] = useState(null);
 
-    // Effect นี้จะรอฟังการเปลี่ยนแปลงของ loginData
     useEffect(() => {
         if (loginData) {
             login(loginData.token, loginData.user);
@@ -25,7 +26,6 @@ export default function UserPortalLoginPage() {
         }
     }, [loginData, login, navigate]);
 
-    // Effect นี้จะจัดการกรณีที่ User มี Token อยู่แล้ว (เช่น refresh หน้า)
     useEffect(() => {
         if (_hasHydrated && token) {
             navigate('/portal/dashboard', { replace: true });
@@ -37,41 +37,61 @@ export default function UserPortalLoginPage() {
         setIsLoading(true);
         try {
             const response = await axiosInstance.post('/portal/login', { username, password });
-            toast.success(`Welcome back, ${response.data.user.full_name || response.data.user.username}!`);
+            toast.success(t('toast.welcome', { name: response.data.user.full_name || response.data.user.username }));
             setLoginData(response.data);
         } catch (error) {
-            toast.error("Login Failed", {
-              description: error.response?.data?.message || "Please check your credentials.",
+            toast.error(t('toast.login_failed_title'), {
+              description: error.response?.data?.message || t('toast.login_failed_desc'),
             });
             setIsLoading(false);
         }
     };
     
     if (!_hasHydrated) {
-        return null; // รอจนกว่าข้อมูลจาก localStorage จะพร้อมใช้งาน
+        return null; 
     }
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <div className="text-center mb-6">
-                <CardTitle>User Portal</CardTitle>
-                <CardDescription>Manage your account and connections.</CardDescription>
+                <CardTitle>{t('user_portal_login_page.title')}</CardTitle>
+                <CardDescription>{t('user_portal_login_page.description')}</CardDescription>
             </div>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus/>
+                        <Label htmlFor="username">{t('form_labels.username')}</Label>
+                        <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus placeholder={t('form_labels.username_placeholder')} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <Label htmlFor="password">{t('form_labels.password')}</Label>
+                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••"/>
                     </div>
                     <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
-                        {isLoading ? 'Logging in...' : 'Log In'}
+                        {isLoading ? t('logging_in') : t('log_in')}
                     </Button>
                 </form>
             </CardContent>
+            <CardFooter className="flex justify-center">
+                <div className="text-sm text-muted-foreground">
+                    <Button
+                        variant="link"
+                        className={`p-1 h-auto ${i18n.language === 'th' ? 'font-bold text-primary' : ''}`}
+                        onClick={() => i18n.changeLanguage('th')}
+                    >
+                        ภาษาไทย
+                    </Button>
+                    <span className="mx-1">|</span>
+                    <Button
+                        variant="link"
+                        className={`p-1 h-auto ${i18n.language === 'en' ? 'font-bold text-primary' : ''}`}
+                        onClick={() => i18n.changeLanguage('en')}
+                    >
+                        English
+                    </Button>
+                </div>
+            </CardFooter>
         </>
     );
 }

@@ -8,24 +8,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
-import useSWR from 'swr'; // <-- 1. Import SWR
+import useSWR from 'swr';
+import { useTranslation } from "react-i18next"; // <-- Import
 
 export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState({
         name: '',
         radiusProfileId: '',
         login_identifier_type: 'manual',
-        advertisementId: '', // <-- 2. เพิ่ม state สำหรับเก็บ ID โฆษณา
+        advertisementId: '',
     });
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!org;
 
-    // --- START: 3. ดึงข้อมูล Profiles และ Advertisements ด้วย SWR ---
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
     const { data: profiles, error: profilesError } = useSWR('/radius-profiles', fetcher);
     const { data: advertisements, error: adsError } = useSWR('/advertisements', fetcher);
-    // --- END ---
 
     const isProtectedOrg = isEditMode && (org.name === 'Register' || org.name === 'Voucher');
 
@@ -36,7 +36,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     name: org.name || '',
                     radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
                     login_identifier_type: org.login_identifier_type || 'manual',
-                    advertisementId: org.advertisementId ? String(org.advertisementId) : '', // <-- 4. Set ค่าเริ่มต้น
+                    advertisementId: org.advertisementId ? String(org.advertisementId) : '',
                 });
             } else {
                 setFormData({
@@ -50,7 +50,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
     }, [org, isOpen]);
 
     if (profilesError || adsError) {
-        toast.error("Failed to load required data for the form.");
+        toast.error(t('toast.form_data_load_failed'));
         setIsOpen(false);
     }
     
@@ -60,7 +60,6 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
     };
 
     const handleSelectChange = (id, value) => {
-        // --- 5. แก้ไขให้รองรับการเลือก "None" ---
         setFormData(prev => ({ ...prev, [id]: value === 'null' ? null : value }));
     };
 
@@ -74,13 +73,13 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
         toast.promise(
             axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: 'Saving organization...',
+                loading: t('toast.saving_org'),
                 success: () => {
                     onSave();
                     setIsOpen(false);
-                    return `Organization ${org ? 'updated' : 'created'} successfully!`;
+                    return t(org ? 'toast.update_org_success' : 'toast.create_org_success');
                 },
-                error: (err) => err.response?.data?.message || "An error occurred.",
+                error: (err) => err.response?.data?.message || t('toast.generic_error'),
                 finally: () => setIsLoading(false)
             }
         );
@@ -90,35 +89,34 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{org ? 'Edit Organization' : 'Add New Organization'}</DialogTitle>
+                    <DialogTitle>{org ? t('org_form_dialog.edit_title') : t('org_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                    {/* ... (ส่วนของ Name, Radius Profile, Login Type ไม่เปลี่ยนแปลง) ... */}
                     <div className="space-y-2">
-                        <Label htmlFor="name">Organization Name</Label>
+                        <Label htmlFor="name">{t('form_labels.org_name')}</Label>
                         <Input 
                             id="name" 
                             value={formData.name} 
                             onChange={handleInputChange} 
-                            placeholder="e.g., Corporate HQ" 
+                            placeholder={t('form_labels.org_name_placeholder')}
                             required 
                             disabled={isProtectedOrg}
                         />
                          {isProtectedOrg && (
                             <p className="text-xs text-muted-foreground pt-1">
-                                The name of this critical organization cannot be changed.
+                                {t('org_form_dialog.protected_org_name_note', { name: org.name })}
                             </p>
                         )}
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="radiusProfileId">Radius Profile</Label>
+                        <Label htmlFor="radiusProfileId">{t('form_labels.radius_profile')}</Label>
                         <Select
                             value={formData.radiusProfileId}
                             onValueChange={(value) => handleSelectChange('radiusProfileId', value)}
                             required
                         >
                             <SelectTrigger id="radiusProfileId" disabled={!profiles}>
-                                <SelectValue placeholder={!profiles ? "Loading..." : "Select a profile..."} />
+                                <SelectValue placeholder={!profiles ? t('loading_profiles') : t('form_labels.select_profile_placeholder')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {profiles?.map(p => (
@@ -128,7 +126,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="login_identifier_type">Login Identifier Type</Label>
+                        <Label htmlFor="login_identifier_type">{t('form_labels.login_type')}</Label>
                          <Select
                             value={formData.login_identifier_type}
                             onValueChange={(value) => handleSelectChange('login_identifier_type', value)}
@@ -138,43 +136,40 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="manual">Manual Username</SelectItem>
-                                <SelectItem value="national_id">National ID</SelectItem>
-                                <SelectItem value="employee_id">Employee ID</SelectItem>
-                                <SelectItem value="student_id">Student ID</SelectItem>
+                                <SelectItem value="manual">{t('login_types.manual')}</SelectItem>
+                                <SelectItem value="national_id">{t('login_types.national_id')}</SelectItem>
+                                <SelectItem value="employee_id">{t('login_types.employee_id')}</SelectItem>
+                                <SelectItem value="student_id">{t('login_types.student_id')}</SelectItem>
                             </SelectContent>
                         </Select>
                         {isProtectedOrg && (
                             <p className="text-xs text-muted-foreground pt-1">
-                                The login type for this critical organization must be 'manual'.
+                                {t('org_form_dialog.protected_org_type_note', { name: org.name })}
                             </p>
                         )}
                     </div>
-
-                    {/* --- START: 6. เพิ่ม Dropdown สำหรับเลือกโฆษณา --- */}
                     <div className="space-y-2">
-                        <Label htmlFor="advertisementId">Advertisement Campaign</Label>
+                        <Label htmlFor="advertisementId">{t('form_labels.ad_campaign')}</Label>
                         <Select
-                            value={formData.advertisementId === null ? 'null' : formData.advertisementId}
+                            value={formData.advertisementId === null ? 'null' : String(formData.advertisementId)}
                             onValueChange={(value) => handleSelectChange('advertisementId', value)}
                         >
                             <SelectTrigger id="advertisementId" disabled={!advertisements}>
-                                <SelectValue placeholder={!advertisements ? "Loading..." : "Select a campaign..."} />
+                                <SelectValue placeholder={!advertisements ? t('loading_ads') : t('form_labels.select_ad_placeholder')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="null">None (Disable Ads)</SelectItem>
+                                <SelectItem value="null">{t('form_labels.no_ad')}</SelectItem>
                                 {advertisements?.map(ad => (
                                     <SelectItem key={ad.id} value={ad.id.toString()}>{ad.name} ({ad.type})</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-                    {/* --- END --- */}
 
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save'}
+                            {isLoading ? t('saving') : t('save')}
                         </Button>
                     </DialogFooter>
                 </form>

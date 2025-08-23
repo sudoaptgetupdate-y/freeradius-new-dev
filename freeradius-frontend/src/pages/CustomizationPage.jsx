@@ -11,38 +11,32 @@ import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
 
 export default function CustomizationPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     
-    // States for data
-    // --- START: เพิ่ม State สำหรับ appName ---
     const [appName, setAppName] = useState('');
-    // --- END ---
     const [logo, setLogo] = useState(null);
     const [logoPreview, setLogoPreview] = useState('');
     const [background, setBackground] = useState(null);
     const [backgroundPreview, setBackgroundPreview] = useState('');
     const [terms, setTerms] = useState('');
     
-    // --- START: แก้ไข State ---
     const [isLoading, setIsLoading] = useState({ appName: false, logo: false, background: false, terms: false });
-    // --- END ---
 
-    // Load initial settings
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => {
               const settings = response.data.data;
-              // --- START: เพิ่มการ set appName ---
               setAppName(settings.appName || "Freeradius UI");
-              // --- END ---
               setTerms(settings.terms || "");
               setLogoPreview(settings.logoUrl || '');
               setBackgroundPreview(settings.backgroundUrl || '');
           })
-          .catch(() => toast.error("Could not load settings."));
-    }, [token]);
+          .catch(() => toast.error(t('toast.settings_load_failed')));
+    }, [token, t]);
 
     const handleFileChange = (e, setFile, setPreview) => {
         const file = e.target.files[0];
@@ -54,7 +48,6 @@ export default function CustomizationPage() {
         }
     };
 
-    // --- START: เพิ่มฟังก์ชัน handleSaveAppName ---
     const handleSaveAppName = async () => {
         setIsLoading(prev => ({ ...prev, appName: true }));
         const formData = new FormData();
@@ -65,18 +58,16 @@ export default function CustomizationPage() {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             }),
             {
-                loading: 'Saving application name...',
-                success: 'Application name saved successfully!',
-                error: (err) => err.response?.data?.message || "Failed to save application name.",
+                loading: t('toast.saving_app_name'),
+                success: t('toast.save_app_name_success'),
+                error: (err) => err.response?.data?.message || t('toast.save_app_name_failed'),
                 finally: () => setIsLoading(prev => ({ ...prev, appName: false }))
             }
         );
     };
-    // --- END ---
 
-    // --- Save handler for LOGO ---
     const handleLogoSave = async () => {
-        if (!logo) return toast.info("Please select a new logo file first.");
+        if (!logo) return toast.info(t('toast.select_logo_first'));
         setIsLoading(prev => ({ ...prev, logo: true }));
         const formData = new FormData();
         formData.append('logo', logo);
@@ -86,17 +77,16 @@ export default function CustomizationPage() {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             }),
             {
-                loading: 'Saving logo...',
-                success: 'Logo saved successfully!',
-                error: (err) => err.response?.data?.message || "Failed to save logo.",
+                loading: t('toast.saving_logo'),
+                success: t('toast.save_logo_success'),
+                error: (err) => err.response?.data?.message || t('toast.save_logo_failed'),
                 finally: () => setIsLoading(prev => ({ ...prev, logo: false }))
             }
         );
     };
 
-    // --- Save handler for BACKGROUND ---
     const handleBackgroundSave = async () => {
-        if (!background) return toast.info("Please select a new background file first.");
+        if (!background) return toast.info(t('toast.select_background_first'));
         setIsLoading(prev => ({ ...prev, background: true }));
         const formData = new FormData();
         formData.append('background', background);
@@ -106,15 +96,14 @@ export default function CustomizationPage() {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             }),
             {
-                loading: 'Saving background...',
-                success: 'Background saved successfully!',
-                error: (err) => err.response?.data?.message || "Failed to save background.",
+                loading: t('toast.saving_background'),
+                success: t('toast.save_background_success'),
+                error: (err) => err.response?.data?.message || t('toast.save_background_failed'),
                 finally: () => setIsLoading(prev => ({ ...prev, background: false }))
             }
         );
     };
 
-    // --- Save handler for TERMS ---
     const handleTermsSave = async () => {
         setIsLoading(prev => ({ ...prev, terms: true }));
         const formData = new FormData();
@@ -125,34 +114,33 @@ export default function CustomizationPage() {
                 headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` }
             }),
             {
-                loading: 'Saving terms...',
-                success: 'Terms & Policy saved successfully!',
-                error: (err) => err.response?.data?.message || "Failed to save settings.",
+                loading: t('toast.saving_terms'),
+                success: t('toast.save_terms_success'),
+                error: (err) => err.response?.data?.message || t('toast.settings_save_failed'),
                 finally: () => setIsLoading(prev => ({ ...prev, terms: false }))
             }
         );
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <Tabs defaultValue="appearance" className="w-full">
             <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center mb-4">
                 <div>
-                    <h1 className="text-2xl font-bold flex items-center gap-2"><Palette className="h-6 w-6" />Customization</h1>
-                    <p className="text-muted-foreground">Adjust the look and feel of your login pages.</p>
+                    <h1 className="text-2xl font-bold flex items-center gap-2"><Palette className="h-6 w-6" />{t('customization_page.title')}</h1>
+                    <p className="text-muted-foreground">{t('customization_page.description')}</p>
                 </div>
                 <TabsList>
-                    <TabsTrigger value="appearance">Appearance</TabsTrigger>
-                    <TabsTrigger value="terms">Terms & Policy</TabsTrigger>
+                    <TabsTrigger value="appearance">{t('customization_page.tabs.appearance')}</TabsTrigger>
+                    <TabsTrigger value="terms">{t('customization_page.tabs.terms')}</TabsTrigger>
                 </TabsList>
             </div>
 
-            {/* --- Content for "Appearance" Tab --- */}
             <TabsContent value="appearance" className="space-y-6">
-                {/* --- START: เพิ่ม Card สำหรับ App Name --- */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Application Name</CardTitle>
-                        <CardDescription>This name will appear on the login page and in the sidebar header.</CardDescription>
+                        <CardTitle>{t('customization_page.app_name.title')}</CardTitle>
+                        <CardDescription>{t('customization_page.app_name.description')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Input id="app-name" value={appName} onChange={(e) => setAppName(e.target.value)} />
@@ -160,31 +148,26 @@ export default function CustomizationPage() {
                     <CardFooter>
                         <Button onClick={handleSaveAppName} disabled={isLoading.appName} className="ml-auto">
                             <Save className="mr-2 h-4 w-4" />
-                            {isLoading.appName ? 'Saving...' : 'Save Name'}
+                            {isLoading.appName ? t('saving') : t('customization_page.app_name.save_button')}
                         </Button>
                     </CardFooter>
                 </Card>
-                {/* --- END --- */}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Logo Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Company Logo</CardTitle>
-                            <CardDescription>Upload a logo to be displayed on login pages.</CardDescription>
+                            <CardTitle>{t('customization_page.logo.title')}</CardTitle>
+                            <CardDescription>{t('customization_page.logo.description')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => handleFileChange(e, setLogo, setLogoPreview)} />
-                            <p className="text-xs text-muted-foreground pt-1">
-                                • Recommended: SVG or PNG with transparent background.<br/>
-                                • Max height: 80px. Max file size: 3MB.
-                            </p>
+                            <p className="text-xs text-muted-foreground pt-1" dangerouslySetInnerHTML={{ __html: t('customization_page.logo.recommendations') }} />
                              {logoPreview && (
                                 <Dialog>
                                     <div className="p-4 border rounded-md bg-muted/50 text-center relative group h-48 flex flex-col justify-center">
-                                        <Label className="text-muted-foreground">Logo Preview</Label>
+                                        <Label className="text-muted-foreground">{t('customization_page.logo.preview_label')}</Label>
                                         <img src={logoPreview} alt="Logo Preview" className="mx-auto mt-2 max-h-24 object-contain" />
-                                        <DialogTrigger asChild><Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="mr-2 h-4 w-4" /> View Full</Button></DialogTrigger>
+                                        <DialogTrigger asChild><Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="mr-2 h-4 w-4" /> {t('customization_page.logo.view_full_button')}</Button></DialogTrigger>
                                     </div>
                                     <DialogContent className="max-w-md p-2"><img src={logoPreview} alt="Full logo preview" className="w-full h-auto rounded-md" /></DialogContent>
                                 </Dialog>
@@ -193,29 +176,25 @@ export default function CustomizationPage() {
                         <CardFooter>
                             <Button onClick={handleLogoSave} disabled={isLoading.logo} className="ml-auto">
                                 <Save className="mr-2 h-4 w-4" />
-                                {isLoading.logo ? 'Saving...' : 'Save Logo'}
+                                {isLoading.logo ? t('saving') : t('customization_page.logo.save_button')}
                             </Button>
                         </CardFooter>
                     </Card>
 
-                    {/* Background Card */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Page Background</CardTitle>
-                            <CardDescription>Set a background image for login pages.</CardDescription>
+                            <CardTitle>{t('customization_page.background.title')}</CardTitle>
+                            <CardDescription>{t('customization_page.background.description')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <Input id="background-upload" type="file" accept="image/png, image/jpeg" onChange={(e) => handleFileChange(e, setBackground, setBackgroundPreview)} />
-                             <p className="text-xs text-muted-foreground pt-1">
-                                • Recommended resolution: 1920x1080px (16:9 aspect ratio).<br/>
-                                • Max file size: 3MB.
-                            </p>
+                             <p className="text-xs text-muted-foreground pt-1" dangerouslySetInnerHTML={{ __html: t('customization_page.background.recommendations') }} />
                             {backgroundPreview && (
                                 <Dialog>
                                     <div className="p-4 border rounded-md bg-muted/50 text-center relative group h-48 flex flex-col justify-center">
-                                        <Label className="text-muted-foreground">Background Preview</Label>
+                                        <Label className="text-muted-foreground">{t('customization_page.background.preview_label')}</Label>
                                         <img src={backgroundPreview} alt="Background Preview" className="mx-auto mt-2 h-full w-full object-cover rounded-md" />
-                                        <DialogTrigger asChild><Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="mr-2 h-4 w-4" /> View Full Image</Button></DialogTrigger>
+                                        <DialogTrigger asChild><Button variant="outline" size="sm" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"><Eye className="mr-2 h-4 w-4" /> {t('customization_page.background.view_full_button')}</Button></DialogTrigger>
                                     </div>
                                     <DialogContent className="max-w-4xl p-2"><img src={backgroundPreview} alt="Full background preview" className="w-full h-auto rounded-md" /></DialogContent>
                                 </Dialog>
@@ -224,27 +203,26 @@ export default function CustomizationPage() {
                         <CardFooter>
                             <Button onClick={handleBackgroundSave} disabled={isLoading.background} className="ml-auto">
                                 <Save className="mr-2 h-4 w-4" />
-                                {isLoading.background ? 'Saving...' : 'Save Background'}
+                                {isLoading.background ? t('saving') : t('customization_page.background.save_button')}
                             </Button>
                         </CardFooter>
                     </Card>
                 </div>
             </TabsContent>
 
-            {/* --- Content for "Terms & Policy" Tab --- */}
             <TabsContent value="terms">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Terms of Service & Privacy Policy</CardTitle>
-                        <CardDescription>This text will be shown to users before they can register or log in.</CardDescription>
+                        <CardTitle>{t('customization_page.terms.title')}</CardTitle>
+                        <CardDescription>{t('customization_page.terms.description')}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Textarea id="terms-text" value={terms} onChange={(e) => setTerms(e.target.value)} rows={10} placeholder="Enter the full text of your terms and policy here..." />
+                        <Textarea id="terms-text" value={terms} onChange={(e) => setTerms(e.target.value)} rows={10} placeholder={t('customization_page.terms.placeholder')} />
                     </CardContent>
                     <CardFooter>
                         <Button onClick={handleTermsSave} disabled={isLoading.terms} className="ml-auto">
                             <Save className="mr-2 h-4 w-4" />
-                            {isLoading.terms ? 'Saving...' : 'Save Terms'}
+                            {isLoading.terms ? t('saving') : t('customization_page.terms.save_button')}
                         </Button>
                     </CardFooter>
                 </Card>

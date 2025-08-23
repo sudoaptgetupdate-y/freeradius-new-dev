@@ -7,37 +7,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Trash2, Palette, Eye } from "lucide-react"; // <-- Import Eye icon
+import { PlusCircle, Edit, Trash2, Palette, Eye } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // <-- Import Tooltip
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import AdvertisementFormDialog from "@/components/dialogs/AdvertisementFormDialog";
-import AdvertisementPreviewDialog from "@/components/dialogs/AdvertisementPreviewDialog"; // <-- Import Preview Dialog
+import AdvertisementPreviewDialog from "@/components/dialogs/AdvertisementPreviewDialog";
+import { useTranslation } from "react-i18next"; // <-- 1. Import hook
 
-const getTemplateName = (type) => {
+const getTemplateName = (type, t) => {
     const names = {
-        A: 'Hero Page',
-        B: 'Split-Screen',
-        C: 'Image Focused',
+        A: t('ad_templates.hero'),
+        B: t('ad_templates.split'),
+        C: t('ad_templates.image_focused'),
     };
-    return names[type] || 'Unknown';
+    return names[type] || t('ad_templates.unknown');
 };
 
 export default function AdvertisementPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const { data: ads, isLoading, refreshData } = usePaginatedFetch("/advertisements");
 
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [editingAd, setEditingAd] = useState(null);
     const [adToDelete, setAdToDelete] = useState(null);
-
-    // --- START: Add state for the preview dialog ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [adToPreview, setAdToPreview] = useState(null);
-    // --- END ---
 
     const handleAddNew = () => {
         setEditingAd(null);
@@ -53,12 +52,10 @@ export default function AdvertisementPage() {
         setAdToDelete(ad);
     };
     
-    // --- START: Add handler for the preview action ---
     const handlePreview = (ad) => {
         setAdToPreview(ad);
         setIsPreviewOpen(true);
     };
-    // --- END ---
 
     const confirmDelete = async () => {
         if (!adToDelete) return;
@@ -67,17 +64,18 @@ export default function AdvertisementPage() {
                 headers: { Authorization: `Bearer ${token}` }
             }),
             {
-                loading: 'Deleting advertisement...',
+                loading: t('toast.deleting_ad'),
                 success: () => {
                     refreshData();
-                    return `Advertisement '${adToDelete.name}' deleted successfully!`;
+                    return t('toast.delete_ad_success', { name: adToDelete.name });
                 },
-                error: (err) => err.response?.data?.message || "Failed to delete advertisement.",
+                error: (err) => err.response?.data?.message || t('toast.delete_ad_failed'),
                 finally: () => setAdToDelete(null)
             }
         );
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -86,12 +84,12 @@ export default function AdvertisementPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Palette className="h-6 w-6" />
-                                Advertisement Management
+                                {t('ad_page.title')}
                             </CardTitle>
-                            <CardDescription>Manage advertisement campaigns for the login page.</CardDescription>
+                            <CardDescription>{t('ad_page.description')}</CardDescription>
                         </div>
                         <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New Campaign
+                            <PlusCircle className="mr-2 h-4 w-4" /> {t('ad_page.add_new_button')}
                         </Button>
                     </div>
                 </CardHeader>
@@ -101,10 +99,10 @@ export default function AdvertisementPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Campaign Name</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
+                                        <TableHead>{t('table_headers.campaign_name')}</TableHead>
+                                        <TableHead>{t('table_headers.type')}</TableHead>
+                                        <TableHead>{t('table_headers.status')}</TableHead>
+                                        <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -118,13 +116,12 @@ export default function AdvertisementPage() {
                                         ads.map((ad) => (
                                             <TableRow key={ad.id}>
                                                 <TableCell className="font-medium">{ad.name}</TableCell>
-                                                <TableCell>{getTemplateName(ad.type)}</TableCell>
+                                                <TableCell>{getTemplateName(ad.type, t)}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={ad.status === 'active' ? 'success' : 'secondary'}>
-                                                        {ad.status === 'active' ? 'Active' : 'Inactive'}
+                                                        {ad.status === 'active' ? t('status.active') : t('status.inactive')}
                                                     </Badge>
                                                 </TableCell>
-                                                {/* --- START: Update the actions cell --- */}
                                                 <TableCell className="text-center">
                                                     <div className="inline-flex items-center justify-center gap-1">
                                                         <Tooltip>
@@ -133,7 +130,7 @@ export default function AdvertisementPage() {
                                                                     <Eye className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Preview</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.preview')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -141,7 +138,7 @@ export default function AdvertisementPage() {
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Edit</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.edit')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -149,16 +146,15 @@ export default function AdvertisementPage() {
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Delete</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.delete')}</p></TooltipContent>
                                                         </Tooltip>
                                                     </div>
                                                 </TableCell>
-                                                 {/* --- END --- */}
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">No advertisement campaigns found.</TableCell>
+                                            <TableCell colSpan={4} className="h-24 text-center">{t('ad_page.no_ads_found')}</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -176,8 +172,7 @@ export default function AdvertisementPage() {
                     onSave={refreshData}
                 />
             )}
-
-            {/* --- START: Add the preview dialog instance --- */}
+            
             {isPreviewOpen && (
                 <AdvertisementPreviewDialog
                     isOpen={isPreviewOpen}
@@ -185,19 +180,18 @@ export default function AdvertisementPage() {
                     ad={adToPreview}
                 />
             )}
-            {/* --- END --- */}
 
             <AlertDialog open={!!adToDelete} onOpenChange={(isOpen) => !isOpen && setAdToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the campaign: <strong>{adToDelete?.name}</strong>.
+                            {t('delete_ad_dialog.description', { name: adToDelete?.name })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_ad_dialog.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

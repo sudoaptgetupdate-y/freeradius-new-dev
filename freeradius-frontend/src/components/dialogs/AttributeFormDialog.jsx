@@ -8,13 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import { useTranslation } from "react-i18next"; // <-- Import
 
-// --- START: แก้ไขส่วนนี้ ---
-// 1. ย้าย OPERATORS เข้ามาไว้ในไฟล์นี้โดยตรง
 const OPERATORS = [":=", "=", "==", "+=", ">", ">=", "<", "<="];
-// --- END: สิ้นสุดการแก้ไข ---
 
 export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, attributeType, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState({
         attribute: '',
@@ -37,14 +36,14 @@ export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, at
                     const filtered = response.data.data.filter(attr => attr.type === attributeType);
                     setAttributeList(filtered);
                 } catch (error) {
-                    toast.error("Failed to load attribute list.");
+                    toast.error(t('toast.attribute_list_load_failed'));
                 } finally {
                     setIsAttrListLoading(false);
                 }
             };
             fetchAttributes();
         }
-    }, [isOpen, attributeType, token]);
+    }, [isOpen, attributeType, token, t]);
 
     const handleSelectChange = (id, value) => {
         setFormData(prev => ({ ...prev, [id]: value }));
@@ -58,36 +57,39 @@ export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, at
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        try {
-            await axiosInstance.post('/attributes', {
+        toast.promise(
+            axiosInstance.post('/attributes', {
                 profileName: profileName,
                 type: attributeType,
                 ...formData
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success("Attribute added successfully!");
-            onSave();
-            setIsOpen(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to add attribute.");
-        } finally {
-            setIsLoading(false);
-        }
+            }, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: t('toast.adding_attribute'),
+                success: () => {
+                    onSave();
+                    setIsOpen(false);
+                    return t('toast.add_attribute_success');
+                },
+                error: (err) => err.response?.data?.message || t('toast.add_attribute_failed'),
+                finally: () => setIsLoading(false),
+            }
+        );
     };
     
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add {attributeType === 'reply' ? 'Reply' : 'Check'} Attribute to "{profileName}"</DialogTitle>
+                    <DialogTitle>
+                        {t(attributeType === 'reply' ? 'attribute_form_dialog.add_reply_title' : 'attribute_form_dialog.add_check_title', { name: profileName })}
+                    </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="attribute">Attribute</Label>
+                        <Label htmlFor="attribute">{t('form_labels.attribute')}</Label>
                         <Select value={formData.attribute} onValueChange={(value) => handleSelectChange('attribute', value)} required>
                             <SelectTrigger id="attribute" disabled={isAttrListLoading}>
-                                <SelectValue placeholder={isAttrListLoading ? "Loading attributes..." : "Select an attribute..."} />
+                                <SelectValue placeholder={isAttrListLoading ? t('loading_attributes') : t('form_labels.select_attribute_placeholder')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {attributeList.map(attr => (
@@ -99,24 +101,22 @@ export default function AttributeFormDialog({ isOpen, setIsOpen, profileName, at
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="op">Operator</Label>
+                        <Label htmlFor="op">{t('form_labels.operator')}</Label>
                         <Select value={formData.op} onValueChange={(value) => handleSelectChange('op', value)} required>
-                            <SelectTrigger id="op">
-                                <SelectValue />
-                            </SelectTrigger>
+                            <SelectTrigger id="op"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 {OPERATORS.map(op => <SelectItem key={op} value={op}>{op}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="value">Value</Label>
-                        <Input id="value" value={formData.value} onChange={handleInputChange} placeholder="Enter the attribute value" required />
+                        <Label htmlFor="value">{t('form_labels.value')}</Label>
+                        <Input id="value" value={formData.value} onChange={handleInputChange} placeholder={t('form_labels.value_placeholder')} required />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save Attribute'}
+                            {isLoading ? t('saving') : t('save_attribute')}
                         </Button>
                     </DialogFooter>
                 </form>

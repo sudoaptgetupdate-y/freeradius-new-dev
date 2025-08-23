@@ -12,13 +12,13 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-// --- START: เพิ่มการ import Tooltip ---
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// --- END ---
 import { toast } from "sonner";
 import AdminFormDialog from "@/components/dialogs/AdminFormDialog";
+import { useTranslation } from "react-i18next"; // <-- 1. Import hook
 
 export default function AdminsPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const currentUser = useAuthStore((state) => state.user);
     const token = useAuthStore((state) => state.token);
 
@@ -56,22 +56,31 @@ export default function AdminsPage() {
         if (!adminToAction) return;
 
         if (actionType === 'delete') {
-            try {
-                await axiosInstance.delete(`/admins/${adminToAction.id}`, { headers: { Authorization: `Bearer ${token}` } });
-                toast.success(`Admin '${adminToAction.username}' deleted successfully!`);
-                refreshData();
-            } catch (error) {
-                toast.error(error.response?.data?.message || "Failed to delete admin.");
-            }
+            toast.promise(
+                axiosInstance.delete(`/admins/${adminToAction.id}`, { headers: { Authorization: `Bearer ${token}` } }),
+                {
+                    loading: t('toast.deleting_admin'),
+                    success: () => {
+                        refreshData();
+                        return t('toast.delete_admin_success', { username: adminToAction.username });
+                    },
+                    error: (err) => err.response?.data?.message || t('toast.delete_admin_failed'),
+                }
+            );
         } else if (actionType === 'toggle') {
-            try {
-                await axiosInstance.put(`/admins/${adminToAction.id}/status`, {}, { headers: { Authorization: `Bearer ${token}` }});
-                toast.success(`Admin '${adminToAction.username}' status updated!`);
-                refreshData();
-            } catch (error) {
-                toast.error(error.response?.data?.message || "Failed to update status.");
-            }
+            toast.promise(
+                axiosInstance.put(`/admins/${adminToAction.id}/status`, {}, { headers: { Authorization: `Bearer ${token}` }}),
+                {
+                    loading: t('toast.updating_status'),
+                    success: () => {
+                        refreshData();
+                        return t('toast.status_update_success', { username: adminToAction.username });
+                    },
+                    error: (err) => err.response?.data?.message || t('toast.status_update_failed'),
+                }
+            );
         }
+        setIsConfirmDialogOpen(false);
     };
     
     const handleConfirmDialogClose = (isOpen) => {
@@ -87,15 +96,16 @@ export default function AdminsPage() {
     const getDialogDescription = () => {
         if (!adminToAction) return '';
         if (actionType === 'delete') {
-            return `This will permanently delete the admin: ${adminToAction.username}.`;
+            return t('delete_admin_dialog.description', { username: adminToAction.username });
         }
         if (actionType === 'toggle') {
-            const nextStatus = adminToAction.status === 'active' ? 'deactivate' : 'activate';
-            return `Are you sure you want to ${nextStatus} the admin: ${adminToAction.username}?`;
+            const nextStatus = adminToAction.status === 'active' ? 'disable' : 'enable';
+            return t(`toggle_admin_status_dialog.${nextStatus}_desc`, { username: adminToAction.username });
         }
         return '';
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -104,28 +114,27 @@ export default function AdminsPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <UserCog className="h-6 w-6" />
-                                Admin Management
+                                {t('admins_page.title')}
                             </CardTitle>
-                            <CardDescription>Manage all administrator accounts.</CardDescription>
+                            <CardDescription>{t('admins_page.description')}</CardDescription>
                         </div>
                         <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New Admin
+                            <PlusCircle className="mr-2 h-4 w-4" /> {t('admins_page.add_new_button')}
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-md">
-                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
                         <TooltipProvider delayDuration={0}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Full Name</TableHead>
-                                        <TableHead>Username</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>Role</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
+                                        <TableHead>{t('table_headers.full_name')}</TableHead>
+                                        <TableHead>{t('table_headers.username')}</TableHead>
+                                        <TableHead>{t('table_headers.email')}</TableHead>
+                                        <TableHead>{t('table_headers.role')}</TableHead>
+                                        <TableHead>{t('table_headers.status')}</TableHead>
+                                        <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -144,10 +153,9 @@ export default function AdminsPage() {
                                                 <TableCell>{admin.role}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={admin.status === 'active' ? 'success' : 'secondary'}>
-                                                        {admin.status === 'active' ? 'Active' : 'Inactive'}
+                                                        {admin.status === 'active' ? t('status.active') : t('status.inactive')}
                                                     </Badge>
                                                 </TableCell>
-                                                {/* --- START: แก้ไขปุ่ม Action --- */}
                                                 <TableCell className="text-center">
                                                     <div className="inline-flex items-center justify-center gap-1">
                                                         <Tooltip>
@@ -156,7 +164,7 @@ export default function AdminsPage() {
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Edit Admin</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.edit_admin')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -168,7 +176,7 @@ export default function AdminsPage() {
                                                                     {admin.status === 'active' ? <Ban className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>{admin.status === 'active' ? 'Disable' : 'Enable'} Admin</p></TooltipContent>
+                                                            <TooltipContent><p>{admin.status === 'active' ? t('actions.disable_admin') : t('actions.enable_admin')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -180,22 +188,20 @@ export default function AdminsPage() {
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Delete Admin</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.delete_admin')}</p></TooltipContent>
                                                         </Tooltip>
                                                     </div>
                                                 </TableCell>
-                                                {/* --- END --- */}
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center">No administrators found.</TableCell>
+                                            <TableCell colSpan={6} className="h-24 text-center">{t('admins_page.no_admins_found')}</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
                         </TooltipProvider>
-                        {/* --- END --- */}
                     </div>
                 </CardContent>
             </Card>
@@ -212,18 +218,18 @@ export default function AdminsPage() {
             <AlertDialog open={isConfirmDialogOpen} onOpenChange={handleConfirmDialogClose}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {getDialogDescription()}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                         <AlertDialogAction 
                           onClick={confirmAction} 
                           className={actionType === 'delete' ? 'bg-destructive hover:bg-destructive/90' : ''}
                         >
-                          Confirm
+                          {t('confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

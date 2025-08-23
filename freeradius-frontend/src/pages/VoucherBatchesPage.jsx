@@ -9,18 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-// --- START: เพิ่มการ import Ticket icon และ PlusCircle ---
 import { History, Printer, PlusCircle, Settings, Ticket } from 'lucide-react';
-// --- END ---
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import VoucherGenerationDialog from '@/components/dialogs/VoucherGenerationDialog';
 import VoucherSettingsDialog from '@/components/dialogs/VoucherSettingsDialog';
-// --- START: เพิ่มการ import PackageFormDialog ---
 import PackageFormDialog from '@/components/dialogs/PackageFormDialog';
-// --- END ---
+import { useTranslation } from 'react-i18next'; // <-- 1. Import useTranslation
 
 export default function VoucherBatchesPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const navigate = useNavigate();
 
@@ -35,9 +33,7 @@ export default function VoucherBatchesPage() {
     const [admins, setAdmins] = useState([]);
     const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
-    // --- START: เพิ่ม State สำหรับ Package Dialog ---
     const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
-    // --- END ---
 
     const {
         data: batches,
@@ -48,7 +44,7 @@ export default function VoucherBatchesPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    } = usePaginatedFetch("/vouchers/batches", 5, filters);
+    } = usePaginatedFetch("/vouchers/batches", 15, filters); // <-- เพิ่มจำนวนแถวเริ่มต้น
 
     useEffect(() => {
         const fetchDataForFilters = async () => {
@@ -60,16 +56,17 @@ export default function VoucherBatchesPage() {
                 setPackages(pkgRes.data.data);
                 setAdmins(adminRes.data.data);
             } catch (error) {
-                toast.error("Failed to load filter options.");
+                toast.error(t('toast.filter_load_failed'));
             }
         };
         fetchDataForFilters();
-    }, [token]);
+    }, [token, t]);
 
     const handleFilterChange = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -78,38 +75,35 @@ export default function VoucherBatchesPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <History className="h-6 w-6" />
-                                Voucher Batches
+                                {t('voucher_batches_page.title')}
                             </CardTitle>
-                            <CardDescription>History of all generated voucher batches.</CardDescription>
+                            <CardDescription>{t('voucher_batches_page.description')}</CardDescription>
                         </div>
-                        {/* --- START: แก้ไขกลุ่มของปุ่ม --- */}
                         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
                             <Button variant="outline" size="sm" onClick={() => setIsSettingsDialogOpen(true)}>
-                                <Settings className="mr-2 h-4 w-4" /> Voucher Settings
+                                <Settings className="mr-2 h-4 w-4" /> {t('voucher_batches_page.voucher_settings')}
                             </Button>
                              <Button variant="outline" size="sm" onClick={() => setIsPackageDialogOpen(true)}>
-                                <Ticket className="mr-2 h-4 w-4" /> Add New Package
+                                <Ticket className="mr-2 h-4 w-4" /> {t('voucher_batches_page.add_package')}
                             </Button>
                             <Button size="sm" onClick={() => setIsGenerateDialogOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Batch
+                                <PlusCircle className="mr-2 h-4 w-4" /> {t('voucher_batches_page.add_batch')}
                             </Button>
                         </div>
-                        {/* --- END --- */}
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {/* ... (เนื้อหาส่วนที่เหลือของ CardContent ไม่เปลี่ยนแปลง) ... */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <Input
-                            placeholder="Search by package, creator..."
+                            placeholder={t('voucher_batches_page.search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="lg:col-span-3"
                         />
                         <Select value={filters.packageId} onValueChange={(value) => handleFilterChange('packageId', value === 'all' ? '' : value)}>
-                            <SelectTrigger><SelectValue placeholder="Filter by package..." /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder={t('voucher_batches_page.filter_package_placeholder')} /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Packages</SelectItem>
+                                <SelectItem value="all">{t('all_packages')}</SelectItem>
                                 {packages.map((p) => (<SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>))}
                             </SelectContent>
                         </Select>
@@ -120,11 +114,11 @@ export default function VoucherBatchesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Package</TableHead>
-                                    <TableHead className="text-center">Quantity</TableHead>
-                                    <TableHead>Created By</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>{t('table_headers.date')}</TableHead>
+                                    <TableHead>{t('table_headers.package')}</TableHead>
+                                    <TableHead className="text-center">{t('table_headers.quantity')}</TableHead>
+                                    <TableHead>{t('table_headers.created_by')}</TableHead>
+                                    <TableHead className="text-right">{t('table_headers.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -148,7 +142,7 @@ export default function VoucherBatchesPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">No voucher batches found.</TableCell>
+                                        <TableCell colSpan={5} className="h-24 text-center">{t('voucher_batches_page.no_batches_found')}</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -157,23 +151,23 @@ export default function VoucherBatchesPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Label htmlFor="rows-per-page">{t('pagination.rows_per_page')}</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {[5, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                                {[15, 30, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalRecords || 0} items)
+                        {t('pagination.page_info', { currentPage: pagination.currentPage, totalPages: pagination.totalPages, totalItems: pagination.totalRecords || 0 })}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
-                            Previous
+                            {t('pagination.previous')}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
-                            Next
+                            {t('pagination.next')}
                         </Button>
                     </div>
                 </CardFooter>
@@ -194,19 +188,14 @@ export default function VoucherBatchesPage() {
                 />
             )}
 
-            {/* --- START: เพิ่มการเรียกใช้ PackageFormDialog --- */}
             {isPackageDialogOpen && (
                 <PackageFormDialog
                     isOpen={isPackageDialogOpen}
                     setIsOpen={setIsPackageDialogOpen}
                     pkg={null}
-                    onSave={() => {
-                        // ไม่ต้องทำอะไรเมื่อ Save สำเร็จ เพราะ Dialog จะปิดตัวเอง
-                        // และเราไม่จำเป็นต้อง refresh ข้อมูลหน้านี้
-                    }}
+                    onSave={refreshData}
                 />
             )}
-            {/* --- END --- */}
         </>
     );
 }

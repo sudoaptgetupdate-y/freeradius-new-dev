@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import { useTranslation } from "react-i18next"; // <-- Import
 
 const initialFormData = {
     nasname: '',
@@ -17,6 +18,7 @@ const initialFormData = {
 };
 
 export default function NasFormDialog({ isOpen, setIsOpen, nas, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +30,7 @@ export default function NasFormDialog({ isOpen, setIsOpen, nas, onSave }) {
                 setFormData({
                     nasname: nas.nasname || '',
                     shortname: nas.shortname || '',
-                    secret: '', // ไม่แสดง secret เดิมเพื่อความปลอดภัย
+                    secret: '', 
                     description: nas.description || '',
                 });
             } else {
@@ -50,52 +52,52 @@ export default function NasFormDialog({ isOpen, setIsOpen, nas, onSave }) {
         const method = isEditMode ? 'put' : 'post';
         
         let payload = { ...formData };
-        // ถ้าเป็นโหมดแก้ไขและไม่ได้กรอก secret ใหม่ ให้ลบออกจาก payload
         if (isEditMode && !payload.secret) {
             delete payload.secret;
         }
 
-        try {
-            await axiosInstance[method](url, payload, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`NAS ${isEditMode ? 'updated' : 'created'} successfully!`);
-            onSave();
-            setIsOpen(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred.");
-        } finally {
-            setIsLoading(false);
-        }
+        toast.promise(
+            axiosInstance[method](url, payload, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: t('toast.saving_nas'),
+                success: () => {
+                    onSave();
+                    setIsOpen(false);
+                    return t(isEditMode ? 'toast.update_nas_success' : 'toast.create_nas_success');
+                },
+                error: (err) => err.response?.data?.message || t('toast.generic_error'),
+                finally: () => setIsLoading(false)
+            }
+        );
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit NAS Client' : 'Add New NAS Client'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? t('nas_form_dialog.edit_title') : t('nas_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="nasname">NAS Name (IP Address / Hostname)</Label>
-                        <Input id="nasname" value={formData.nasname} onChange={handleInputChange} placeholder="e.g., 192.168.1.1" required />
+                        <Label htmlFor="nasname">{t('form_labels.nas_name')}</Label>
+                        <Input id="nasname" value={formData.nasname} onChange={handleInputChange} placeholder={t('form_labels.nas_name_placeholder')} required />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="shortname">Short Name</Label>
-                        <Input id="shortname" value={formData.shortname} onChange={handleInputChange} placeholder="e.g., main-router" />
+                        <Label htmlFor="shortname">{t('form_labels.short_name')}</Label>
+                        <Input id="shortname" value={formData.shortname} onChange={handleInputChange} placeholder={t('form_labels.short_name_placeholder')} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="secret">Secret</Label>
-                        <Input id="secret" type="password" onChange={handleInputChange} placeholder={isEditMode ? "Leave blank to keep current secret" : "Enter a strong secret"} required={!isEditMode} />
+                        <Label htmlFor="secret">{t('form_labels.secret')}</Label>
+                        <Input id="secret" type="password" onChange={handleInputChange} placeholder={isEditMode ? t('form_labels.secret_edit_placeholder') : t('form_labels.secret_add_placeholder')} required={!isEditMode} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder="e.g., Main office FortiGate" />
+                        <Label htmlFor="description">{t('form_labels.description_optional')}</Label>
+                        <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder={t('form_labels.nas_description_placeholder')} />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
                         <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save'}
+                            {isLoading ? t('saving') : t('save')}
                         </Button>
                     </DialogFooter>
                 </form>

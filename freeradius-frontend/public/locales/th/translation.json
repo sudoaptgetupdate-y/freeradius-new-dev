@@ -1,0 +1,869 @@
+{
+  "account_settings": "ตั้งค่าบัญชี",
+  "logout": "ออกจากระบบ",
+  "nav": {
+    "dashboard": "แดชบอร์ด",
+    "online_users": "ผู้ใช้ออนไลน์",
+    "history": "ประวัติการใช้งาน",
+    "section_users": "การจัดการผู้ใช้",
+    "all_users": "ผู้ใช้ทั้งหมด",
+    "voucher_batches": "ออกการ์ดรายวัน",
+    "section_config": "การตั้งค่า",
+    "organizations": "กลุ่มผู้ใช้",
+    "radius_profiles": "โปรไฟล์ Radius",
+    "nas": "อุปกรณ์ NAS",
+    "voucher_packages": "แพ็กเกจการ์ด",
+    "advertisements": "โฆษณา",
+    "customization": "ปรับแต่ง",
+    "section_system": "ระบบ",
+    "admins": "ผู้ดูแลระบบ",
+    "attributes": "แอตทริบิวต์",
+    "system_settings": "ตั้งค่าระบบ",
+    "log_management": "การจัดการล็อก"
+  },
+  "dashboard": "แดชบอร์ด",
+  "welcome_back": "ยินดีต้อนรับกลับมา, {{name}}!",
+  "dashboard_subtitle": "นี่คือสรุปภาพรวมของเซิร์ฟเวอร์ FreeRADIUS ของคุณ",
+  "online_users": "ผู้ใช้ออนไลน์",
+  "total_users": "ผู้ใช้ทั้งหมด",
+  "organizations": "กลุ่มผู้ใช้",
+  "nas_clients": "อุปกรณ์ NAS",
+  "freeradius_status": "สถานะ FreeRADIUS",
+  "click_to_view_details": "คลิกเพื่อดูรายละเอียด",
+  "restart_service": "รีสตาร์ทเซอร์วิส",
+  "view_all_history": "ดูประวัติทั้งหมด",
+  "loading_dashboard": "กำลังโหลดแดชบอร์ด...",
+  "dashboard_load_error": "ไม่สามารถโหลดข้อมูลแดชบอร์ดได้",
+  "cancel": "ยกเลิก",
+  "restarting": "กำลังรีสตาร์ท...",
+  "confirm_restart": "ยืนยันการรีสตาร์ท",
+  "status": {
+    "active": "ปกติ",
+    "inactive": "inactive",
+    "failed": "failed",
+    "unknown": "ไม่ทราบ",
+    "still_online": "online",
+    "disabled": "ปิดใช้งาน"
+  },
+  "all_packages": "ทุกแพ็กเกจ",
+  "saving": "กำลังบันทึก...",
+  "save": "บันทึก",
+  "generating": "กำลังสร้าง...",
+  "generate_and_preview": "สร้างและดูตัวอย่าง",
+  "save_settings": "บันทึกการตั้งค่า",
+  "loading_profiles": "กำลังโหลดโปรไฟล์...",
+  "add_new": "เพิ่มใหม่",
+  "no_description": "ไม่มีคำอธิบาย",
+  "loading_attributes": "กำลังโหลดแอตทริบิวต์...",
+  "reply_attributes": "Reply Attributes",
+  "check_attributes": "Check Attributes",
+  "add_reply": "เพิ่ม Reply",
+  "add_check": "เพิ่ม Check",
+  "no_attributes_defined": "ยังไม่มีการกำหนดแอตทริบิวต์",
+  "save_attribute": "บันทึกแอตทริบิวต์",
+  "table_headers": {
+    "user": "ผู้ใช้",
+    "ip_address": "ไอพีแอดเดรส",
+    "time": "เวลา",
+    "organization": "กลุ่มผู้ใช้",
+    "data_usage": "ปริมาณข้อมูล",
+    "client_ip": "IP Address",
+    "login_time": "เวลาล็อกอิน",
+    "logout_time": "เวลาล็อกเอาต์",
+    "duration": "ระยะเวลา",
+    "mac_address": "MAC Address",
+    "data_up": "ข้อมูลอัปโหลด",
+    "data_down": "ข้อมูลดาวน์โหลด",
+    "total_data": "ข้อมูลทั้งหมด",
+    "actions": "การกระทำ",
+    "terminate_cause": "ตัดการเชื่อมต่อ",
+    "date": "วันที่",
+    "package": "แพ็กเกจ",
+    "quantity": "จำนวน",
+    "created_by": "สร้างโดย",
+    "full_name": "ชื่อ-นามสกุล",
+    "username": "ชื่อผู้ใช้",
+    "status": "สถานะ",
+    "created_at": "สร้างเมื่อ",
+    "name": "ชื่อ",
+    "login_type": "ประเภทการล็อกอิน",
+    "radius_profile": "โปรไฟล์ Radius",
+    "advertisement": "โฆษณา",
+    "nas_name": "ชื่อ NAS (IP/Hostname)",
+    "short_name": "ชื่อย่อ",
+    "description": "คำอธิบาย",
+    "attribute": "แอตทริบิวต์",
+    "operator": "ตัวดำเนินการ",
+    "value": "ค่า",
+    "action": "การกระทำ",
+    "package_name": "ชื่อแพ็กเกจ",
+    "duration_days": "ระยะเวลา (วัน)",
+    "campaign_name": "ชื่อแคมเปญ",
+    "type": "ประเภท",
+    "email": "อีเมล",
+    "role": "สิทธิใช้งาน",
+    "attribute_name": "ชื่อแอตทริบิวต์",
+    "hostname": "ชื่อโฮสต์",
+    "filename": "ชื่อไฟล์",
+    "size": "ขนาด",
+    "modified_date": "วันที่แก้ไข",
+    "timestamp": "เวลา",
+    "source_ip": "IP ต้นทาง"
+  },
+  "recent_logins": {
+    "title": "การล็อกอินล่าสุด",
+    "description": "5 การยืนยันตัวตนล่าสุดของผู้ใช้"
+  },
+  "top_users": {
+    "title": "5 ผู้ใช้สูงสุด (วันนี้)",
+    "description": "ผู้ใช้ที่มีการใช้งานข้อมูลสูงสุดในวันนี้"
+  },
+  "restart_dialog": {
+    "title": "คุณแน่ใจหรือไม่?",
+    "description": "การกระทำนี้จะรีสตาร์ทเซอร์วิส FreeRADIUS เซสชันของผู้ใช้ที่ใช้งานอยู่อาจถูกตัดการเชื่อมต่อทั้งหมด"
+  },
+  "refresh": "รีเฟรช",
+  "kick": "ตัดการเชื่อมต่อ",
+  "all_organizations": "กลุ่มผู้ใช้ทั้งหมด",
+  "pagination": {
+    "rows_per_page": "แถวต่อหน้า:",
+    "page_info": "หน้า {{currentPage}} จาก {{totalPages}} (ทั้งหมด {{totalItems}} รายการ)",
+    "previous": "ก่อนหน้า",
+    "next": "ถัดไป",
+    "page_info_files": "หน้า {{currentPage}} จาก {{totalPages}} ({{totalItems}} ไฟล์)"
+  },
+  "online_users_page": {
+    "title": "ผู้ใช้ออนไลน์",
+    "description": "แสดงเซสชันของผู้ใช้ที่กำลังใช้งานอยู่",
+    "clear_stale_sessions": "ล้างเซสชันที่ค้าง",
+    "search_placeholder": "ค้นหาด้วยชื่อผู้ใช้, IP, หรือ MAC...",
+    "filter_org_placeholder": "กรองตามกลุ่มผู้ใช้...",
+    "no_users_found": "ไม่พบผู้ใช้ที่ออนไลน์อยู่"
+  },
+  "kick_dialog": {
+    "title": "ยืนยันการตัดการเชื่อมต่อ",
+    "description": "คุณแน่ใจหรือไม่ว่าต้องการตัดการเชื่อมต่อผู้ใช้: <strong>{{username}}</strong>? พวกเขาอาจจะสามารถเชื่อมต่อใหม่ได้ทันที",
+    "confirm_kick": "ยืนยันการตัด"
+  },
+  "clear_stale_dialog": {
+    "title": "ยืนยันการล้างเซสชันที่ค้าง",
+    "description": "การกระทำนี้จะปิดเซสชันทั้งหมดที่เปิดอยู่นานกว่า 24 ชั่วโมง จะไม่มีผลกับผู้ใช้ที่กำลังออนไลน์อยู่ คุณแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ?",
+    "confirm_clear": "ยืนยันการล้าง"
+  },
+  "voucher_batches_page": {
+    "title": "ออกการ์ดรายวัน",
+    "description": "ประวัติการสร้างออกการ์ดรายวันทั้งหมด",
+    "voucher_settings": "ตั้งค่าการ์ด",
+    "add_package": "เพิ่มแพ็กเกจใหม่",
+    "add_batch": "สร้างชุดใหม่",
+    "search_placeholder": "ค้นหาด้วยแพ็กเกจ, ผู้สร้าง...",
+    "filter_package_placeholder": "กรองตามแพ็กเกจ...",
+    "no_batches_found": "ไม่พบข้อมูลออกการ์ดรายวัน"
+  },
+  "generate_voucher_dialog": {
+    "title": "สร้างออกการ์ดรายวันใหม่",
+    "description": "สร้างชุดผู้ใช้ใหม่ในรูปแบบการ์ดตามแพ็กเกจที่กำหนด"
+  },
+  "voucher_settings_dialog": {
+    "title": "ปรับแต่งการ์ด",
+    "description": "ปรับแต่งลักษณะของการ์ดที่จะพิมพ์",
+    "logo_label": "โลโก้บนการ์ด (ถ้ามี)",
+    "logo_desc": "หากเว้นว่าง จะใช้โลโก้หลักจากการตั้งค่า Customization",
+    "ssid_label": "ชื่อ WiFi (SSID)",
+    "header_label": "ข้อความส่วนหัว",
+    "footer_label": "ข้อความส่วนท้าย",
+    "preview_title": "ตัวอย่าง",
+    "no_logo": "(ไม่มีโลโก้)"
+  },
+  "package_form_dialog": {
+    "edit_title": "แก้ไขแพ็กเกจการ์ด",
+    "add_title": "เพิ่มแพ็กเกจการ์ดใหม่"
+  },
+  "organizations_page": {
+    "title": "กลุ่มผู้ใช้",
+    "description": "จัดการกลุ่มผู้ใช้ทั้งหมดในระบบ",
+    "add_new_button": "เพิ่มใหม่",
+    "search_placeholder": "ค้นหาด้วยชื่อกลุ่มผู้ใช้...",
+    "no_orgs_found": "ไม่พบข้อมูลกลุ่มผู้ใช้"
+  },
+  "delete_org_dialog": {
+    "description": "การกระทำนี้จะลบกลุ่มผู้ใช้: <strong>{{name}}</strong> อย่างถาวรและไม่สามารถย้อนกลับได้",
+    "confirm": "ยืนยันการลบ"
+  },
+  "org_form_dialog": {
+    "edit_title": "แก้ไขกลุ่มผู้ใช้",
+    "add_title": "เพิ่มกลุ่มผู้ใช้ใหม่",
+    "protected_org_name_note": "ชื่อของกลุ่มผู้ใช้หลัก ({{name}}) นี้ไม่สามารถเปลี่ยนแปลงได้",
+    "protected_org_type_note": "ประเภทการล็อกอินสำหรับกลุ่มผู้ใช้ '{{name}}' ต้องเป็น 'manual' เท่านั้น"
+  },
+  "login_types": {
+    "manual": "กำหนดชื่อผู้ใช้เอง",
+    "national_id": "เลขบัตรประชาชน",
+    "employee_id": "รหัสพนักงาน",
+    "student_id": "รหัสนักเรียน/นักศึกษา"
+  },
+  "form_labels": {
+    "quantity": "จำนวน",
+    "package": "แพ็กเกจ",
+    "select_package_placeholder": "เลือกแพ็กเกจ...",
+    "username_prefix": "คำนำหน้าชื่อผู้ใช้",
+    "username_length": "ความยาวชื่อผู้ใช้ (ส่วนสุ่ม)",
+    "password_type": "ประเภทของรหัสผ่าน",
+    "alnum": "ตัวอักษรและตัวเลข",
+    "numeric": "ตัวเลขเท่านั้น",
+    "password_length": "ความยาวรหัสผ่าน",
+    "package_name": "ชื่อแพ็กเกจ",
+    "package_name_placeholder": "เช่น,ใช้งาน 24 ชั่วโมง",
+    "duration_days": "ระยะเวลา (วัน)",
+    "price": "ราคา (ถ้ามี)",
+    "radius_profile": "โปรไฟล์ Radius",
+    "select_profile_placeholder": "เลือกโปรไฟล์...",
+    "organization": "กลุ่มผู้ใช้",
+    "select_org_placeholder": "เลือกกลุ่มผู้ใช้...",
+    "full_name": "ชื่อ-นามสกุล",
+    "full_name_placeholder": "เช่น, สมชาย ใจดี",
+    "username": "ชื่อผู้ใช้",
+    "username_placeholder": "ป้อนชื่อผู้ใช้ของคุณ",
+    "employee_id": "รหัสพนักงาน",
+    "employee_id_placeholder": "เช่น, EMP001",
+    "student_id": "รหัสนักเรียน/นักศึกษา",
+    "student_id_placeholder": "เช่น, 6601001",
+    "national_id": "เลขบัตรประชาชน",
+    "national_id_optional": "เลขบัตรประชาชน (ถ้ามี)",
+    "national_id_placeholder": "เลข 13 หลัก",
+    "email": "อีเมล",
+    "email_placeholder": "เช่น, user@example.com",
+    "phone_number": "เบอร์โทรศัพท์",
+    "phone_number_placeholder": "เช่น, 0812345678",
+    "password": "รหัสผ่าน",
+    "password_edit_placeholder": "เว้นว่างไว้เพื่อใช้รหัสผ่านเดิม",
+    "password_add_placeholder": "ตั้งรหัสผ่านที่คาดเดายาก",
+    "org_name": "ชื่อกลุ่มผู้ใช้",
+    "org_name_placeholder": "เช่น, สำนักงานใหญ่",
+    "login_type": "ประเภทการยืนยันตัวตน",
+    "ad_campaign": "แคมเปญโฆษณา",
+    "select_ad_placeholder": "เลือกแคมเปญ...",
+    "no_ad": "ไม่มี (ปิดใช้งานโฆษณา)",
+    "nas_name": "ชื่อ NAS (IP Address / Hostname)",
+    "nas_name_placeholder": "เช่น, 192.168.1.1",
+    "short_name": "ชื่อย่อ",
+    "short_name_placeholder": "เช่น, main-router",
+    "secret": "Secret",
+    "secret_edit_placeholder": "เว้นว่างไว้เพื่อใช้ Secret เดิม",
+    "secret_add_placeholder": "ป้อน Secret ที่คาดเดายาก",
+    "nas_description_placeholder": "เช่น, Main office FortiGate",
+    "profile_name": "ชื่อโปรไฟล์",
+    "profile_name_placeholder": "เช่น, vip-users",
+    "description_optional": "คำอธิบาย (ถ้ามี)",
+    "description_placeholder": "คำอธิบายสั้นๆ เกี่ยวกับวัตถุประสงค์ของโปรไฟล์นี้",
+    "attribute": "แอตทริบิวต์",
+    "select_attribute_placeholder": "เลือกแอตทริบิวต์...",
+    "operator": "ตัวดำเนินการ",
+    "value": "ค่า",
+    "value_placeholder": "ป้อนค่าของแอตทริบิวต์",
+    "campaign_name": "ชื่อแคมเปญ",
+    "campaign_name_placeholder": "เช่น, Summer Promotion",
+    "template_type": "ประเภทเทมเพลต",
+    "status": "สถานะ",
+    "image_url": "URL รูปภาพ",
+    "image_url_placeholder": "https://example.com/image.jpg",
+    "header_text": "ข้อความส่วนหัว",
+    "header_text_placeholder": "ยินดีต้อนรับสู่ WiFi ของเรา!",
+    "body_text": "ข้อความเนื้อหา",
+    "body_text_placeholder": "เพลิดเพลินกับการเข้าถึงอินเทอร์เน็ตความเร็วสูง",
+    "button_text": "ข้อความบนปุ่ม",
+    "countdown": "นับถอยหลัง (วินาที)",
+    "countdown_placeholder": "เช่น, 5. เว้นว่างไว้หากไม่ต้องการนับถอยหลัง",
+    "full_name_placeholder_admin": "เช่น, สมศรี ใจดี",
+    "username_placeholder_admin": "เช่น, somsri.j",
+    "password_add_placeholder_admin": "ตั้งรหัสผ่านที่คาดเดายาก",
+    "role": "สิทธิใช้งาน",
+    "attribute_name": "ชื่อแอตทริบิวต์",
+    "attribute_name_placeholder": "เช่น, Session-Timeout",
+    "attribute_type": "ประเภทแอตทริบิวต์",
+    "description": "คำอธิบาย",
+    "attribute_description_placeholder": "คำอธิบายสั้นๆ เกี่ยวกับวัตถุประสงค์ของแอตทริบิวต์นี้",
+    "start_date": "วันที่เริ่มต้น",
+    "end_date": "วันที่สิ้นสุด",
+    "retention_days": "จำนวนวันที่เก็บข้อมูล (วัน)",
+    "critical_disk_usage": "ระดับพื้นที่ใช้งานวิกฤต (%)",
+    "target_disk_usage": "ระดับพื้นที่เป้าหมาย (%) หลังล้างข้อมูล",
+    "new_password": "รหัสผ่านใหม่",
+    "new_password_placeholder": "เว้นว่างไว้เพื่อใช้รหัสผ่านเดิม",
+    "confirm_new_password": "ยืนยันรหัสผ่านใหม่",
+    "confirm_new_password_placeholder": "ยืนยันรหัสผ่านใหม่อีกครั้ง",
+    "password_placeholder": "ป้อนรหัสผ่านของคุณ",
+    "username_or_identifier": "ชื่อผู้ใช้ / รหัสยืนยันตัวตน",
+    "username_or_identifier_placeholder": "ชื่อผู้ใช้, เลขบัตรประชาชน, รหัสพนักงาน...",
+    "confirm_password": "ยืนยันรหัสผ่าน"
+  },
+  "actions": {
+    "view_details": "ดูรายละเอียด",
+    "edit": "แก้ไข",
+    "disable": "ปิดใช้งาน",
+    "enable": "เปิดใช้งาน",
+    "delete": "ลบ",
+    "edit_nas": "แก้ไข NAS",
+    "delete_nas": "ลบ NAS",
+    "edit_package": "แก้ไขแพ็กเกจ",
+    "delete_package": "ลบแพ็กเกจ",
+    "preview": "ดูตัวอย่าง",
+    "edit_admin": "แก้ไขผู้ดูแล",
+    "disable_admin": "ปิดใช้งานผู้ดูแล",
+    "enable_admin": "เปิดใช้งานผู้ดูแล",
+    "delete_admin": "ลบผู้ดูแล",
+    "edit_attribute": "แก้ไขแอตทริบิวต์",
+    "delete_attribute": "ลบแอตทริบิวต์",
+    "edit_user": "แก้ไขผู้ใช้"
+  },
+  "users_page": {
+    "title": "ผู้ใช้งาน",
+    "description": "จัดการผู้ใช้งานทั้งหมดในระบบ",
+    "move_button": "ย้าย ({{count}})",
+    "delete_button": "ลบ ({{count}})",
+    "import_button": "นำเข้าผู้ใช้",
+    "add_new_button": "เพิ่มใหม่",
+    "search_placeholder": "ค้นหาด้วยชื่อผู้ใช้หรือชื่อ-นามสกุล...",
+    "filter_org_placeholder": "กรองตามกลุ่มผู้ใช้...",
+    "filter_status_placeholder": "กรองตามสถานะ...",
+    "bulk_actions_prompt": "กรุณาเลือกกลุ่มผู้ใช้จากตัวกรองเพื่อเปิดใช้งานการดำเนินการหลายรายการ",
+    "no_users_found": "ไม่พบผู้ใช้งาน"
+  },
+  "bulk_delete_dialog": {
+    "description": "สิ่งนี้จะลบผู้ใช้ที่เลือกจำนวน <strong>{{count}} คน</strong> อย่างถาวร การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "confirm": "ยืนยันการลบ"
+  },
+  "toggle_status_dialog": {
+    "title": "ยืนยันการเปลี่ยนสถานะ",
+    "disable_desc": "คุณแน่ใจหรือไม่ว่าต้องการปิดการใช้งานผู้ใช้: <strong>{{username}}</strong>?",
+    "enable_desc": "คุณแน่ใจหรือไม่ว่าต้องการเปิดการใช้งานผู้ใช้: <strong>{{username}}</strong>?"
+  },
+  "delete_dialog": {
+    "description": "สิ่งนี้จะลบผู้ใช้: <strong>{{username}}</strong> อย่างถาวร การกระทำนี้ไม่สามารถย้อนกลับได้",
+    "confirm": "ยืนยันการลบ"
+  },
+  "loading_ads": "กำลังโหลดโฆษณา...",
+  "toast": {
+    "dashboard_load_failed": "ไม่สามารถโหลดข้อมูลแดชบอร์ดได้",
+    "restart_sent_title": "ส่งคำสั่งรีสตาร์ทแล้ว",
+    "restart_sent_desc": "เซอร์วิสอาจใช้เวลาสักครู่เพื่อรีสตาร์ท กำลังรีเฟรชข้อมูลใน 5 วินาที...",
+    "restart_failed_title": "การรีสตาร์ทเซอร์วิสล้มเหลว",
+    "restart_failed_desc": "กรุณาตรวจสอบล็อกของเซิร์ฟเวอร์",
+    "chart_load_failed": "ไม่สามารถโหลดข้อมูลกราฟสำหรับ: {{period}}",
+    "org_load_failed": "ไม่สามารถโหลดรายชื่อกลุ่มผู้ใช้สำหรับกรองข้อมูลได้",
+    "kick_sent": "ส่งคำสั่งตัดการเชื่อมต่อผู้ใช้ '{{username}}' แล้ว",
+    "kick_failed": "ไม่สามารถตัดการเชื่อมต่อผู้ใช้ได้",
+    "clearing_stale": "กำลังล้างเซสชันที่ค้าง...",
+    "clear_stale_success": "ล้างเซสชันที่ค้างสำเร็จ",
+    "clear_stale_failed": "การล้างเซสชันที่ค้างล้มเหลว",
+    "filter_load_failed": "ไม่สามารถโหลดตัวเลือกสำหรับกรองข้อมูลได้",
+    "generating_vouchers": "กำลังสร้างบัตร...",
+    "generate_vouchers_success": "สร้างบัตรสำเร็จ! กำลังเปลี่ยนเส้นทาง...",
+    "generate_vouchers_failed": "การสร้างบัตรล้มเหลว",
+    "package_load_failed": "ไม่สามารถโหลดแพ็กเกจสำหรับเลือกได้",
+    "settings_load_failed": "ไม่สามารถโหลดการตั้งค่าได้",
+    "saving_settings": "กำลังบันทึกการตั้งค่า...",
+    "settings_save_success": "บันทึกการตั้งค่าการ์ดสำเร็จ!",
+    "settings_save_failed": "การบันทึกการตั้งค่าล้มเหลว",
+    "saving_package": "กำลังบันทึกแพ็กเกจ...",
+    "package_update_success": "อัปเดตแพ็กเกจสำเร็จ!",
+    "package_create_success": "สร้างแพ็กเกจสำเร็จ!",
+    "profile_load_failed": "ไม่สามารถโหลดโปรไฟล์ Radius ได้",
+    "generic_error": "เกิดข้อผิดพลาดบางอย่าง",
+    "deleting_users": "กำลังลบผู้ใช้...",
+    "bulk_delete_success": "ลบผู้ใช้ {{count}} คนสำเร็จ!",
+    "bulk_delete_failed": "การลบผู้ใช้ล้มเหลว",
+    "updating_status": "กำลังอัปเดตสถานะ...",
+    "status_update_success": "อัปเดตสถานะผู้ใช้ '{{username}}' สำเร็จ",
+    "status_update_failed": "การอัปเดตสถานะล้มเหลว",
+    "deleting_user": "กำลังลบผู้ใช้...",
+    "delete_success": "ลบผู้ใช้ '{{username}}' สำเร็จ!",
+    "delete_failed": "การลบผู้ใช้ล้มเหลว",
+    "user_update_success": "อัปเดตผู้ใช้สำเร็จ!",
+    "user_create_success": "สร้างผู้ใช้สำเร็จ!",
+    "select_target_org": "กรุณาเลือกกลุ่มผู้ใช้ปลายทาง",
+    "moving_users": "กำลังย้ายผู้ใช้...",
+    "move_success": "ย้ายผู้ใช้ {{count}} คนสำเร็จ!",
+    "move_failed": "เกิดข้อผิดพลาดระหว่างการย้าย",
+    "select_csv_file": "กรุณาเลือกไฟล์ .csv ที่ถูกต้อง",
+    "please_select_file": "กรุณาเลือกไฟล์เพื่อนำเข้า",
+    "import_successful": "นำเข้าสำเร็จ!",
+    "import_failed": "การนำเข้าล้มเหลว กรุณาตรวจสอบข้อผิดพลาดด้านล่าง",
+    "deleting_org": "กำลังลบกลุ่มผู้ใช้...",
+    "delete_org_success": "ลบกลุ่มผู้ใช้ '{{name}}' สำเร็จ!",
+    "delete_org_failed": "การลบกลุ่มผู้ใช้ล้มเหลว",
+    "form_data_load_failed": "ไม่สามารถโหลดข้อมูลที่จำเป็นสำหรับฟอร์มได้",
+    "saving_org": "กำลังบันทึกกลุ่มผู้ใช้...",
+    "update_org_success": "อัปเดตกลุ่มผู้ใช้สำเร็จ!",
+    "create_org_success": "สร้างกลุ่มผู้ใช้สำเร็จ!",
+    "deleting_nas": "กำลังลบ NAS...",
+    "delete_nas_success": "ลบ NAS '{{name}}' สำเร็จ!",
+    "delete_nas_failed": "การลบ NAS ล้มเหลว",
+    "saving_nas": "กำลังบันทึก NAS...",
+    "update_nas_success": "อัปเดต NAS สำเร็จ!",
+    "create_nas_success": "สร้าง NAS สำเร็จ!",
+    "profile_attrs_load_failed": "ไม่สามารถโหลดแอตทริบิวต์ของโปรไฟล์ได้",
+    "deleting_profile": "กำลังลบโปรไฟล์...",
+    "delete_profile_success": "ลบโปรไฟล์ '{{name}}' สำเร็จ!",
+    "delete_profile_failed": "การลบโปรไฟล์ล้มเหลว",
+    "deleting_attribute": "กำลังลบแอตทริบิวต์...",
+    "delete_attribute_success": "ลบแอตทริบิวต์สำเร็จ!",
+    "delete_attribute_failed": "การลบแอตทริบิวต์ล้มเหลว",
+    "saving_profile": "กำลังบันทึกโปรไฟล์...",
+    "update_profile_success": "อัปเดตโปรไฟล์สำเร็จ!",
+    "create_profile_success": "สร้างโปรไฟล์สำเร็จ!",
+    "attribute_list_load_failed": "ไม่สามารถโหลดรายการแอตทริบิวต์ได้",
+    "adding_attribute": "กำลังเพิ่มแอตทริบิวต์...",
+    "add_attribute_success": "เพิ่มแอตทริบิวต์สำเร็จ!",
+    "add_attribute_failed": "การเพิ่มแอตทริบิวต์ล้มเหลว",
+    "deleting_package": "กำลังลบแพ็กเกจ...",
+    "delete_package_success": "ลบแพ็กเกจ '{{name}}' สำเร็จ!",
+    "delete_package_failed": "การลบแพ็กเกจล้มเหลว",
+    "deleting_ad": "กำลังลบโฆษณา...",
+    "delete_ad_success": "ลบโฆษณา '{{name}}' สำเร็จ!",
+    "delete_ad_failed": "การลบโฆษณาล้มเหลว",
+    "saving_ad": "กำลังบันทึกแคมเปญ...",
+    "update_ad_success": "อัปเดตแคมเปญสำเร็จ!",
+    "create_ad_success": "สร้างแคมเปญสำเร็จ!",
+    "saving_app_name": "กำลังบันทึกชื่อแอปพลิเคชัน...",
+    "save_app_name_success": "บันทึกชื่อแอปพลิเคชันสำเร็จ!",
+    "save_app_name_failed": "ไม่สามารถบันทึกชื่อแอปพลิเคชันได้",
+    "select_logo_first": "กรุณาเลือกไฟล์โลโก้ใหม่ก่อน",
+    "saving_logo": "กำลังบันทึกโลโก้...",
+    "save_logo_success": "บันทึกโลโก้สำเร็จ!",
+    "save_logo_failed": "ไม่สามารถบันทึกโลโก้ได้",
+    "select_background_first": "กรุณาเลือกไฟล์พื้นหลังใหม่ก่อน",
+    "saving_background": "กำลังบันทึกพื้นหลัง...",
+    "save_background_success": "บันทึกพื้นหลังสำเร็จ!",
+    "save_background_failed": "ไม่สามารถบันทึกพื้นหลังได้",
+    "saving_terms": "กำลังบันทึกข้อกำหนด...",
+    "save_terms_success": "บันทึกข้อกำหนดและนโยบายสำเร็จ!",
+    "deleting_admin": "กำลังลบผู้ดูแลระบบ...",
+    "delete_admin_success": "ลบผู้ดูแล '{{username}}' สำเร็จ!",
+    "delete_admin_failed": "การลบผู้ดูแลระบบล้มเหลว",
+    "password_req_not_met": "รหัสผ่านไม่ตรงตามข้อกำหนดความปลอดภัยทั้งหมด",
+    "saving_admin": "กำลังบันทึกข้อมูลผู้ดูแล...",
+    "update_admin_success": "อัปเดตข้อมูลผู้ดูแลสำเร็จ!",
+    "create_admin_success": "สร้างผู้ดูแลสำเร็จ!",
+    "deleting_attribute_def": "กำลังลบแอตทริบิวต์...",
+    "delete_attribute_def_success": "ลบแอตทริบิวต์ '{{name}}' สำเร็จ!",
+    "delete_attribute_def_failed": "การลบแอตทริบิวต์ล้มเหลว",
+    "saving_attribute_def": "กำลังบันทึกแอตทริบิวต์...",
+    "update_attribute_def_success": "อัปเดตแอตทริบิวต์สำเร็จ!",
+    "create_attribute_def_success": "สร้างแอตทริบิวต์สำเร็จ!",
+    "settings_save_success_main": "บันทึกการตั้งค่าสำเร็จ!",
+    "preparing_download_title": "กำลังเตรียมการดาวน์โหลด...",
+    "preparing_download_desc": "ไฟล์ของคุณจะเริ่มดาวน์โหลดในไม่ช้า",
+    "download_failed": "การดาวน์โหลดล้มเหลว",
+    "log_files_load_failed": "ไม่สามารถโหลดไฟล์ล็อกได้",
+    "history_load_failed": "ไม่สามารถโหลดประวัติได้",
+    "ip_empty_or_exists": "IP address ว่างเปล่าหรือมีอยู่แล้ว",
+    "saving_ips": "กำลังบันทึก IP ของอุปกรณ์...",
+    "save_ips_success": "บันทึก IP ของอุปกรณ์สำเร็จ!",
+    "save_ips_failed": "การบันทึก IP ของอุปกรณ์ล้มเหลว",
+    "save_settings_success": "บันทึกการตั้งค่าสำเร็จ!",
+    "save_settings_failed": "การบันทึกการตั้งค่าล้มเหลว",
+    "config_load_failed": "ไม่สามารถโหลดการตั้งค่าได้",
+    "passwords_do_not_match": "รหัสผ่านไม่ตรงกัน",
+    "updating_profile": "กำลังอัปเดตโปรไฟล์...",
+    "update_profile_failed": "การอัปเดตโปรไฟล์ล้มเหลว",
+    "welcome": "ยินดีต้อนรับ, {{name}}!",
+    "login_failed_title": "เข้าสู่ระบบไม่สำเร็จ",
+    "login_failed_desc": "กรุณาตรวจสอบชื่อผู้ใช้และรหัสผ่านของคุณ",
+    "must_agree_terms": "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อเข้าสู่ระบบ",
+    "auth_successful_title": "การยืนยันตัวตนสำเร็จ!",
+    "auth_successful_desc": "กำลังเปลี่ยนเส้นทางผ่าน FortiGate...",
+    "portal_settings_load_failed": "ไม่สามารถโหลดการตั้งค่าพอร์ทัลได้",
+    "changing_password": "กำลังเปลี่ยนรหัสผ่าน...",
+    "change_password_success": "เปลี่ยนรหัสผ่านสำเร็จ!",
+    "change_password_failed": "ไม่สามารถเปลี่ยนรหัสผ่านได้",
+    "disconnecting_sessions": "กำลังตัดการเชื่อมต่อเซสชันอื่น...",
+    "disconnect_sessions_success": "ตัดการเชื่อมต่อเซสชันอื่นสำเร็จ",
+    "clear_sessions_failed": "ไม่สามารถล้างเซสชันได้",
+    "must_agree_terms_register": "คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อลงทะเบียน",
+    "registering": "กำลังลงทะเบียน...",
+    "register_success_title": "ลงทะเบียนสำเร็จ!",
+    "register_failed_desc": "เกิดข้อผิดพลาดที่ไม่คาดคิด",
+    "user_detail_load_failed": "ไม่สามารถโหลดรายละเอียดผู้ใช้ได้"
+  },
+  "charts": {
+    "online_users_trend": {
+      "title": "แนวโน้มผู้ใช้ออนไลน์",
+      "description": "จำนวนผู้ใช้สูงสุดที่ออนไลน์พร้อมกันในช่วงเวลาต่างๆ"
+    },
+    "loading": "กำลังโหลดข้อมูลกราฟ...",
+    "no_data_for_period": "ไม่พบข้อมูลสำหรับช่วงเวลานี้"
+  },
+  "periods": {
+    "today": "วันนี้",
+    "week": "สัปดาห์",
+    "month": "เดือน",
+    "year": "ปี",
+    "daily": "รายวัน",
+    "weekly": "รายสัปดาห์",
+    "monthly": "รายเดือน",
+    "yearly": "รายปี"
+  },
+  "history_page": {
+    "title": "ประวัติการใช้งาน",
+    "description": "ตรวจสอบเซสชันและรายละเอียดการเชื่อมต่อที่ผ่านมาของผู้ใช้",
+    "search_placeholder": "ค้นหาผู้ใช้, IP, MAC...",
+    "filter_org_placeholder": "กรองตามกลุ่มผู้ใช้...",
+    "no_records_found": "ไม่พบข้อมูลประวัติการใช้งาน"
+  },
+  "close": "ปิด",
+  "moving": "กำลังย้าย...",
+  "importing": "กำลังนำเข้า...",
+  "loading_form_data": "กำลังโหลดข้อมูลฟอร์ม...",
+  "all_statuses": "ทุกสถานะ",
+  "are_you_sure": "คุณแน่ใจหรือไม่?",
+  "confirm": "ยืนยัน",
+  "user_form_dialog": {
+    "edit_title": "แก้ไขผู้ใช้",
+    "add_title": "เพิ่มผู้ใช้ใหม่"
+  },
+  "move_users_dialog": {
+    "title": "ย้ายผู้ใช้",
+    "description": "คุณได้เลือกผู้ใช้ {{count}} คน กรุณาเลือกกลุ่มผู้ใช้ปลายทาง",
+    "target_org_label": "กลุ่มผู้ใช้ปลายทาง",
+    "select_org_placeholder": "เลือกกลุ่มผู้ใช้ที่มีประเภทเดียวกัน...",
+    "note": "แสดงเฉพาะกลุ่มผู้ใช้ที่มีประเภทการล็อกอินเดียวกันเท่านั้น",
+    "confirm_move": "ยืนยันการย้าย"
+  },
+  "import_dialog": {
+    "title": "นำเข้าผู้ใช้จาก CSV",
+    "description": "อัปโหลดไฟล์ CSV เพื่อเพิ่มผู้ใช้หลายคนพร้อมกัน",
+    "view_format_button": "ดูตัวอย่างรูปแบบ",
+    "view_csv_example_button": "ดูตัวอย่าง CSV",
+    "download_template_button": "ดาวน์โหลดเทมเพลต CSV",
+    "upload_label": "อัปโหลดไฟล์ CSV",
+    "start_import_button": "เริ่มนำเข้า",
+    "success_message": "นำเข้าผู้ใช้จำนวน {{count}} คนสำเร็จ",
+    "error_title": "การนำเข้าล้มเหลว กรุณาแก้ไขข้อผิดพลาดต่อไปนี้:",
+    "error_row": "แถวที่ {{row}}",
+    "optional_field": "ใส่หรือไม่ใส่ก็ได้",
+    "empty_field": "ปล่อยว่าง",
+    "csv_preview": {
+      "title": "ตัวอย่างข้อมูลในไฟล์ CSV",
+      "description": "นี่คือตัวอย่างข้อมูลและรูปแบบสีเพื่อแสดงข้อมูลที่ควรกรอก, ไม่ควรกรอก, และไม่บังคับ"
+    },
+    "format_preview": {
+      "title": "ตัวอย่างรูปแบบการ Import ข้อมูล",
+      "description": "โปรดตรวจสอบประเภทของกลุ่มผู้ใช้และกรอกข้อมูลในไฟล์ CSV ให้ถูกต้องตามรูปแบบด้านล่าง",
+      "manual_title": "1. ตัวอย่างการเพิ่มข้อมูลแบบ Manual",
+      "manual_desc": "สำหรับกลุ่มผู้ใช้ประเภท <span class='font-mono bg-muted px-1 rounded'>manual</span> จะใช้ <span class='text-green-600 font-semibold'>username</span> ที่กรอกเป็นข้อมูลในการ Login",
+      "national_id_title": "2. ตัวอย่างการเพิ่มกลุ่มบัตรประชาชน",
+      "national_id_desc": "สำหรับกลุ่มผู้ใช้ประเภท <span class='font-mono bg-muted px-1 rounded'>national_id</span> จะใช้ <span class='text-green-600 font-semibold'>national_id</span> เป็นข้อมูลในการ Login",
+      "employee_id_title": "3. ตัวอย่างการเพิ่มกลุ่มพนักงานบริษัท",
+      "employee_id_desc": "สำหรับกลุ่มผู้ใช้ประเภท <span class='font-mono bg-muted px-1 rounded'>employee_id</span> จะใช้ <span class='text-green-600 font-semibold'>employee_id</span> เป็นข้อมูลในการ Login",
+      "student_id_title": "4. ตัวอย่างการเพิ่มกลุ่มนักเรียน",
+      "student_id_desc": "สำหรับกลุ่มผู้ใช้ประเภท <span class='font-mono bg-muted px-1 rounded'>student_id</span> จะใช้ <span class='text-green-600 font-semibold'>student_id</span> เป็นข้อมูลในการ Login"
+    }
+  },
+  "radius_profiles_page": {
+    "title": "โปรไฟล์ Radius",
+    "search_placeholder": "ค้นหาโปรไฟล์...",
+    "no_profiles_found": "ไม่พบโปรไฟล์",
+    "attributes_title": "แอตทริบิวต์ของโปรไฟล์",
+    "attributes_desc_selected": "กำลังจัดการแอตทริบิวต์สำหรับ \"{{name}}\"",
+    "attributes_desc_none": "เลือกโปรไฟล์เพื่อจัดการแอตทริบิวต์",
+    "select_profile_prompt": "กรุณาเลือกโปรไฟล์จากรายการ"
+  },
+  "delete_profile_dialog": {
+    "description": "การกระทำนี้จะลบโปรไฟล์: <strong>{{name}}</strong> อย่างถาวร",
+    "confirm": "ยืนยันการลบ"
+  },
+  "profile_form_dialog": {
+    "edit_title": "แก้ไขโปรไฟล์",
+    "add_title": "เพิ่มโปรไฟล์ใหม่"
+  },
+  "attribute_form_dialog": {
+    "add_reply_title": "เพิ่ม Reply Attribute ใน \"{{name}}\"",
+    "add_check_title": "เพิ่ม Check Attribute ใน \"{{name}}\""
+  },
+  "nas_page": {
+    "title": "อุปกรณ์ NAS / Clients",
+    "description": "จัดการ RADIUS clients ทั้งหมด (Network Access Servers)",
+    "no_nas_found": "ไม่พบอุปกรณ์ NAS"
+  },
+  "delete_nas_dialog": {
+    "description": "การกระทำนี้จะลบ NAS client: <strong>{{name}}</strong> อย่างถาวรและไม่สามารถย้อนกลับได้",
+    "confirm": "ยืนยันการลบ"
+  },
+  "nas_form_dialog": {
+    "edit_title": "แก้ไข NAS Client",
+    "add_title": "เพิ่ม NAS Client ใหม่"
+  },
+  "loading_packages": "กำลังโหลดแพ็กเกจ...",
+  "load_packages_failed": "ไม่สามารถโหลดแพ็กเกจได้",
+  "voucher_packages_page": {
+    "title": "แพ็กเกจการ์ด",
+    "description": "จัดการแพ็กเกจสำหรับสร้างการ์ด",
+    "add_new_button": "เพิ่มแพ็กเกจใหม่",
+    "no_packages_found": "ไม่พบแพ็กเกจ คลิก \"เพิ่มแพ็กเกจใหม่\" เพื่อเริ่มต้น"
+  },
+  "delete_package_dialog": {
+    "description": "การกระทำนี้จะลบแพ็กเกจ: <strong>{{name}}</strong> อย่างถาวรและไม่สามารถย้อนกลับได้",
+    "confirm": "ยืนยันการลบ"
+  },
+  "ad_page": {
+    "title": "จัดการโฆษณา",
+    "description": "จัดการแคมเปญโฆษณาสำหรับหน้าล็อกอิน",
+    "add_new_button": "เพิ่มแคมเปญใหม่",
+    "no_ads_found": "ไม่พบแคมเปญโฆษณา"
+  },
+  "ad_templates": {
+    "hero": "Hero Page",
+    "split": "Split-Screen",
+    "image_focused": "Image Focused",
+    "unknown": "ไม่ทราบ"
+  },
+  "delete_ad_dialog": {
+    "description": "การกระทำนี้จะลบแคมเปญ: <strong>{{name}}</strong> อย่างถาวร",
+    "confirm": "ยืนยันการลบ"
+  },
+  "ad_form_dialog": {
+    "edit_title": "แก้ไขโฆษณา",
+    "add_title": "เพิ่มโฆษณาใหม่"
+  },
+  "ad_preview_dialog": {
+    "title": "ตัวอย่างโฆษณา: {{name}}",
+    "description": "นี่คือลักษณะที่แคมเปญโฆษณาจะปรากฏต่อผู้ใช้"
+  },
+  "customization_page": {
+    "title": "ปรับแต่ง",
+    "description": "ปรับแต่งรูปลักษณ์และความรู้สึกของหน้าเข้าสู่ระบบของคุณ",
+    "tabs": {
+      "appearance": "ลักษณะ",
+      "terms": "ข้อกำหนดและนโยบาย"
+    },
+    "app_name": {
+      "title": "ตั้งค่าชื่อระบบของคุณ",
+      "description": "ชื่อนี้จะปรากฏบนหน้าเข้าสู่ระบบและในส่วนหัวของแถบด้านข้าง",
+      "save_button": "บันทึกชื่อ"
+    },
+    "logo": {
+      "title": "โลโก้ของหน่วยงาน",
+      "description": "อัปโหลดโลโก้เพื่อแสดงบนหน้าเข้าสู่ระบบ",
+      "recommendations": "• แนะนำ: SVG หรือ PNG พื้นหลังโปร่งใส<br/>• ความสูงสูงสุด: 80px. ขนาดไฟล์สูงสุด: 3MB.",
+      "preview_label": "ตัวอย่างโลโก้",
+      "view_full_button": "ดูขนาดเต็ม",
+      "save_button": "บันทึกโลโก้"
+    },
+    "background": {
+      "title": "พื้นหลังหน้าเว็บ",
+      "description": "ตั้งค่ารูปภาพพื้นหลังสำหรับหน้าเข้าสู่ระบบ",
+      "recommendations": "• ความละเอียดที่แนะนำ: 1920x1080px (อัตราส่วน 16:9)<br/>• ขนาดไฟล์สูงสุด: 3MB.",
+      "preview_label": "ตัวอย่างพื้นหลัง",
+      "view_full_button": "ดูรูปภาพเต็ม",
+      "save_button": "บันทึกพื้นหลัง"
+    },
+    "terms": {
+      "title": "ข้อกำหนดในการให้บริการและนโยบายความเป็นส่วนตัว",
+      "description": "ข้อความนี้จะแสดงให้ผู้ใช้เห็นก่อนที่จะสามารถลงทะเบียนหรือเข้าสู่ระบบได้",
+      "placeholder": "ป้อนข้อความทั้งหมดของข้อกำหนดและนโยบายของคุณที่นี่...",
+      "save_button": "บันทึกข้อกำหนด"
+    }
+  },
+  "admins_page": {
+    "title": "จัดการผู้ดูแลระบบ",
+    "description": "จัดการบัญชีผู้ดูแลระบบทั้งหมด",
+    "add_new_button": "เพิ่มผู้ดูแลใหม่",
+    "no_admins_found": "ไม่พบข้อมูลผู้ดูแลระบบ"
+  },
+  "delete_admin_dialog": {
+    "description": "การกระทำนี้จะลบผู้ดูแลระบบ: {{username}} อย่างถาวร"
+  },
+  "toggle_admin_status_dialog": {
+    "disable_desc": "คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานผู้ดูแลระบบ: {{username}}?",
+    "enable_desc": "คุณแน่ใจหรือไม่ว่าต้องการเปิดใช้งานผู้ดูแลระบบ: {{username}}?"
+  },
+  "admin_form_dialog": {
+    "edit_title": "แก้ไขผู้ดูแลระบบ",
+    "add_title": "เพิ่มผู้ดูแลระบบใหม่"
+  },
+  "roles": {
+    "admin": "Admin",
+    "superadmin": "Super Admin"
+  },
+  "password_reqs": {
+    "length": "มีอย่างน้อย 8 ตัวอักษร",
+    "lowercase": "มีตัวพิมพ์เล็กอย่างน้อยหนึ่งตัว (a-z)",
+    "uppercase": "มีตัวพิมพ์ใหญ่อย่างน้อยหนึ่งตัว (A-Z)",
+    "number": "มีตัวเลขอย่างน้อยหนึ่งตัว (0-9)",
+    "special": "มีอักขระพิเศษอย่างน้อยหนึ่งตัว (!@#$%^*)"
+  },
+  "all": "ทั้งหมด",
+  "reply": "Reply",
+  "check": "Check",
+  "attribute_management_page": {
+    "title": "จัดการแอตทริบิวต์",
+    "description": "จัดการคำจำกัดความของแอตทริบิวต์ RADIUS สำหรับใช้ในโปรไฟล์",
+    "add_new_button": "เพิ่มแอตทริบิวต์ใหม่",
+    "search_placeholder": "ค้นหาด้วยชื่อหรือคำอธิบาย...",
+    "no_attributes_found": "ไม่พบคำจำกัดความของแอตทริบิวต์"
+  },
+  "delete_attribute_dialog": {
+    "description": "การกระทำนี้จะลบแอตทริบิวต์: <strong>{{name}}</strong> อย่างถาวร",
+    "confirm": "ยืนยันการลบ"
+  },
+  "attribute_def_form_dialog": {
+    "edit_title": "แก้ไขคำจำกัดความของแอตทริบิวต์",
+    "add_title": "เพิ่มคำจำกัดความของแอตทริบิวต์ใหม่"
+  },
+  "settings_page": {
+    "title": "ตั้งค่าระบบ",
+    "description": "จัดการฟังก์ชันการทำงานทั่วทั้งระบบ เช่น การลงทะเบียนผู้ใช้ และการล็อกอินจากภายนอก",
+    "self_registration": {
+      "label": "การลงทะเบียนด้วยตนเองของผู้ใช้",
+      "description": "อนุญาตให้ผู้ใช้ลงทะเบียนเพื่อสร้างบัญชีจากหน้าล็อกอิน"
+    },
+    "external_login": {
+      "label": "การล็อกอินของผู้ใช้ภายนอก",
+      "description": "อนุญาตให้ผู้ใช้ทั่วไป (ไม่ใช่ผู้ดูแลระบบ) ล็อกอินเข้าสู่เครือข่าย"
+    }
+  },
+  "total": "ทั้งหมด",
+  "used": "ใช้ไป",
+  "available": "ว่าง",
+  "recipient": "ผู้รับ",
+  "not_set": "ยังไม่ตั้งค่า",
+  "no_log_files_found": "ไม่พบไฟล์ล็อก",
+  "download": "ดาวน์โหลด",
+  "loading_log_files": "กำลังโหลดไฟล์ล็อก...",
+  "no_log_files_found_criteria": "ไม่พบไฟล์ล็อกตามเงื่อนไขที่เลือก",
+  "loading_history": "กำลังโหลดประวัติการดาวน์โหลด...",
+  "administrator": "ผู้ดูแลระบบ",
+  "all_admins": "ผู้ดูแลทั้งหมด",
+  "filter_by_admin": "กรองตามผู้ดูแล...",
+  "hostname": "ชื่อโฮสต์",
+  "all_hostnames": "ทุกโฮสต์",
+  "filter_by_hostname": "กรองตามชื่อโฮสต์...",
+  "no_history_found_criteria": "ไม่พบประวัติการดาวน์โหลดตามเงื่อนไขที่เลือก",
+  "loading_config": "กำลังโหลดการตั้งค่า...",
+  "no_device_ips": "ยังไม่มีการตั้งค่า IP ของอุปกรณ์",
+  "enter_new_ip": "ป้อน IP ใหม่",
+  "add_ip": "เพิ่ม IP",
+  "save_ip_changes": "บันทึกการเปลี่ยนแปลง IP",
+  "log_management_page": {
+    "title": "การจัดการล็อก",
+    "description": "ตรวจสอบและจัดการไฟล์ล็อกของระบบ",
+    "tabs": {
+        "archive": "ไฟล์ล็อก",
+        "history": "ประวัติการดาวน์โหลด",
+        "config": "การตั้งค่า"
+    },
+    "dashboard": {
+        "disk_usage": "พื้นที่ใช้งานดิสก์",
+        "gpg_key": "คีย์เข้ารหัส GPG",
+        "top_5_logs": "5 วันที่ไฟล์ล็อกใหญ่ที่สุด"
+    },
+    "archive": {
+        "title": "ไฟล์ล็อกที่จัดเก็บ",
+        "description": "กรองและดาวน์โหลดไฟล์ล็อกที่เข้ารหัสเพื่อการวิเคราะห์แบบออฟไลน์"
+    },
+    "history": {
+        "title": "ประวัติการดาวน์โหลด",
+        "description": "บันทึกการตรวจสอบการดาวน์โหลดไฟล์ล็อกทั้งหมด"
+    },
+    "config": {
+        "ips_title": "IP ของอุปกรณ์",
+        "ips_desc": "จัดการ IP Address ที่สามารถส่งล็อกมายังเซิร์ฟเวอร์นี้ได้ (การเปลี่ยนแปลงต้องรีสตาร์ทเซอร์วิส)",
+        "retention_title": "การเก็บข้อมูลและ Failsafe",
+        "retention_desc": "ตั้งค่าการหมุนเวียนล็อกและการป้องกันพื้นที่ดิสก์เต็ม"
+    },
+    "charts": {
+      "volume_trend": {
+        "title": "แนวโน้มปริมาณล็อก",
+        "description": "ขนาดล็อกรวมของแต่ละอุปกรณ์ในช่วงเวลาต่างๆ (คลิกที่ชื่อเพื่อซ่อน/แสดง)"
+      }
+    }
+  },
+  "delete_ip_dialog": {
+    "description": "การกระทำนี้จะลบ IP address: <strong>{{ip}}</strong> ออกจากการตั้งค่าอย่างถาวร",
+    "confirm": "ยืนยันการลบ"
+  },
+  "save_changes": "บันทึกการเปลี่ยนแปลง",
+  "admin_profile_page": {
+    "title": "โปรไฟล์ของฉัน",
+    "description": "อัปเดตข้อมูลส่วนตัวและรหัสผ่านของคุณ"
+  },
+  "logging_in": "กำลังเข้าสู่ระบบ...",
+  "log_in": "เข้าสู่ระบบ",
+  "login_page": {
+    "description": "กรุณาเข้าสู่ระบบเพื่อใช้งานต่อ"
+  },
+  "loading": "กำลังโหลด...",
+  "authenticating": "กำลังยืนยันตัวตน...",
+  "external_login_page": {
+    "user_login_title": "เข้าสู่ระบบผู้ใช้",
+    "description": "กรุณาป้อนข้อมูลเพื่อเข้าสู่ระบบเครือข่าย",
+    "login_disabled_title": "ปิดการเข้าสู่ระบบ",
+    "login_disabled_desc": "การเข้าสู่ระบบไม่สามารถใช้งานได้ในขณะนี้",
+    "agree_terms_checkbox": "ฉันได้อ่านและยอมรับข้อกำหนด",
+    "must_agree_prefix": "คุณต้องยอมรับ",
+    "terms_and_conditions": "ข้อกำหนดและเงื่อนไข",
+    "must_agree_suffix": "เพื่อดำเนินการต่อ",
+    "no_account_link": "ยังไม่มีบัญชี?",
+    "account_management_link": "จัดการบัญชี",
+    "contact_admin": "กรุณาติดต่อผู้ดูแลระบบเพื่อขอความช่วยเหลือ",
+    "go_to_registration_button": "ไปที่หน้าลงทะเบียน"
+  },
+  "terms_dialog": {
+    "title": "ข้อกำหนดในการให้บริการและนโยบายความเป็นส่วนตัว"
+  },
+  "user_portal_login_page": {
+    "title": "พอร์ทัลผู้ใช้",
+    "description": "จัดการบัญชีและการเชื่อมต่อของคุณ"
+  },
+  "user_portal": {
+    "connection_status": "สถานะการเชื่อมต่อ",
+    "account_expires": "บัญชีหมดอายุ",
+    "no_expiration": "ไม่มีวันหมดอายุ",
+    "current_session": "เซสชันปัจจุบัน",
+    "not_connected": "คุณยังไม่ได้เชื่อมต่อกับเครือข่าย",
+    "active_connection_details": "รายละเอียดการเชื่อมต่อปัจจุบันของคุณ",
+    "connection_time": "ระยะเวลาที่เชื่อมต่อ",
+    "connected_via": "เชื่อมต่อผ่าน",
+    "total_data_used": "ข้อมูลทั้งหมดที่ใช้ไป",
+    "change_password_button": "เปลี่ยนรหัสผ่าน",
+    "change_password_dialog": {
+      "title": "เปลี่ยนรหัสผ่านของคุณ",
+      "description": "ป้อนรหัสผ่านเก่าและสร้างรหัสผ่านใหม่"
+    },
+    "security_sessions": {
+      "title": "ความปลอดภัยและเซสชัน",
+      "description": "จัดการรหัสผ่านและการเชื่อมต่อที่ใช้งานอยู่ของคุณ",
+      "change_password_desc": "เป็นความคิดที่ดีที่จะใช้รหัสผ่านที่คาดเดายากและไม่ซ้ำกับที่อื่น",
+      "active_connections_title": "การเชื่อมต่อที่ใช้งานอยู่",
+      "active_connections_desc": "หากคุณมีปัญหาในการล็อกอินบนอุปกรณ์ใหม่ คุณสามารถตัดการเชื่อมต่อเซสชันอื่นๆ ทั้งหมดได้",
+      "disconnect_button": "ตัดการเชื่อมต่ออุปกรณ์อื่นทั้งหมด",
+      "disconnect_dialog_desc": "การกระทำนี้จะตัดการเชื่อมต่ออุปกรณ์ทั้งหมดที่ล็อกอินด้วยบัญชีของคุณ คุณจะยังคงล็อกอินอยู่บนอุปกรณ์นี้",
+      "disconnect_dialog_confirm": "ยืนยันและตัดการเชื่อมต่อ"
+    }
+  },
+  "registering": "กำลังลงทะเบียน...",
+  "register_button": "ลงทะเบียน",
+  "register_page": {
+    "create_account_title": "สร้างบัญชีผู้ใช้",
+    "create_account_desc": "ป้อนข้อมูลของคุณเพื่อลงทะเบียนเข้าใช้เครือข่าย",
+    "disabled_title": "ปิดการลงทะเบียน",
+    "disabled_desc": "การลงทะเบียนไม่สามารถใช้งานได้ในขณะนี้",
+    "success_title": "ลงทะเบียนสำเร็จ",
+    "success_desc": "บัญชีของคุณถูกสร้างแล้ว กรุณารอผู้ดูแลระบบอนุมัติ",
+    "redirecting_in": "กำลังเปลี่ยนเส้นทางในอีก {{count}} วินาที...",
+    "already_have_account": "มีบัญชีอยู่แล้ว?",
+    "log_in_here": "เข้าสู่ระบบที่นี่"
+  },
+  "not_provided": "ไม่ได้ระบุ",
+  "user_detail_page": {
+    "loading": "กำลังโหลดรายละเอียดผู้ใช้...",
+    "not_found": "ไม่พบผู้ใช้",
+    "back_link": "กลับไปหน้ารายชื่อผู้ใช้",
+    "history": {
+      "title": "ประวัติการเชื่อมต่อ",
+      "description": "ตรวจสอบเซสชันที่ผ่านมาของผู้ใช้นี้",
+      "no_records": "ไม่พบประวัติการใช้งานสำหรับผู้ใช้นี้"
+    }
+  }
+}

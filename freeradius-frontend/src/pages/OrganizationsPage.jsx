@@ -17,11 +17,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-// --- START: เพิ่มการ import Tooltip ---
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-// --- END ---
+import { useTranslation } from "react-i18next"; // <-- 1. Import hook
 
 export default function OrganizationsPage() {
+    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const {
         data: organizations,
@@ -54,19 +54,23 @@ export default function OrganizationsPage() {
 
     const confirmDelete = async () => {
         if (!orgToDelete) return;
-        try {
-            await axiosInstance.delete(`/organizations/${orgToDelete.id}`, {
+        toast.promise(
+            axiosInstance.delete(`/organizations/${orgToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Organization '${orgToDelete.name}' deleted successfully!`);
-            refreshData();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to delete organization.");
-        } finally {
-            setOrgToDelete(null);
-        }
+            }),
+            {
+                loading: t('toast.deleting_org'),
+                success: () => {
+                    refreshData();
+                    return t('toast.delete_org_success', { name: orgToDelete.name });
+                },
+                error: (err) => err.response?.data?.message || t('toast.delete_org_failed'),
+                finally: () => setOrgToDelete(null)
+            }
+        );
     };
 
+    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -75,34 +79,33 @@ export default function OrganizationsPage() {
                         <div>
                             <CardTitle className="flex items-center gap-2">
                                 <Building className="h-6 w-6" />
-                                Organizations
+                                {t('organizations_page.title')}
                             </CardTitle>
-                            <CardDescription>Manage all organizations in the system.</CardDescription>
+                            <CardDescription>{t('organizations_page.description')}</CardDescription>
                         </div>
                         <Button onClick={handleAddNew}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                            <PlusCircle className="mr-2 h-4 w-4" /> {t('organizations_page.add_new_button')}
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="mb-4">
                         <Input
-                            placeholder="Search by organization name..."
+                            placeholder={t('organizations_page.search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
                         />
                     </div>
                     <div className="border rounded-md">
-                        {/* --- START: เพิ่ม TooltipProvider ครอบ Table --- */}
                         <TooltipProvider delayDuration={0}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Login Type</TableHead>
-                                        <TableHead>Radius Profile</TableHead>
-                                        <TableHead>Advertisement</TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
+                                        <TableHead>{t('table_headers.name')}</TableHead>
+                                        <TableHead>{t('table_headers.login_type')}</TableHead>
+                                        <TableHead>{t('table_headers.radius_profile')}</TableHead>
+                                        <TableHead>{t('table_headers.advertisement')}</TableHead>
+                                        <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -122,10 +125,9 @@ export default function OrganizationsPage() {
                                                     {org.advertisement ? (
                                                         <Badge variant="default">{org.advertisement.name}</Badge>
                                                     ) : (
-                                                        <Badge variant="secondary">Disabled</Badge>
+                                                        <Badge variant="secondary">{t('status.disabled')}</Badge>
                                                     )}
                                                 </TableCell>
-                                                {/* --- START: แก้ไขปุ่ม Action ทั้งหมด --- */}
                                                 <TableCell className="text-center">
                                                     <div className="inline-flex items-center justify-center gap-1">
                                                         <Tooltip>
@@ -134,7 +136,7 @@ export default function OrganizationsPage() {
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Edit Organization</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.edit')}</p></TooltipContent>
                                                         </Tooltip>
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -142,27 +144,25 @@ export default function OrganizationsPage() {
                                                                     <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </TooltipTrigger>
-                                                            <TooltipContent><p>Delete Organization</p></TooltipContent>
+                                                            <TooltipContent><p>{t('actions.delete')}</p></TooltipContent>
                                                         </Tooltip>
                                                     </div>
                                                 </TableCell>
-                                                {/* --- END --- */}
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="h-24 text-center">No organizations found.</TableCell>
+                                            <TableCell colSpan={5} className="h-24 text-center">{t('organizations_page.no_orgs_found')}</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
                             </Table>
                         </TooltipProvider>
-                         {/* --- END --- */}
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Label htmlFor="rows-per-page">{t('pagination.rows_per_page')}</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -171,14 +171,14 @@ export default function OrganizationsPage() {
                         </Select>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
+                        {t('pagination.page_info', { currentPage: pagination.currentPage, totalPages: pagination.totalPages, totalItems: pagination.totalItems || 0 })}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
-                            Previous
+                            {t('pagination.previous')}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
-                            Next
+                            {t('pagination.next')}
                         </Button>
                     </div>
                 </CardFooter>
@@ -196,15 +196,14 @@ export default function OrganizationsPage() {
             <AlertDialog open={!!orgToDelete} onOpenChange={(isOpen) => !isOpen && setOrgToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the organization: <strong>{orgToDelete?.name}</strong>.
-                            This action cannot be undone.
+                           {t('delete_org_dialog.description', { name: orgToDelete?.name })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_org_dialog.confirm')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

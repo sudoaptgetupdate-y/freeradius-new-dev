@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import { useTranslation } from "react-i18next"; // <-- Import
 
 export default function AttributeDefinitionFormDialog({ isOpen, setIsOpen, attribute, onSave }) {
+    const { t } = useTranslation(); // <-- เรียกใช้
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState({ name: '', description: '', type: 'reply' });
     const [isLoading, setIsLoading] = useState(false);
@@ -43,48 +45,49 @@ export default function AttributeDefinitionFormDialog({ isOpen, setIsOpen, attri
         const url = isEditMode ? `/attribute-definitions/${attribute.id}` : '/attribute-definitions';
         const method = isEditMode ? 'put' : 'post';
 
-        try {
-            await axiosInstance[method](url, formData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            toast.success(`Attribute ${isEditMode ? 'updated' : 'created'} successfully!`);
-            onSave();
-            setIsOpen(false);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "An error occurred.");
-        } finally {
-            setIsLoading(false);
-        }
+        toast.promise(
+            axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: t('toast.saving_attribute_def'),
+                success: () => {
+                    onSave();
+                    setIsOpen(false);
+                    return t(isEditMode ? 'toast.update_attribute_def_success' : 'toast.create_attribute_def_success');
+                },
+                error: (err) => err.response?.data?.message || t('toast.generic_error'),
+                finally: () => setIsLoading(false)
+            }
+        );
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit Attribute Definition' : 'Add New Attribute Definition'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? t('attribute_def_form_dialog.edit_title') : t('attribute_def_form_dialog.add_title')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Attribute Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., Session-Timeout" required />
+                        <Label htmlFor="name">{t('form_labels.attribute_name')}</Label>
+                        <Input id="name" value={formData.name} onChange={handleInputChange} placeholder={t('form_labels.attribute_name_placeholder')} required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="type">Attribute Type</Label>
+                        <Label htmlFor="type">{t('form_labels.attribute_type')}</Label>
                         <Select value={formData.type} onValueChange={handleTypeChange}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="reply">Reply</SelectItem>
-                                <SelectItem value="check">Check</SelectItem>
+                                <SelectItem value="reply">{t('reply')}</SelectItem>
+                                <SelectItem value="check">{t('check')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder="A short description of this attribute's purpose." />
+                        <Label htmlFor="description">{t('form_labels.description')}</Label>
+                        <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder={t('form_labels.attribute_description_placeholder')} />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</Button>
+                        <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? t('saving') : t('save')}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

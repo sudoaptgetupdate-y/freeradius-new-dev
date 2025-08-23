@@ -1,6 +1,6 @@
 // freeradius-frontend/src/pages/LoginPage.jsx
-import { useState, useEffect } from 'react'; // --- เพิ่ม useEffect ---
-import { useNavigate, Navigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,15 @@ import { CardContent, CardDescription, CardTitle, CardFooter } from '@/component
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { Separator } from '@/components/ui/separator'; 
+import { useTranslation } from 'react-i18next'; // <-- Import hook
 
 export default function LoginPage() {
+    const { t, i18n } = useTranslation(); // <-- เรียกใช้ hook
     const navigate = useNavigate();
-    const { login, token, user } = useAuthStore();
+    const { login, token } = useAuthStore();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    // --- START: เพิ่ม State สำหรับ appName ---
     const [appName, setAppName] = useState('Freeradius UI');
 
     useEffect(() => {
@@ -27,11 +27,9 @@ export default function LoginPage() {
                 }
             })
             .catch(() => {
-                // ไม่ต้องแสดง error หากโหลดชื่อไม่สำเร็จ ก็ใช้ชื่อ default ไป
                 console.warn("Could not load app name setting.");
             });
     }, []);
-    // --- END ---
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -40,11 +38,11 @@ export default function LoginPage() {
             const response = await axiosInstance.post('/auth/login', { username, password });
             const { token, user: userData } = response.data;
             login(token, userData);
-            toast.success(`Welcome, ${userData.fullName || userData.username}!`);
+            toast.success(t('toast.welcome', { name: userData.fullName || userData.username }));
             navigate('/dashboard');
         } catch (error) {
-            toast.error("Login Failed", {
-              description: error.response?.data?.message || "Please check your credentials.",
+            toast.error(t('toast.login_failed_title'), {
+              description: error.response?.data?.message || t('toast.login_failed_desc'),
             });
         } finally {
             setIsLoading(false);
@@ -59,25 +57,42 @@ export default function LoginPage() {
         <>
             <CardContent className="pt-0">
                 <div className="text-center mb-6">
-                    {/* --- START: แก้ไข CardTitle --- */}
                     <CardTitle>{appName}</CardTitle>
-                    {/* --- END --- */}
-                    <CardDescription>Please log in to continue.</CardDescription>
+                    <CardDescription>{t('login_page.description')}</CardDescription>
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus/>
+                        <Label htmlFor="username">{t('form_labels.username')}</Label>
+                        <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus placeholder={t('form_labels.username_placeholder_admin')} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <Label htmlFor="password">{t('form_labels.password')}</Label>
+                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? 'Logging in...' : 'Log In'}
+                        {isLoading ? t('logging_in') : t('log_in')}
                     </Button>
                 </form>
             </CardContent>
+            <CardFooter className="flex justify-center">
+                <div className="text-sm text-muted-foreground">
+                    <Button
+                        variant="link"
+                        className={`p-1 h-auto ${i18n.language === 'th' ? 'font-bold text-primary' : ''}`}
+                        onClick={() => i18n.changeLanguage('th')}
+                    >
+                        ภาษาไทย
+                    </Button>
+                    <span className="mx-1">|</span>
+                    <Button
+                        variant="link"
+                        className={`p-1 h-auto ${i18n.language === 'en' ? 'font-bold text-primary' : ''}`}
+                        onClick={() => i18n.changeLanguage('en')}
+                    >
+                        English
+                    </Button>
+                </div>
+            </CardFooter>
         </>
     );
 }
