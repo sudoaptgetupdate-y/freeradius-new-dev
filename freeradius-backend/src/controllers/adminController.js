@@ -41,8 +41,18 @@ const getAdmin = async (req, res, next) => {
 
 const updateAdmin = async (req, res, next) => {
     try {
-        const adminId = parseInt(req.params.id);
-        const updatedAdmin = await adminService.updateAdmin(adminId, req.body);
+        // --- START: เพิ่มโค้ดตรวจสอบสิทธิ์ ---
+        const adminIdToUpdate = parseInt(req.params.id);
+        const requestingAdminId = req.admin.id; // ID ของผู้ใช้ที่ส่ง request มา
+        const requestingAdminRole = req.admin.role; // Role ของผู้ใช้ที่ส่ง request มา
+
+        // ถ้าผู้ใช้เป็น 'admin' และพยายามแก้ไข ID ที่ไม่ใช่ของตัวเอง ให้ปฏิเสธ
+        if (requestingAdminRole === 'admin' && requestingAdminId !== adminIdToUpdate) {
+            return res.status(403).json({ success: false, message: 'Admins can only update their own profile.' });
+        }
+        // --- END ---
+
+        const updatedAdmin = await adminService.updateAdmin(adminIdToUpdate, req.body);
         res.status(200).json({ success: true, data: updatedAdmin });
     } catch (error) {
         next(error);

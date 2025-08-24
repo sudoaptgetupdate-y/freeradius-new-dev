@@ -115,7 +115,6 @@ export default function MainLayout() {
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
                 <div className="p-4 border-b flex items-center gap-3 h-[65px] overflow-hidden">
-                    {/* --- START: ส่วนที่แก้ไข --- */}
                     <img 
                         src="/uploads/nt-head-logo.png" 
                         alt="Logo" 
@@ -127,7 +126,6 @@ export default function MainLayout() {
                     )}>
                         NTIdentity Center
                     </h1>
-                    {/* --- END --- */}
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text={t('nav.dashboard')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
@@ -139,9 +137,7 @@ export default function MainLayout() {
                            {t('nav.section_users')}
                         </p>
                         <div className="space-y-1">
-                             <NavItem to="/organizations" icon={<Building size={18} />} text={t('nav.organizations')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                              <NavItem to="/users" icon={<Users size={18} />} text={t('nav.all_users')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                             <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text={t('nav.voucher_packages')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                              <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text={t('nav.voucher_batches')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                         </div>
                     </div>
@@ -151,28 +147,32 @@ export default function MainLayout() {
                            {t('nav.section_config')}
                         </p>
                          <div className="space-y-1">
+                            <NavItem to="/organizations" icon={<Building size={18} />} text={t('nav.organizations')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            {isSuperAdmin && (
-                               <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            )}
+                            <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text={t('nav.voucher_packages')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text={t('nav.advertisements')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text={t('nav.customization')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>
 
-                    {isSuperAdmin && (
-                         <div className="pt-2">
-                            <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                                {t('nav.section_system')}
-                            </p>
-                            <div className="space-y-1">
-                                <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                    <div className="pt-2">
+                        <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                            {t('nav.section_system')}
+                        </p>
+                        <div className="space-y-1">
+                            {isSuperAdmin && (
+                                <>
+                                    <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                </>
+                            )}
+                            <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            {isSuperAdmin && (
                                 <NavItem to="/log-management" icon={<ShieldCheck size={18} />} text={t('nav.log_management')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </nav>
             </aside>
 

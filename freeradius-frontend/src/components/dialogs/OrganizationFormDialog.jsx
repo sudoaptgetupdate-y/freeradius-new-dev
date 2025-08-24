@@ -9,16 +9,16 @@ import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import useSWR from 'swr';
-import { useTranslation } from "react-i18next"; // <-- Import
+import { useTranslation } from "react-i18next";
 
 export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave }) {
-    const { t } = useTranslation(); // <-- เรียกใช้
+    const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState({
         name: '',
         radiusProfileId: '',
         login_identifier_type: 'manual',
-        advertisementId: '',
+        advertisementId: null,
     });
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!org;
@@ -32,6 +32,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
     useEffect(() => {
         if (isOpen) {
             if (org) {
+                // --- Edit Mode ---
                 setFormData({
                     name: org.name || '',
                     radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
@@ -39,15 +40,17 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     advertisementId: org.advertisementId ? String(org.advertisementId) : '',
                 });
             } else {
+                // --- Add New Mode (แก้ไขส่วนนี้) ---
+                const defaultProfile = profiles?.find(p => p.name === 'default-profile');
                 setFormData({
                     name: '',
-                    radiusProfileId: '',
+                    radiusProfileId: defaultProfile ? String(defaultProfile.id) : '',
                     login_identifier_type: 'manual',
-                    advertisementId: '',
+                    advertisementId: null, // <-- ตั้งค่าเริ่มต้นเป็น null (None)
                 });
             }
         }
-    }, [org, isOpen]);
+    }, [org, isOpen, profiles]); // <-- เพิ่ม profiles ใน dependency array
 
     if (profilesError || adsError) {
         toast.error(t('toast.form_data_load_failed'));

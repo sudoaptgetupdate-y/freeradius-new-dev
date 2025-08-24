@@ -50,13 +50,13 @@ router.get('/', getAppSettings);
 router.post(
   '/',
   protect,
-  authorize('superadmin'),
+  authorize('superadmin', 'admin'),
   upload.fields([
     { name: 'logo', maxCount: 1 }, 
     { name: 'background', maxCount: 1 },
     { name: 'voucherLogo', maxCount: 1 }
   ]),
-  handleUploadErrors, // <-- 3. เพิ่ม Middleware จัดการ Error เข้ามา
+  handleUploadErrors,
   updateAppSettings
 );
 

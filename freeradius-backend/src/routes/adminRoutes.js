@@ -8,16 +8,17 @@ const router = express.Router();
 // ใช้ protect กับทุก route ในไฟล์นี้
 router.use(protect);
 
-// --- START: แก้ไขส่วนนี้ ---
 // GET routes: อนุญาตให้ทั้ง superadmin และ admin เข้าถึงได้
 router.get('/', authorize('superadmin', 'admin'), getAllAdmins);
 router.get('/:id', authorize('superadmin', 'admin'), getAdmin);
 
-// POST, PUT, DELETE routes: อนุญาตให้เฉพาะ superadmin เท่านั้น
+// POST, DELETE routes: อนุญาตให้เฉพาะ superadmin เท่านั้น
 router.post('/', authorize('superadmin'), createNewAdmin);
-router.put('/:id', authorize('superadmin'), updateAdmin);
 router.put('/:id/status', authorize('superadmin'), toggleStatus);
 router.delete('/:id', authorize('superadmin'), deleteAdminById);
+
+// PUT route: อนุญาตให้ superadmin และ admin เข้าถึงได้ (แต่จะไปเช็คสิทธิ์ละเอียดใน controller)
+router.put('/:id', authorize('superadmin', 'admin'), updateAdmin);
 // --- END ---
 
 module.exports = router;

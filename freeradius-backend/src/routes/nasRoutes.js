@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.use(protect);
 // --- START: แก้ไขส่วนนี้ ---
-router.use(authorize('superadmin'));
+router.use(authorize('superadmin', 'admin'));
 // --- END ---
 
 router.get('/', getAllNas);
