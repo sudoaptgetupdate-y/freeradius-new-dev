@@ -187,9 +187,7 @@ export default function AttributeManagementPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('delete_attribute_dialog.description', { name: attributeToDelete?.name })}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('delete_attribute_dialog.description', { name: attributeToDelete?.name }) }} />
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>

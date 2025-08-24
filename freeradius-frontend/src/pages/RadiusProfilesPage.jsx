@@ -263,9 +263,7 @@ export default function RadiusProfilesPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                           {t('delete_profile_dialog.description', { name: profileToDelete?.name })}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('delete_profile_dialog.description', { name: profileToDelete?.name }) }} />
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>

@@ -147,9 +147,7 @@ export default function NasPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('delete_nas_dialog.description', { name: nasToDelete?.nasname })}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('delete_nas_dialog.description', { name: nasToDelete?.nasname }) }} />
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>

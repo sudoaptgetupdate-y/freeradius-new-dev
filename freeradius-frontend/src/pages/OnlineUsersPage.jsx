@@ -264,9 +264,7 @@ export default function OnlineUsersPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('kick_dialog.title')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('kick_dialog.description', { username: userToKick?.username })}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('kick_dialog.description', { username: userToKick?.username }) }} />
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>

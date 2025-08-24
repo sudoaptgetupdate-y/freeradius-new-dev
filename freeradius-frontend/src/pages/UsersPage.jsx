@@ -23,7 +23,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { format } from 'date-fns';
-import { useTranslation } from "react-i18next"; // <-- 1. Import hook
+import { useTranslation, Trans } from "react-i18next"; // <-- 1. Import hook
 
 const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
     const isSorted = sortConfig.key === columnKey;
@@ -365,19 +365,31 @@ export default function UsersPage() {
             
             <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
                 <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle><AlertDialogDescription>{t('bulk_delete_dialog.description', { count: selectedUsers.length })}</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive hover:bg-destructive/90">{t('bulk_delete_dialog.confirm')}</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('bulk_delete_dialog.description', { count: selectedUsers.length }) }} />
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmBulkDelete} className="bg-destructive hover:bg-destructive/90">{t('bulk_delete_dialog.confirm')}</AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog open={!!userToToggle} onOpenChange={(isOpen) => !isOpen && setUserToToggle(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>{t('toggle_status_dialog.title')}</AlertDialogTitle><AlertDialogDescription>{t(userToToggle?.status === 'active' ? 'toggle_status_dialog.disable_desc' : 'toggle_status_dialog.enable_desc', { username: userToToggle?.username })}</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={confirmToggleStatus}>{t('confirm')}</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('toggle_status_dialog.title')}</AlertDialogTitle>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t(userToToggle?.status === 'active' ? 'toggle_status_dialog.disable_desc' : 'toggle_status_dialog.enable_desc', { username: userToToggle?.username }) }} />
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmToggleStatus}>{t('confirm')}</AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog open={!!userToDelete} onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}>
                 <AlertDialogContent>
-                    <AlertDialogHeader><AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle><AlertDialogDescription>{t('delete_dialog.description', { username: userToDelete?.username })}</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogHeader><AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle><AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('delete_dialog.description', { username: userToDelete?.username }) }} /></AlertDialogHeader>
                     <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_dialog.confirm')}</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

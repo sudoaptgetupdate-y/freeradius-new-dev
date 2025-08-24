@@ -145,9 +145,7 @@ export default function VoucherPackagesPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t('delete_package_dialog.description', { name: packageToDelete?.name })}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('delete_package_dialog.description', { name: packageToDelete?.name }) }} />
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>

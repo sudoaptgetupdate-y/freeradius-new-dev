@@ -15,10 +15,10 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import AdminFormDialog from "@/components/dialogs/AdminFormDialog";
-import { useTranslation } from "react-i18next"; // <-- 1. Import hook
+import { useTranslation } from "react-i18next"; 
 
 export default function AdminsPage() {
-    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
+    const { t } = useTranslation(); 
     const currentUser = useAuthStore((state) => state.user);
     const token = useAuthStore((state) => state.token);
 
@@ -96,16 +96,15 @@ export default function AdminsPage() {
     const getDialogDescription = () => {
         if (!adminToAction) return '';
         if (actionType === 'delete') {
-            return t('delete_admin_dialog.description', { username: adminToAction.username });
+            return t('delete_admin_dialog.description', { username: `<strong>${adminToAction.username}</strong>` });
         }
         if (actionType === 'toggle') {
-            const nextStatus = adminToAction.status === 'active' ? 'disable' : 'enable';
-            return t(`toggle_admin_status_dialog.${nextStatus}_desc`, { username: adminToAction.username });
+            const nextStatusKey = adminToAction.status === 'active' ? 'disable_desc' : 'enable_desc';
+            return t(`toggle_admin_status_dialog.${nextStatusKey}`, { username: `<strong>${adminToAction.username}</strong>` });
         }
         return '';
     };
 
-    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
@@ -219,9 +218,7 @@ export default function AdminsPage() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {getDialogDescription()}
-                        </AlertDialogDescription>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: getDialogDescription() }} />
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
