@@ -5,21 +5,21 @@
     "dashboard": "แดชบอร์ด",
     "online_users": "ผู้ใช้ออนไลน์",
     "history": "ประวัติการใช้งาน",
-    "section_users": "การจัดการผู้ใช้",
-    "all_users": "ผู้ใช้ทั้งหมด",
-    "voucher_batches": "ออกการ์ดรายวัน",
+    "section_users": "จัดการผู้ใช้",
+    "all_users": "จัดการผู้ใช้งาน",
+    "voucher_batches": "จัดการบัตรรายวัน",
     "section_config": "การตั้งค่า",
-    "organizations": "กลุ่มผู้ใช้",
-    "radius_profiles": "โปรไฟล์ Radius",
-    "nas": "อุปกรณ์ NAS",
-    "voucher_packages": "แพ็กเกจการ์ด",
-    "advertisements": "โฆษณา",
-    "customization": "ปรับแต่ง",
+    "organizations": "จัดการกลุ่มผู้ใช้",
+    "radius_profiles": "จัดการโปรไฟล์กลุ่ม",
+    "nas": "จัดการอุปกรณ์ NAS",
+    "voucher_packages": "จัดการ Package บัตรรายวัน",
+    "advertisements": "จัดการโฆษณา",
+    "customization": "ปรับแต่งหน้าเว็บ",
     "section_system": "ระบบ",
     "admins": "ผู้ดูแลระบบ",
-    "attributes": "แอตทริบิวต์",
+    "attributes": "จัดการแอตทริบิวต์",
     "system_settings": "ตั้งค่าระบบ",
-    "log_management": "การจัดการล็อก"
+    "log_management": "จัดการล็อกไฟล์"
   },
   "dashboard": "แดชบอร์ด",
   "welcome_back": "ยินดีต้อนรับกลับมา, {{name}}!",
@@ -151,17 +151,17 @@
     "confirm_clear": "ยืนยันการล้าง"
   },
   "voucher_batches_page": {
-    "title": "ออกการ์ดรายวัน",
+    "title": "จัดการบัตรรายวัน",
     "description": "ประวัติการสร้างออกการ์ดรายวันทั้งหมด",
     "voucher_settings": "ตั้งค่าการ์ด",
     "add_package": "เพิ่มแพ็กเกจใหม่",
     "add_batch": "สร้างชุดใหม่",
     "search_placeholder": "ค้นหาด้วยแพ็กเกจ, ผู้สร้าง...",
     "filter_package_placeholder": "กรองตามแพ็กเกจ...",
-    "no_batches_found": "ไม่พบข้อมูลออกการ์ดรายวัน"
+    "no_batches_found": "ไม่พบข้อมูลออกบัตรรายวัน"
   },
   "generate_voucher_dialog": {
-    "title": "สร้างออกการ์ดรายวันใหม่",
+    "title": "สร้างบัตรรายวันใหม่",
     "description": "สร้างชุดผู้ใช้ใหม่ในรูปแบบการ์ดตามแพ็กเกจที่กำหนด"
   },
   "voucher_settings_dialog": {
@@ -176,8 +176,8 @@
     "no_logo": "(ไม่มีโลโก้)"
   },
   "package_form_dialog": {
-    "edit_title": "แก้ไขแพ็กเกจการ์ด",
-    "add_title": "เพิ่มแพ็กเกจการ์ดใหม่"
+    "edit_title": "แก้ไขPackage บัตรรายวัน",
+    "add_title": "เพิ่มPackage บัตรรายวันใหม่"
   },
   "organizations_page": {
     "title": "กลุ่มผู้ใช้",
@@ -597,7 +597,7 @@
   "loading_packages": "กำลังโหลดแพ็กเกจ...",
   "load_packages_failed": "ไม่สามารถโหลดแพ็กเกจได้",
   "voucher_packages_page": {
-    "title": "แพ็กเกจการ์ด",
+    "title": "Package บัตรรายวัน",
     "description": "จัดการแพ็กเกจสำหรับสร้างการ์ด",
     "add_new_button": "เพิ่มแพ็กเกจใหม่",
     "no_packages_found": "ไม่พบแพ็กเกจ คลิก \"เพิ่มแพ็กเกจใหม่\" เพื่อเริ่มต้น"
@@ -746,7 +746,7 @@
   "add_ip": "เพิ่ม IP",
   "save_ip_changes": "บันทึกการเปลี่ยนแปลง IP",
   "log_management_page": {
-    "title": "การจัดการล็อก",
+    "title": "จัดการล็อก",
     "description": "ตรวจสอบและจัดการไฟล์ล็อกของระบบ",
     "tabs": {
         "archive": "ไฟล์ล็อก",
