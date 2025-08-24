@@ -9,11 +9,39 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { History, ArrowUpDown } from "lucide-react";
+import { History, ArrowUpDown, CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format, formatDistanceStrict } from 'date-fns';
+import { th, enUS } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
-import { useTranslation } from "react-i18next"; // <-- 1. Import useTranslation
+import { useTranslation } from "react-i18next";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
+// --- START: เพิ่ม Helper Function สำหรับจัดการวันที่ พ.ศ. ---
+const formatDateLocalized = (date, language = 'en', options = {}) => {
+    const { withTime = false } = options;
+    if (!date) return '';
+    const d = new Date(date);
+    
+    // กำหนด Pattern พื้นฐาน
+    const pattern = withTime ? 'dd/MM/yyyy, HH:mm:ss' : 'dd/MM/yyyy';
+
+    // ถ้าเป็นภาษาไทย ให้แปลงปี ค.ศ. เป็น พ.ศ.
+    if (language === 'th') {
+        const yearAD = d.getFullYear();
+        const yearBE = yearAD + 543;
+        // ใช้ format ของ date-fns เพื่อให้ได้ชื่อเดือน/วันที่ถูกต้องตาม locale
+        const baseFormatted = format(d, pattern, { locale: th });
+        // จากนั้นแทนที่เฉพาะส่วนของปีที่เป็น ค.ศ. ด้วย พ.ศ.
+        return baseFormatted.replace(yearAD.toString(), yearBE.toString());
+    }
+    
+    // ถ้าเป็นภาษาอื่น ให้ใช้ format ปกติ
+    return format(d, pattern, { locale: enUS });
+};
+// --- END ---
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -37,12 +65,12 @@ const formatMacAddress = (mac) => {
     return (cleanedMac.match(/.{1,2}/g) || []).join(':').toUpperCase();
 };
 
-const calculateDuration = (startTime, stopTime) => {
+const calculateDuration = (startTime, stopTime, locale) => {
     if (!startTime) return 'N/A';
     if (!stopTime) {
-        return formatDistanceStrict(new Date(), new Date(startTime));
+        return formatDistanceStrict(new Date(), new Date(startTime), { locale });
     }
-    return formatDistanceStrict(new Date(stopTime), new Date(startTime));
+    return formatDistanceStrict(new Date(stopTime), new Date(startTime), { locale });
 };
 
 const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
@@ -67,15 +95,17 @@ const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
 };
 
 export default function HistoryPage() {
-    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
+    const { t, i18n } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const [organizations, setOrganizations] = useState([]);
     const [filters, setFilters] = useState({
         organizationId: "",
-        startDate: "",
-        endDate: "",
+        startDate: null,
+        endDate: null,
     });
     const [sortConfig, setSortConfig] = useState({ key: 'logintime', direction: 'desc' });
+    
+    const currentLocale = i18n.language === 'th' ? th : enUS;
 
     const { 
         data: history, 
@@ -86,8 +116,10 @@ export default function HistoryPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData 
-    } = usePaginatedFetch("/history", 15, { // <-- เพิ่มจำนวนแถวเริ่มต้นเป็น 15
-        ...filters,
+    } = usePaginatedFetch("/history", 15, {
+        organizationId: filters.organizationId,
+        startDate: filters.startDate ? format(filters.startDate, 'yyyy-MM-dd') : '',
+        endDate: filters.endDate ? format(filters.endDate, 'yyyy-MM-dd') : '',
         sortBy: sortConfig.key,
         sortOrder: sortConfig.direction,
     });
@@ -110,7 +142,6 @@ export default function HistoryPage() {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <Card>
             <CardHeader>
@@ -139,8 +170,24 @@ export default function HistoryPage() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
-                    <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.startDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {filters.startDate ? formatDateLocalized(filters.startDate, i18n.language) : <span>{t('form_labels.start_date')}</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date)} initialFocus locale={currentLocale} /></PopoverContent>
+                    </Popover>
+                     <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.endDate && "text-muted-foreground")}>
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {filters.endDate ? formatDateLocalized(filters.endDate, i18n.language) : <span>{t('form_labels.end_date')}</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date)} initialFocus locale={currentLocale} /></PopoverContent>
+                    </Popover>
                 </div>
                 <div className="border rounded-md">
                     <Table>
@@ -171,15 +218,15 @@ export default function HistoryPage() {
                                         <TableRow key={rec.radacctid}>
                                             <TableCell className="font-medium">{rec.full_name}<br/><span className="text-xs text-muted-foreground">{rec.username}</span></TableCell>
                                             <TableCell className="font-mono">{rec.framedipaddress}</TableCell>
-                                            <TableCell>{rec.acctstarttime ? format(new Date(rec.acctstarttime), 'dd/MM/yyyy HH:mm:ss') : 'N/A'}</TableCell>
+                                            <TableCell>{rec.acctstarttime ? formatDateLocalized(rec.acctstarttime, i18n.language, { withTime: true }) : 'N/A'}</TableCell>
                                             <TableCell>
                                                 {rec.acctstoptime ? (
-                                                    format(new Date(rec.acctstoptime), 'dd/MM/yyyy HH:mm:ss')
+                                                    formatDateLocalized(rec.acctstoptime, i18n.language, { withTime: true })
                                                 ) : (
                                                     <Badge variant="success" className="w-auto">{t('status.still_online')}</Badge>
                                                 )}
                                             </TableCell>
-                                            <TableCell>{calculateDuration(rec.acctstarttime, rec.acctstoptime)}</TableCell>
+                                            <TableCell>{calculateDuration(rec.acctstarttime, rec.acctstoptime, currentLocale)}</TableCell>
                                             <TableCell className="font-mono">{formatMacAddress(rec.callingstationid)}</TableCell>
                                             <TableCell>{formatBytes(dataUp)}</TableCell>
                                             <TableCell>{formatBytes(dataDown)}</TableCell>

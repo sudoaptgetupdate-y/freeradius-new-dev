@@ -9,24 +9,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { History, Printer, PlusCircle, Settings, Ticket } from 'lucide-react';
+import { History, Printer, PlusCircle, Settings, Ticket, CalendarIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import VoucherGenerationDialog from '@/components/dialogs/VoucherGenerationDialog';
 import VoucherSettingsDialog from '@/components/dialogs/VoucherSettingsDialog';
 import PackageFormDialog from '@/components/dialogs/PackageFormDialog';
-import { useTranslation } from 'react-i18next'; // <-- 1. Import useTranslation
+import { useTranslation } from 'react-i18next';
+// --- START: Import Component และฟังก์ชันที่จำเป็น ---
+import { format } from 'date-fns';
+import { th, enUS } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+// --- END ---
+
+// --- START: เพิ่ม Helper Function สำหรับจัดการวันที่ พ.ศ. ---
+const formatDateLocalized = (date, language = 'en', options = {}) => {
+    const { withTime = false } = options;
+    if (!date) return '';
+    const d = new Date(date);
+    
+    const pattern = withTime ? 'dd/MM/yyyy, HH:mm:ss' : 'dd/MM/yyyy';
+
+    if (language === 'th') {
+        const yearAD = d.getFullYear();
+        const yearBE = yearAD + 543;
+        const baseFormatted = format(d, pattern, { locale: th });
+        return baseFormatted.replace(yearAD.toString(), yearBE.toString());
+    }
+    
+    return format(d, pattern, { locale: enUS });
+};
+// --- END ---
 
 export default function VoucherBatchesPage() {
-    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
+    const { t, i18n } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const navigate = useNavigate();
 
     const [filters, setFilters] = useState({
         packageId: "",
         adminId: "",
-        startDate: "",
-        endDate: "",
+        startDate: null,
+        endDate: null,
     });
     
     const [packages, setPackages] = useState([]);
@@ -34,6 +60,8 @@ export default function VoucherBatchesPage() {
     const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
     const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
+    
+    const currentLocale = i18n.language === 'th' ? th : enUS;
 
     const {
         data: batches,
@@ -44,7 +72,11 @@ export default function VoucherBatchesPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    } = usePaginatedFetch("/vouchers/batches", 15, filters); // <-- เพิ่มจำนวนแถวเริ่มต้น
+    } = usePaginatedFetch("/vouchers/batches", 15, {
+        ...filters,
+        startDate: filters.startDate ? format(filters.startDate, 'yyyy-MM-dd') : '',
+        endDate: filters.endDate ? format(filters.endDate, 'yyyy-MM-dd') : ''
+    });
 
     useEffect(() => {
         const fetchDataForFilters = async () => {
@@ -66,40 +98,25 @@ export default function VoucherBatchesPage() {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <>
             <Card>
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
                         <div>
-                            <CardTitle className="flex items-center gap-2">
-                                <History className="h-6 w-6" />
-                                {t('voucher_batches_page.title')}
-                            </CardTitle>
+                            <CardTitle className="flex items-center gap-2"><History className="h-6 w-6" />{t('voucher_batches_page.title')}</CardTitle>
                             <CardDescription>{t('voucher_batches_page.description')}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-                            <Button variant="outline" size="sm" onClick={() => setIsSettingsDialogOpen(true)}>
-                                <Settings className="mr-2 h-4 w-4" /> {t('voucher_batches_page.voucher_settings')}
-                            </Button>
-                             <Button variant="outline" size="sm" onClick={() => setIsPackageDialogOpen(true)}>
-                                <Ticket className="mr-2 h-4 w-4" /> {t('voucher_batches_page.add_package')}
-                            </Button>
-                            <Button size="sm" onClick={() => setIsGenerateDialogOpen(true)}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> {t('voucher_batches_page.add_batch')}
-                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setIsSettingsDialogOpen(true)}><Settings className="mr-2 h-4 w-4" /> {t('voucher_batches_page.voucher_settings')}</Button>
+                            <Button variant="outline" size="sm" onClick={() => setIsPackageDialogOpen(true)}><Ticket className="mr-2 h-4 w-4" /> {t('voucher_batches_page.add_package')}</Button>
+                            <Button size="sm" onClick={() => setIsGenerateDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> {t('voucher_batches_page.add_batch')}</Button>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                        <Input
-                            placeholder={t('voucher_batches_page.search_placeholder')}
-                            value={searchTerm}
-                            onChange={(e) => handleSearchChange(e.target.value)}
-                            className="lg:col-span-3"
-                        />
+                        <Input placeholder={t('voucher_batches_page.search_placeholder')} value={searchTerm} onChange={(e) => handleSearchChange(e.target.value)} className="lg:col-span-3"/>
                         <Select value={filters.packageId} onValueChange={(value) => handleFilterChange('packageId', value === 'all' ? '' : value)}>
                             <SelectTrigger><SelectValue placeholder={t('voucher_batches_page.filter_package_placeholder')} /></SelectTrigger>
                             <SelectContent>
@@ -107,8 +124,24 @@ export default function VoucherBatchesPage() {
                                 {packages.map((p) => (<SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>))}
                             </SelectContent>
                         </Select>
-                        <Input type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
-                        <Input type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.startDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {filters.startDate ? formatDateLocalized(filters.startDate, i18n.language) : <span>{t('form_labels.start_date')}</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date)} initialFocus locale={currentLocale} /></PopoverContent>
+                        </Popover>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.endDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {filters.endDate ? formatDateLocalized(filters.endDate, i18n.language) : <span>{t('form_labels.end_date')}</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date)} initialFocus locale={currentLocale} /></PopoverContent>
+                        </Popover>
                     </div>
                     <div className="border rounded-md">
                         <Table>
@@ -129,7 +162,7 @@ export default function VoucherBatchesPage() {
                                 ) : batches.length > 0 ? (
                                     batches.map((batch) => (
                                         <TableRow key={batch.id}>
-                                            <TableCell>{new Date(batch.createdAt).toLocaleString()}</TableCell>
+                                            <TableCell>{formatDateLocalized(batch.createdAt, i18n.language, { withTime: true })}</TableCell>
                                             <TableCell>{batch.packageName}</TableCell>
                                             <TableCell className="text-center">{batch.quantity}</TableCell>
                                             <TableCell>{batch.createdBy?.fullName || batch.createdBy?.username || 'N/A'}</TableCell>
@@ -173,29 +206,9 @@ export default function VoucherBatchesPage() {
                 </CardFooter>
             </Card>
             
-            {isGenerateDialogOpen && (
-                <VoucherGenerationDialog 
-                    isOpen={isGenerateDialogOpen}
-                    setIsOpen={setIsGenerateDialogOpen}
-                    onGenerationSuccess={refreshData}
-                />
-            )}
-            
-            {isSettingsDialogOpen && (
-                <VoucherSettingsDialog
-                    isOpen={isSettingsDialogOpen}
-                    setIsOpen={setIsSettingsDialogOpen}
-                />
-            )}
-
-            {isPackageDialogOpen && (
-                <PackageFormDialog
-                    isOpen={isPackageDialogOpen}
-                    setIsOpen={setIsPackageDialogOpen}
-                    pkg={null}
-                    onSave={refreshData}
-                />
-            )}
+            {isGenerateDialogOpen && ( <VoucherGenerationDialog isOpen={isGenerateDialogOpen} setIsOpen={setIsGenerateDialogOpen} onGenerationSuccess={refreshData} /> )}
+            {isSettingsDialogOpen && ( <VoucherSettingsDialog isOpen={isSettingsDialogOpen} setIsOpen={setIsSettingsDialogOpen} /> )}
+            {isPackageDialogOpen && ( <PackageFormDialog isOpen={isPackageDialogOpen} setIsOpen={setIsPackageDialogOpen} pkg={null} onSave={refreshData} /> )}
         </>
     );
 }

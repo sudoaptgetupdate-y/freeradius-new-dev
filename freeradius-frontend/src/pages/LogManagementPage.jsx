@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, ShieldCheck, Trash2 } from 'lucide-react';
+import { Download, ShieldCheck, Trash2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { th, enUS } from 'date-fns/locale';
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
@@ -20,9 +21,30 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
+import { useTranslation } from 'react-i18next';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
 
 const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
+
+const formatDateLocalized = (date, language = 'en', options = {}) => {
+    const { withTime = false } = options;
+    if (!date) return '';
+    const d = new Date(date);
+    
+    const pattern = withTime ? 'dd/MM/yyyy, HH:mm:ss' : 'dd/MM/yyyy';
+
+    if (language === 'th') {
+        const yearAD = d.getFullYear();
+        const yearBE = yearAD + 543;
+        const baseFormatted = format(d, pattern, { locale: th });
+        return baseFormatted.replace(yearAD.toString(), yearBE.toString());
+    }
+    
+    return format(d, pattern, { locale: enUS });
+};
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -88,13 +110,15 @@ const DashboardTab = ({ token }) => {
 };
 
 const LogArchiveTab = ({ token }) => {
-    const { t } = useTranslation();
-    const [filters, setFilters] = useState({ startDate: '', endDate: '' });
+    const { t, i18n } = useTranslation();
+    const [filters, setFilters] = useState({ startDate: null, endDate: null });
     const [pagination, setPagination] = useState({ currentPage: 1, itemsPerPage: 15 });
+    
+    const currentLocale = i18n.language === 'th' ? th : enUS;
 
     const queryParams = new URLSearchParams({ page: pagination.currentPage, pageSize: pagination.itemsPerPage });
-    if (filters.startDate) queryParams.append('startDate', filters.startDate);
-    if (filters.endDate) queryParams.append('endDate', filters.endDate);
+    if (filters.startDate) queryParams.append('startDate', format(filters.startDate, 'yyyy-MM-dd'));
+    if (filters.endDate) queryParams.append('endDate', format(filters.endDate, 'yyyy-MM-dd'));
 
     const { data: responseData, error, isLoading } = useSWR(`/logs/files?${queryParams.toString()}`, (url) => fetcher(url, token), { revalidateOnFocus: false });
     
@@ -143,11 +167,27 @@ const LogArchiveTab = ({ token }) => {
                 <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <div className="flex-1 space-y-2">
                         <Label htmlFor="startDate">{t('form_labels.start_date')}</Label>
-                        <Input id="startDate" type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.startDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {filters.startDate ? formatDateLocalized(filters.startDate, i18n.language) : <span>{t('form_labels.start_date')}</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date)} initialFocus locale={currentLocale} /></PopoverContent>
+                        </Popover>
                     </div>
                     <div className="flex-1 space-y-2">
                         <Label htmlFor="endDate">{t('form_labels.end_date')}</Label>
-                        <Input id="endDate" type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.endDate && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {filters.endDate ? formatDateLocalized(filters.endDate, i18n.language) : <span>{t('form_labels.end_date')}</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date)} initialFocus locale={currentLocale} /></PopoverContent>
+                        </Popover>
                     </div>
                 </div>
                 <div className="border rounded-md max-h-[60vh] overflow-y-auto">
@@ -170,7 +210,7 @@ const LogArchiveTab = ({ token }) => {
                                     <TableCell className="font-mono">{file.host}</TableCell>
                                     <TableCell className="font-mono">{file.name}</TableCell>
                                     <TableCell>{formatBytes(file.size)}</TableCell>
-                                    <TableCell>{format(new Date(file.modified), 'Pp')}</TableCell>
+                                    <TableCell>{formatDateLocalized(file.modified, i18n.language, { withTime: true })}</TableCell>
                                     <TableCell className="text-right">
                                         <Button size="sm" variant="outline" onClick={() => handleDownload(file.id, file.name)}>
                                             <Download className="mr-2 h-4 w-4" /> {t('download')}
@@ -205,14 +245,20 @@ const LogArchiveTab = ({ token }) => {
 };
 
 const DownloadHistoryTab = ({ token }) => {
-    const { t } = useTranslation();
-    const [filters, setFilters] = useState({ adminId: '', startDate: '', endDate: '', hostname: '' });
+    const { t, i18n } = useTranslation();
+    const [filters, setFilters] = useState({ adminId: '', startDate: null, endDate: null, hostname: '' });
     
     const { data: admins } = useSWR('/admins', (url) => fetcher(url, token));
     const { data: hostnames } = useSWR('/logs/hostnames', (url) => fetcher(url, token));
 
-    const { data: history, pagination, isLoading, handlePageChange, handleItemsPerPageChange } = usePaginatedFetch("/logs/history", 15, filters);
+    const { data: history, pagination, isLoading, handlePageChange, handleItemsPerPageChange } = usePaginatedFetch("/logs/history", 15, {
+        ...filters,
+        startDate: filters.startDate ? format(filters.startDate, 'yyyy-MM-dd') : '',
+        endDate: filters.endDate ? format(filters.endDate, 'yyyy-MM-dd') : ''
+    });
     
+    const currentLocale = i18n.language === 'th' ? th : enUS;
+
     const handleFilterChange = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
 
     if (isLoading && !history) return <div className="p-4 text-center">{t('loading_history')}</div>;
@@ -225,15 +271,15 @@ const DownloadHistoryTab = ({ token }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div className="space-y-2"><Label htmlFor="adminFilter">{t('administrator')}</Label><Select value={filters.adminId} onValueChange={(value) => handleFilterChange('adminId', value === 'all' ? '' : value)}><SelectTrigger id="adminFilter"><SelectValue placeholder={t('filter_by_admin')} /></SelectTrigger><SelectContent><SelectItem value="all">{t('all_admins')}</SelectItem>{admins?.map(admin => (<SelectItem key={admin.id} value={String(admin.id)}>{admin.fullName || admin.username}</SelectItem>))}</SelectContent></Select></div>
                     <div className="space-y-2"><Label htmlFor="hostnameFilter">{t('hostname')}</Label><Select value={filters.hostname} onValueChange={(value) => handleFilterChange('hostname', value === 'all' ? '' : value)}><SelectTrigger id="hostnameFilter"><SelectValue placeholder={t('filter_by_hostname')} /></SelectTrigger><SelectContent><SelectItem value="all">{t('all_hostnames')}</SelectItem>{hostnames?.map(host => (<SelectItem key={host} value={host}>{host}</SelectItem>))}</SelectContent></Select></div>
-                    <div className="space-y-2"><Label htmlFor="startDateHistory">{t('form_labels.start_date')}</Label><Input id="startDateHistory" type="date" value={filters.startDate} onChange={(e) => handleFilterChange('startDate', e.target.value)} /></div>
-                    <div className="space-y-2"><Label htmlFor="endDateHistory">{t('form_labels.end_date')}</Label><Input id="endDateHistory" type="date" value={filters.endDate} onChange={(e) => handleFilterChange('endDate', e.target.value)} /></div>
+                    <div className="space-y-2"><Label htmlFor="startDateHistory">{t('form_labels.start_date')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.startDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{filters.startDate ? formatDateLocalized(filters.startDate, i18n.language) : <span>{t('form_labels.start_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.startDate} onSelect={(date) => handleFilterChange('startDate', date)} initialFocus locale={currentLocale} /></PopoverContent></Popover></div>
+                    <div className="space-y-2"><Label htmlFor="endDateHistory">{t('form_labels.end_date')}</Label><Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !filters.endDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{filters.endDate ? formatDateLocalized(filters.endDate, i18n.language) : <span>{t('form_labels.end_date')}</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={filters.endDate} onSelect={(date) => handleFilterChange('endDate', date)} initialFocus locale={currentLocale} /></PopoverContent></Popover></div>
                 </div>
                  <div className="border rounded-md">
                     <Table>
                         <TableHeader><TableRow><TableHead>{t('table_headers.hostname')}</TableHead><TableHead>{t('table_headers.timestamp')}</TableHead><TableHead>{t('administrator')}</TableHead><TableHead>{t('table_headers.filename')}</TableHead><TableHead>{t('table_headers.source_ip')}</TableHead></TableRow></TableHeader>
                         <TableBody>
                              {history.length > 0 ? history.map(entry => (
-                                <TableRow key={entry.id}><TableCell className="font-mono text-sm">{entry.hostname}</TableCell><TableCell>{format(new Date(entry.createdAt), 'Pp')}</TableCell><TableCell>{entry.admin.fullName || entry.admin.username}</TableCell><TableCell className="font-mono">{entry.fileName}</TableCell><TableCell className="font-mono">{entry.ipAddress}</TableCell></TableRow>
+                                <TableRow key={entry.id}><TableCell className="font-mono text-sm">{entry.hostname}</TableCell><TableCell>{formatDateLocalized(entry.createdAt, i18n.language, { withTime: true })}</TableCell><TableCell>{entry.admin.fullName || entry.admin.username}</TableCell><TableCell className="font-mono">{entry.fileName}</TableCell><TableCell className="font-mono">{entry.ipAddress}</TableCell></TableRow>
                             )) : (<TableRow><TableCell colSpan={5} className="text-center h-24">{t('no_history_found_criteria')}</TableCell></TableRow>)}
                         </TableBody>
                     </Table>
