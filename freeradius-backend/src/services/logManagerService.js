@@ -8,16 +8,11 @@ const prisma = require('../prisma');
 const IS_PROD = os.platform() === 'linux';
 const LOG_DIR = IS_PROD ? '/var/log/devices' : 'D:/fake_logs/devices';
 
-const SCRIPT_DIR = IS_PROD ? '/var/www/freeradius-app/freeradius-backend/scripts' : 'D:/fake_logs';
 const RSYSLOG_CONFIG_FILE = IS_PROD ? '/etc/rsyslog.d/50-devices.conf' : 'D:/fake_logs/50-devices.conf';
-const MANAGE_SCRIPT_PATH = path.join(SCRIPT_DIR, 'manage-device-logs.sh');
-const FAILSAFE_SCRIPT_PATH = path.join(SCRIPT_DIR, 'clear-oldest-logs-failsafe.sh');
-// --- START: NEW SCRIPT PATH ---
-const UPDATE_RSYSLOG_SCRIPT_PATH = path.join(SCRIPT_DIR, 'update-rsyslog-config.sh');
-// --- END: NEW SCRIPT PATH ---
+const MANAGE_SCRIPT_PATH = IS_PROD ? '/usr/local/bin/manage-device-logs.sh' : 'D:/fake_logs/manage-device-logs.sh';
+const FAILSAFE_SCRIPT_PATH = IS_PROD ? '/usr/local/bin/clear-oldest-logs-failsafe.sh' : 'D:/fake_logs/clear-oldest-logs-failsafe.sh';
 
-
-// --- Mock Data Functions (unaltered) ---
+// --- Mock Data Functions ---
 const getMockDashboardData = () => ({
     diskUsage: { size: '50G', used: '25G', available: '25G', usePercent: '50%' },
     gpgKey: { recipient: 'local-dev-admin@example.com' },
@@ -365,13 +360,8 @@ const updateDeviceIps = async (config) => {
             .map(ip => `if $fromhost-ip == '${ip}' then {\n    action(type="omfile" dynaFile="DeviceLog")\n    stop\n}`)
             .join('\n');
         const newRsyslogContent = `${templateString}\n\n${rulesString}\n`;
-        
-        // --- START: UPDATED LOGIC ---
-        // Use the new script to write the file, passing the content as a shell-safe argument
-        await executeCommand(`sudo ${UPDATE_RSYSLOG_SCRIPT_PATH} "${newRsyslogContent}"`);
-        // --- END: UPDATED LOGIC ---
-        
-        console.log('[Config Update] Successfully wrote to rsyslog config via script.');
+        await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
+        console.log('[Config Update] Successfully wrote to rsyslog config.');
 
         if (config.deviceIPsChanged) {
             console.log('[Config Update] IP list changed. Attempting to restart rsyslog service...');
