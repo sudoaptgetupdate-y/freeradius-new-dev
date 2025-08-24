@@ -139,7 +139,9 @@ export default function MainLayout() {
                            {t('nav.section_users')}
                         </p>
                         <div className="space-y-1">
+                             <NavItem to="/organizations" icon={<Building size={18} />} text={t('nav.organizations')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                              <NavItem to="/users" icon={<Users size={18} />} text={t('nav.all_users')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                             <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text={t('nav.voucher_packages')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                              <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text={t('nav.voucher_batches')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                         </div>
                     </div>
@@ -149,12 +151,10 @@ export default function MainLayout() {
                            {t('nav.section_config')}
                         </p>
                          <div className="space-y-1">
-                            <NavItem to="/organizations" icon={<Building size={18} />} text={t('nav.organizations')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             {isSuperAdmin && (
                                <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             )}
-                            <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text={t('nav.voucher_packages')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text={t('nav.advertisements')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text={t('nav.customization')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
