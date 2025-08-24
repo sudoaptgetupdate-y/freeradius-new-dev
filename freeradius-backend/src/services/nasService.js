@@ -4,27 +4,27 @@ const { exec } = require('child_process');
 const os = require('os');
 
 /**
- * Helper function to execute a shell command for reloading FreeRADIUS.
+ * Helper function to execute a shell command for restarting FreeRADIUS.
  * This function now returns a Promise.
  */
-const reloadFreeradiusService = () => {
+const restartFreeradiusService = () => {
   return new Promise((resolve, reject) => {
     if (os.platform() !== 'linux') {
-      console.log('[NAS Service] Non-Linux platform detected. Skipping service reload.');
+      console.log('[NAS Service] Non-Linux platform detected. Skipping service restart.');
       // หากไม่ใช่ Linux ให้ถือว่าสำเร็จไปเลย
-      return resolve('Skipped service reload on non-Linux OS.');
+      return resolve('Skipped service restart on non-Linux OS.');
     }
 
-    console.log('[NAS Service] Linux platform detected. Attempting to reload FreeRADIUS service...');
-    exec('sudo /bin/systemctl reload freeradius.service', (error, stdout, stderr) => {
+    console.log('[NAS Service] Linux platform detected. Attempting to restart FreeRADIUS service...');
+    exec('sudo /bin/systemctl restart freeradius.service', (error, stdout, stderr) => {
       if (error) {
-        const errorMessage = `[NAS Service] EXEC ERROR: Failed to reload FreeRADIUS: ${stderr || error.message}`;
+        const errorMessage = `[NAS Service] EXEC ERROR: Failed to restart FreeRADIUS: ${stderr || error.message}`;
         console.error(errorMessage);
         // Reject a promise if there's an error.
         return reject(new Error(errorMessage));
       }
       
-      const successMessage = `[NAS Service] SUCCESS: FreeRADIUS reloaded successfully. Output: ${stdout}`;
+      const successMessage = `[NAS Service] SUCCESS: FreeRADIUS restarted successfully. Output: ${stdout}`;
       console.log(successMessage);
       // Resolve the promise on success.
       resolve(successMessage);
@@ -56,14 +56,14 @@ const createNas = async (nasData) => {
     },
   });
 
-  // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ reload
+  // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ restart
   try {
-    await reloadFreeradiusService();
+    await restartFreeradiusService();
   } catch (reloadError) {
     // โยน Error ต่อไปเพื่อให้ Controller หรือส่วนอื่นๆ จัดการ
     // หรืออาจจะแค่ Log ไว้โดยไม่ขัดขวางการทำงานหลักก็ได้
-    console.error('Service reload failed after creating NAS, but the NAS was saved to the database.');
-    // throw new Error('NAS created, but failed to reload service.'); // Uncomment if you want to notify the user
+    console.error('Service restart failed after creating NAS, but the NAS was saved to the database.');
+    // throw new Error('NAS created, but failed to restart service.'); // Uncomment if you want to notify the user
   }
 
   return newNas;
@@ -86,12 +86,12 @@ const updateNas = async (id, nasData) => {
         data: dataToUpdate
     });
     
-    // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ reload
+    // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ restart
     try {
-        await reloadFreeradiusService();
+        await restartFreeradiusService();
     } catch (reloadError) {
-        console.error('Service reload failed after updating NAS, but the changes were saved to the database.');
-        // throw new Error('NAS updated, but failed to reload service.'); // Uncomment if you want to notify the user
+        console.error('Service restart failed after updating NAS, but the changes were saved to the database.');
+        // throw new Error('NAS updated, but failed to restart service.'); // Uncomment if you want to notify the user
     }
 
     return updatedNas;
@@ -121,12 +121,12 @@ const deleteNas = async (id) => {
 
     const deletedNas = await prisma.nas.delete({ where: { id: nasId }});
     
-    // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ reload
+    // ใช้ try...catch เพื่อจัดการข้อผิดพลาดจากการ restart
     try {
-        await reloadFreeradiusService();
+        await restartFreeradiusService();
     } catch (reloadError) {
-        console.error('Service reload failed after deleting NAS, but the NAS was removed from the database.');
-        // throw new Error('NAS deleted, but failed to reload service.'); // Uncomment if you want to notify the user
+        console.error('Service restart failed after deleting NAS, but the NAS was removed from the database.');
+        // throw new Error('NAS deleted, but failed to restart service.'); // Uncomment if you want to notify the user
     }
 
     return deletedNas;
