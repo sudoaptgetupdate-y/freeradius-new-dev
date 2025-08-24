@@ -8,12 +8,14 @@ const prisma = require('../prisma');
 const IS_PROD = os.platform() === 'linux';
 const LOG_DIR = IS_PROD ? '/var/log/devices' : 'D:/fake_logs/devices';
 
-// --- START: PATHS UPDATED ---
 const SCRIPT_DIR = IS_PROD ? '/var/www/freeradius-app/freeradius-backend/scripts' : 'D:/fake_logs';
 const RSYSLOG_CONFIG_FILE = IS_PROD ? '/etc/rsyslog.d/50-devices.conf' : 'D:/fake_logs/50-devices.conf';
 const MANAGE_SCRIPT_PATH = path.join(SCRIPT_DIR, 'manage-device-logs.sh');
 const FAILSAFE_SCRIPT_PATH = path.join(SCRIPT_DIR, 'clear-oldest-logs-failsafe.sh');
-// --- END: PATHS UPDATED ---
+// --- START: NEW SCRIPT PATH ---
+const UPDATE_RSYSLOG_SCRIPT_PATH = path.join(SCRIPT_DIR, 'update-rsyslog-config.sh');
+// --- END: NEW SCRIPT PATH ---
+
 
 // --- Mock Data Functions (unaltered) ---
 const getMockDashboardData = () => ({
@@ -96,7 +98,7 @@ const getMockLogVolumeGraphData = (period) => {
 };
 
 
-// --- Helper Functions (unaltered) ---
+// --- Helper Functions ---
 const executeCommand = (command) => {
   if (!IS_PROD) {
     console.log(`SIMULATING command: "${command}"`);
@@ -136,7 +138,7 @@ const replaceVarInFile = async (filePath, varName, newValue) => {
     await fs.writeFile(filePath, newContent, 'utf-8');
 };
 
-// --- Main Service Functions (unaltered, except getSystemConfig) ---
+// --- Main Service Functions ---
 const getDashboardData = async () => {
     if (!IS_PROD) return getMockDashboardData();
     
@@ -363,8 +365,13 @@ const updateDeviceIps = async (config) => {
             .map(ip => `if $fromhost-ip == '${ip}' then {\n    action(type="omfile" dynaFile="DeviceLog")\n    stop\n}`)
             .join('\n');
         const newRsyslogContent = `${templateString}\n\n${rulesString}\n`;
-        await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
-        console.log('[Config Update] Successfully wrote to rsyslog config.');
+        
+        // --- START: UPDATED LOGIC ---
+        // Use the new script to write the file, passing the content as a shell-safe argument
+        await executeCommand(`sudo ${UPDATE_RSYSLOG_SCRIPT_PATH} "${newRsyslogContent}"`);
+        // --- END: UPDATED LOGIC ---
+        
+        console.log('[Config Update] Successfully wrote to rsyslog config via script.');
 
         if (config.deviceIPsChanged) {
             console.log('[Config Update] IP list changed. Attempting to restart rsyslog service...');
