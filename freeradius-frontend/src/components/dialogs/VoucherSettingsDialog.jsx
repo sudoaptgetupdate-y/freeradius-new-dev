@@ -1,5 +1,5 @@
 // src/components/dialogs/VoucherSettingsDialog.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // <-- 1. เพิ่ม useCallback
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,10 @@ import { toast } from "sonner";
 import { Save } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
-import { useTranslation } from 'react-i18next'; // <-- Import
+import { useTranslation } from 'react-i18next';
 
 export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
-    const { t } = useTranslation(); // <-- เรียกใช้
+    const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const [settings, setSettings] = useState({
         voucherSsid: 'Free-WiFi',
@@ -25,23 +25,29 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
     const [voucherLogo, setVoucherLogo] = useState(null);
     const [voucherLogoPreview, setVoucherLogoPreview] = useState('');
 
+    // --- START: 2. สร้างฟังก์ชันสำหรับโหลดข้อมูล ---
+    const fetchSettings = useCallback(() => {
+        setIsLoading(true);
+        axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
+          .then(response => {
+              const fetchedSettings = response.data.data;
+              setSettings({
+                  voucherSsid: fetchedSettings.voucherSsid || settings.voucherSsid,
+                  voucherHeaderText: fetchedSettings.voucherHeaderText || settings.voucherHeaderText,
+                  voucherFooterText: fetchedSettings.voucherFooterText || settings.voucherFooterText,
+              });
+              setVoucherLogoPreview(fetchedSettings.voucherLogoUrl || fetchedSettings.logoUrl || '');
+          })
+          .catch(() => toast.error(t('toast.settings_load_failed')))
+          .finally(() => setIsLoading(false));
+    }, [token, t]); // <-- ลด dependencies ที่ไม่จำเป็นออก
+    // --- END ---
+
     useEffect(() => {
         if (isOpen) {
-            setIsLoading(true);
-            axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
-              .then(response => {
-                  const fetchedSettings = response.data.data;
-                  setSettings({
-                      voucherSsid: fetchedSettings.voucherSsid || settings.voucherSsid,
-                      voucherHeaderText: fetchedSettings.voucherHeaderText || settings.voucherHeaderText,
-                      voucherFooterText: fetchedSettings.voucherFooterText || settings.voucherFooterText,
-                  });
-                  setVoucherLogoPreview(fetchedSettings.voucherLogoUrl || fetchedSettings.logoUrl || '');
-              })
-              .catch(() => toast.error(t('toast.settings_load_failed')))
-              .finally(() => setIsLoading(false));
+            fetchSettings();
         }
-    }, [isOpen, token, t, settings.voucherSsid, settings.voucherHeaderText, settings.voucherFooterText]);
+    }, [isOpen, fetchSettings]);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
@@ -74,7 +80,10 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
             {
                 loading: t('toast.saving_settings'),
                 success: () => {
-                    setIsOpen(false);
+                    // --- START: 3. แก้ไขส่วนนี้ ---
+                    // setIsOpen(false); // <--- ลบบรรทัดนี้ออก
+                    fetchSettings(); // <--- เรียกให้โหลดข้อมูลใหม่เพื่ออัปเดต Preview
+                    // --- END ---
                     return t('toast.settings_save_success');
                 },
                 error: (err) => err.response?.data?.message || t('toast.settings_save_failed'),
@@ -111,7 +120,7 @@ export default function VoucherSettingsDialog({ isOpen, setIsOpen }) {
                         </div>
                     </div>
                     <DialogFooter>
-                         <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('cancel')}</Button>
+                         <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>{t('close')}</Button> {/* <-- เปลี่ยนปุ่ม Cancel เป็น Close */}
                          <Button onClick={handleSave} disabled={isLoading}>
                             <Save className="mr-2 h-4 w-4" /> 
                             {isLoading ? t('saving') : t('save_settings')}

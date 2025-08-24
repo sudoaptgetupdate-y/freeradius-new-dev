@@ -9,17 +9,19 @@ import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import useSWR from 'swr';
-import { useTranslation } from "react-i18next"; // <-- Import
+import { useTranslation } from "react-i18next";
+
+const initialFormData = {
+    name: '',
+    durationDays: 1,
+    price: 0,
+    radiusProfileId: '',
+};
 
 export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
-    const { t } = useTranslation(); // <-- เรียกใช้
+    const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
-    const [formData, setFormData] = useState({
-        name: '',
-        durationDays: 1,
-        price: 0,
-        radiusProfileId: '',
-    });
+    const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!pkg;
 
@@ -36,10 +38,26 @@ export default function PackageFormDialog({ isOpen, setIsOpen, pkg, onSave }) {
                     radiusProfileId: pkg.radiusProfileId ? String(pkg.radiusProfileId) : '',
                 });
             } else {
-                setFormData({ name: '', durationDays: 1, price: 0, radiusProfileId: '' });
+                setFormData(initialFormData);
             }
         }
     }, [pkg, isEditMode, isOpen]);
+
+    // --- START: เพิ่ม useEffect ใหม่สำหรับตั้งค่าเริ่มต้น ---
+    useEffect(() => {
+        // ทำงานเมื่อ: ไม่ใช่โหมดแก้ไข และ `profiles` โหลดเสร็จแล้ว
+        if (!isEditMode && profiles && profiles.length > 0) {
+            const defaultProfile = profiles.find(p => p.name === 'default-profile');
+            if (defaultProfile) {
+                // ตั้งค่า ID ของ default-profile ให้กับฟอร์ม
+                setFormData(prev => ({
+                    ...prev,
+                    radiusProfileId: String(defaultProfile.id)
+                }));
+            }
+        }
+    }, [isEditMode, profiles]); // ให้ useEffect นี้ทำงานเมื่อ `profiles` มีการเปลี่ยนแปลง
+    // --- END ---
 
     const handleInputChange = (e) => {
         const { id, value, type } = e.target;
