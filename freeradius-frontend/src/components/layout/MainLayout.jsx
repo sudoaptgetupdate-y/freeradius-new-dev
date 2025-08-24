@@ -4,12 +4,12 @@ import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-import {
-    LogOut, LayoutDashboard, Server, Building, Users, Settings,
+import { 
+    LogOut, LayoutDashboard, Server, Building, Users, Settings, 
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal,
-    Megaphone, ShieldCheck 
-} from "lucide-react"; // <-- 1. ลบไอคอน Languages ออก
+    Megaphone,ShieldCheck
+} from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,7 +18,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator"; // <-- 2. Import Separator
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
@@ -115,15 +115,19 @@ export default function MainLayout() {
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
                 <div className="p-4 border-b flex items-center gap-3 h-[65px] overflow-hidden">
-                    <div className="bg-primary p-2 rounded-lg flex-shrink-0">
-                        <Server className="text-primary-foreground" size={24} />
-                    </div>
+                    {/* --- START: ส่วนที่แก้ไข --- */}
+                    <img 
+                        src="/uploads/nt-head-logo.png" 
+                        alt="Logo" 
+                        className="h-9 w-9 object-contain flex-shrink-0"
+                    />
                     <h1 className={cn(
                         "text-lg font-bold text-slate-800 transition-opacity truncate",
                         (isSidebarCollapsed && !isMobileMenuOpen) && "opacity-0 hidden"
                     )}>
-                        NT Auth Manager
+                        NTIdentity Center
                     </h1>
+                    {/* --- END --- */}
                 </div>
                 <nav className="p-3 space-y-1.5 h-[calc(100vh-65px)] overflow-y-auto">
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text={t('nav.dashboard')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
@@ -187,7 +191,6 @@ export default function MainLayout() {
                     </div>
                     <div className="flex items-center gap-4">
                         
-                        {/* --- 3. เปลี่ยน Dropdown เป็นปุ่ม 2 ปุ่ม --- */}
                         <div className="flex items-center gap-1">
                             <Button
                                 variant="ghost"
@@ -209,7 +212,6 @@ export default function MainLayout() {
                                 English
                             </Button>
                         </div>
-                        {/* --- สิ้นสุดส่วนที่แก้ไข --- */}
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

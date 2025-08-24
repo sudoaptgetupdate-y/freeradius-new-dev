@@ -25,6 +25,8 @@
     --input: 220 13% 91%;
     --ring: 217 91.2% 59.8%;
     --radius: 0.5rem;
+
+    --font-sans: "Sarabun", sans-serif;
   }
 
   .dark {

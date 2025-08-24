@@ -9,7 +9,7 @@
     "all_users": "All Users",
     "voucher_batches": "Voucher Batches",
     "section_config": "CONFIGURATION",
-    "organizations": "Organizations",
+    "organizations": "User Groups",
     "radius_profiles": "Radius Profiles",
     "nas": "NAS",
     "voucher_packages": "Voucher Packages",
@@ -23,12 +23,12 @@
   },
   "dashboard": "Dashboard",
   "welcome_back": "Welcome back, {{name}}!",
-  "dashboard_subtitle": "Here's a summary of your FreeRADIUS server.",
+  "dashboard_subtitle": "Here's a summary of your Authentication Users.",
   "online_users": "Online Users",
   "total_users": "Total Users",
-  "organizations": "Organizations",
+  "organizations": "User Groups",
   "nas_clients": "NAS / Clients",
-  "freeradius_status": "FreeRADIUS Status",
+  "freeradius_status": "RADIUS Status",
   "click_to_view_details": "Click to view details",
   "restart_service": "Restart Service",
   "view_all_history": "View all history",
@@ -65,7 +65,7 @@
     "user": "User",
     "ip_address": "IP Address",
     "time": "Time",
-    "organization": "Organization",
+    "organization": "User Group",
     "data_usage": "Data Usage",
     "client_ip": "Client IP",
     "login_time": "Login Time",
@@ -124,7 +124,7 @@
   },
   "refresh": "Refresh",
   "kick": "Kick",
-  "all_organizations": "All Organizations",
+  "all_organizations": "All User Groups",
   "pagination": {
     "rows_per_page": "Rows per page:",
     "page_info": "Page {{currentPage}} of {{totalPages}} ({{totalItems}} items)",
@@ -137,7 +137,7 @@
     "description": "Showing currently active user sessions.",
     "clear_stale_sessions": "Clear Stale Sessions",
     "search_placeholder": "Search by username, IP, or MAC...",
-    "filter_org_placeholder": "Filter by organization...",
+    "filter_org_placeholder": "Filter by User Groups...",
     "no_users_found": "No online users found."
   },
   "kick_dialog": {
@@ -180,21 +180,21 @@
     "add_title": "Add New Voucher Package"
   },
   "organizations_page": {
-    "title": "Organizations",
-    "description": "Manage all organizations in the system.",
+    "title": "User Groups",
+    "description": "Manage all User Groups in the system.",
     "add_new_button": "Add New",
-    "search_placeholder": "Search by organization name...",
-    "no_orgs_found": "No organizations found."
+    "search_placeholder": "Search by User Group name...",
+    "no_orgs_found": "No User Groups found."
   },
   "delete_org_dialog": {
-    "description": "This will permanently delete the organization: <strong>{{name}}</strong>. This action cannot be undone.",
+    "description": "This will permanently delete the User Group: <strong>{{name}}</strong>. This action cannot be undone.",
     "confirm": "Confirm Delete"
   },
   "org_form_dialog": {
-    "edit_title": "Edit Organization",
-    "add_title": "Add New Organization",
-    "protected_org_name_note": "The name of this critical organization ({{name}}) cannot be changed.",
-    "protected_org_type_note": "The Login Identifier Type for the '{{name}}' organization must always be 'manual'."
+    "edit_title": "Edit User Group",
+    "add_title": "Add New User Group",
+    "protected_org_name_note": "The name of this critical User Group ({{name}}) cannot be changed.",
+    "protected_org_type_note": "The Login Identifier Type for the '{{name}}' User Group must always be 'manual'."
   },
   "login_types": {
     "manual": "Manual Username",
@@ -218,8 +218,8 @@
     "price": "Price (Optional)",
     "radius_profile": "Radius Profile",
     "select_profile_placeholder": "Select a profile...",
-    "organization": "Organization",
-    "select_org_placeholder": "Select an organization...",
+    "organization": "User Groups",
+    "select_org_placeholder": "Select an User Group...",
     "full_name": "Full Name",
     "full_name_placeholder": "e.g., John Doe",
     "username": "Username",
@@ -238,7 +238,7 @@
     "password": "Password",
     "password_edit_placeholder": "Leave blank to keep current password",
     "password_add_placeholder": "Enter a strong password",
-    "org_name": "Organization Name",
+    "org_name": "User Group Name",
     "org_name_placeholder": "e.g., Corporate HQ",
     "login_type": "Login Identifier Type",
     "ad_campaign": "Advertisement Campaign",
@@ -324,9 +324,9 @@
     "import_button": "Import Users",
     "add_new_button": "Add New",
     "search_placeholder": "Search by username or full name...",
-    "filter_org_placeholder": "Filter by organization...",
+    "filter_org_placeholder": "Filter by User Group...",
     "filter_status_placeholder": "Filter by status...",
-    "bulk_actions_prompt": "Please select an organization from the filter to enable bulk actions.",
+    "bulk_actions_prompt": "Please select an User Group from the filter to enable bulk actions.",
     "no_users_found": "No users found."
   },
   "bulk_delete_dialog": {
@@ -350,7 +350,7 @@
     "restart_failed_title": "Failed to restart service.",
     "restart_failed_desc": "Please check server logs.",
     "chart_load_failed": "Failed to load graph data for period: {{period}}",
-    "org_load_failed": "Failed to load organizations for filtering.",
+    "org_load_failed": "Failed to load User Groups for filtering.",
     "kick_sent": "Kick command sent for user '{{username}}'.",
     "kick_failed": "Failed to kick user.",
     "clearing_stale": "Clearing stale sessions...",
@@ -381,7 +381,7 @@
     "delete_failed": "Failed to delete user.",
     "user_update_success": "User updated successfully!",
     "user_create_success": "User created successfully!",
-    "select_target_org": "Please select a target organization.",
+    "select_target_org": "Please select a target User Groups.",
     "moving_users": "Moving users...",
     "move_success": "{{count}} user(s) moved successfully!",
     "move_failed": "An error occurred during the move.",
@@ -389,13 +389,13 @@
     "please_select_file": "Please select a file to import.",
     "import_successful": "Import successful!",
     "import_failed": "Import failed. Please check the errors below.",
-    "deleting_org": "Deleting organization...",
-    "delete_org_success": "Organization '{{name}}' deleted successfully!",
-    "delete_org_failed": "Failed to delete organization.",
+    "deleting_org": "Deleting User Group...",
+    "delete_org_success": "User Groups '{{name}}' deleted successfully!",
+    "delete_org_failed": "Failed to delete User Groups.",
     "form_data_load_failed": "Failed to load required data for the form.",
-    "saving_org": "Saving organization...",
-    "update_org_success": "Organization updated successfully!",
-    "create_org_success": "Organization created successfully!",
+    "saving_org": "Saving User Groups...",
+    "update_org_success": "User Groups updated successfully!",
+    "create_org_success": "User Groups created successfully!",
     "deleting_nas": "Deleting NAS...",
     "delete_nas_success": "NAS '{{name}}' deleted successfully!",
     "delete_nas_failed": "Failed to delete NAS.",
@@ -508,7 +508,7 @@
     "title": "Connection History",
     "description": "Review past user sessions and connection details.",
     "search_placeholder": "Search user, IP, MAC...",
-    "filter_org_placeholder": "Filter by organization...",
+    "filter_org_placeholder": "Filter by User Group...",
     "no_records_found": "No history records found."
   },
   "close": "Close",
@@ -524,10 +524,10 @@
   },
   "move_users_dialog": {
     "title": "Move Users",
-    "description": "You have selected {{count}} user(s). Please choose a target organization.",
-    "target_org_label": "Target Organization",
-    "select_org_placeholder": "Select a compatible organization...",
-    "note": "Only organizations with the same login type are shown.",
+    "description": "You have selected {{count}} user(s). Please choose a target User Group.",
+    "target_org_label": "Target User Group",
+    "select_org_placeholder": "Select a compatible User Group...",
+    "note": "Only User Groups with the same login type are shown.",
     "confirm_move": "Confirm Move"
   },
   "import_dialog": {
@@ -549,15 +549,15 @@
     },
     "format_preview": {
       "title": "Data Import Format Example",
-      "description": "Please check the organization type and fill in the CSV file correctly according to the format below.",
+      "description": "Please check the User Groups type and fill in the CSV file correctly according to the format below.",
       "manual_title": "1. Example for Manual Type",
-      "manual_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>manual</span>, the entered <span class='text-green-600 font-semibold'>username</span> will be used for login.",
+      "manual_desc": "For User Groups of type <span class='font-mono bg-muted px-1 rounded'>manual</span>, the entered <span class='text-green-600 font-semibold'>username</span> will be used for login.",
       "national_id_title": "2. Example for National ID Group",
-      "national_id_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>national_id</span>, the <span class='text-green-600 font-semibold'>national_id</span> will be used for login.",
+      "national_id_desc": "For User Groups of type <span class='font-mono bg-muted px-1 rounded'>national_id</span>, the <span class='text-green-600 font-semibold'>national_id</span> will be used for login.",
       "employee_id_title": "3. Example for Employee Group",
-      "employee_id_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>employee_id</span>, the <span class='text-green-600 font-semibold'>employee_id</span> will be used for login.",
+      "employee_id_desc": "For User Groups of type <span class='font-mono bg-muted px-1 rounded'>employee_id</span>, the <span class='text-green-600 font-semibold'>employee_id</span> will be used for login.",
       "student_id_title": "4. Example for Student Group",
-      "student_id_desc": "For organizations of type <span class='font-mono bg-muted px-1 rounded'>student_id</span>, the <span class='text-green-600 font-semibold'>student_id</span> will be used for login."
+      "student_id_desc": "For User Groups of type <span class='font-mono bg-muted px-1 rounded'>student_id</span>, the <span class='text-green-600 font-semibold'>student_id</span> will be used for login."
     }
   },
   "radius_profiles_page": {

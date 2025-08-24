@@ -23,12 +23,12 @@
   },
   "dashboard": "แดชบอร์ด",
   "welcome_back": "ยินดีต้อนรับกลับมา, {{name}}!",
-  "dashboard_subtitle": "นี่คือสรุปภาพรวมของเซิร์ฟเวอร์ FreeRADIUS ของคุณ",
+  "dashboard_subtitle": "นี่คือสรุปภาพรวมผู้ใช้งานระบบอินเตอร์เน็ตของคุณ",
   "online_users": "ผู้ใช้ออนไลน์",
   "total_users": "ผู้ใช้ทั้งหมด",
   "organizations": "กลุ่มผู้ใช้",
   "nas_clients": "อุปกรณ์ NAS",
-  "freeradius_status": "สถานะ FreeRADIUS",
+  "freeradius_status": "สถานะ RADIUS",
   "click_to_view_details": "คลิกเพื่อดูรายละเอียด",
   "restart_service": "รีสตาร์ทเซอร์วิส",
   "view_all_history": "ดูประวัติทั้งหมด",
@@ -791,7 +791,7 @@
   "logging_in": "กำลังเข้าสู่ระบบ...",
   "log_in": "เข้าสู่ระบบ",
   "login_page": {
-    "description": "กรุณาเข้าสู่ระบบเพื่อใช้งานต่อ"
+    "description": "สำหรับเจ้าหน้าที่ กรุณาเข้าสู่ระบบ"
   },
   "loading": "กำลังโหลด...",
   "authenticating": "กำลังยืนยันตัวตน...",

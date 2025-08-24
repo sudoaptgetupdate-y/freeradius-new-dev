@@ -17,7 +17,9 @@ module.exports = {
       },
     },
     extend: {
-      // --- เพิ่มส่วนนี้เข้ามาทั้งหมด ---
+      fontFamily: {
+        sans: ["'Sarabun'", 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
