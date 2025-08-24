@@ -8,11 +8,14 @@ const prisma = require('../prisma');
 const IS_PROD = os.platform() === 'linux';
 const LOG_DIR = IS_PROD ? '/var/log/devices' : 'D:/fake_logs/devices';
 
+// --- START: PATHS UPDATED ---
+const SCRIPT_DIR = IS_PROD ? '/var/www/freeradius-app/freeradius-backend/scripts' : 'D:/fake_logs';
 const RSYSLOG_CONFIG_FILE = IS_PROD ? '/etc/rsyslog.d/50-devices.conf' : 'D:/fake_logs/50-devices.conf';
-const MANAGE_SCRIPT_PATH = IS_PROD ? '/usr/local/bin/manage-device-logs.sh' : 'D:/fake_logs/manage-device-logs.sh';
-const FAILSAFE_SCRIPT_PATH = IS_PROD ? '/usr/local/bin/clear-oldest-logs-failsafe.sh' : 'D:/fake_logs/clear-oldest-logs-failsafe.sh';
+const MANAGE_SCRIPT_PATH = path.join(SCRIPT_DIR, 'manage-device-logs.sh');
+const FAILSAFE_SCRIPT_PATH = path.join(SCRIPT_DIR, 'clear-oldest-logs-failsafe.sh');
+// --- END: PATHS UPDATED ---
 
-// --- Mock Data Functions ---
+// --- Mock Data Functions (unaltered) ---
 const getMockDashboardData = () => ({
     diskUsage: { size: '50G', used: '25G', available: '25G', usePercent: '50%' },
     gpgKey: { recipient: 'local-dev-admin@example.com' },
@@ -93,7 +96,7 @@ const getMockLogVolumeGraphData = (period) => {
 };
 
 
-// --- Helper Functions ---
+// --- Helper Functions (unaltered) ---
 const executeCommand = (command) => {
   if (!IS_PROD) {
     console.log(`SIMULATING command: "${command}"`);
@@ -133,7 +136,7 @@ const replaceVarInFile = async (filePath, varName, newValue) => {
     await fs.writeFile(filePath, newContent, 'utf-8');
 };
 
-// --- Main Service Functions ---
+// --- Main Service Functions (unaltered, except getSystemConfig) ---
 const getDashboardData = async () => {
     if (!IS_PROD) return getMockDashboardData();
     
