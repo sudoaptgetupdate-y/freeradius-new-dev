@@ -357,7 +357,7 @@ const updateDeviceIps = async (config) => {
         console.log(`[Config Update] Writing ${config.deviceIPs.length} IPs to ${RSYSLOG_CONFIG_FILE}`);
         const templateString = `template(name="DeviceLog" type="string" string="${LOG_DIR}/%HOSTNAME%/%$YEAR%-%$MONTH%-%$DAY%.log")`;
         const rulesString = config.deviceIPs
-            .map(ip => `if $fromhost-ip == '${ip}' then {\n    action(type="omfile" dynaFile="DeviceLog")\n    stop\n}`)
+            .map(ip => `if $fromhost-ip == '${ip}' then {\n    action(type="omfile" dynaFile="DeviceLog" dirCreateMode="0775" fileCreateMode="0664")\n    stop\n}`)
             .join('\n');
         const newRsyslogContent = `${templateString}\n\n${rulesString}\n`;
         await fs.writeFile(RSYSLOG_CONFIG_FILE, newRsyslogContent, 'utf-8');
