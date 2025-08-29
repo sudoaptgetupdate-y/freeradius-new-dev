@@ -1,6 +1,7 @@
 {
   "account_settings": "ตั้งค่าบัญชี",
   "logout": "ออกจากระบบ",
+  "registered_users": "Registered Users",
   "nav": {
     "dashboard": "แดชบอร์ด",
     "online_users": "ผู้ใช้ออนไลน์",
@@ -43,7 +44,8 @@
     "failed": "failed",
     "unknown": "ไม่ทราบ",
     "still_online": "online",
-    "disabled": "ปิดใช้งาน"
+    "disabled": "ปิดใช้งาน",
+    "registered": "รออนุมัติ"
   },
   "all_packages": "ทุกแพ็กเกจ",
   "saving": "กำลังบันทึก...",
@@ -717,6 +719,10 @@
     "self_registration": {
       "label": "การลงทะเบียนด้วยตนเองของผู้ใช้",
       "description": "อนุญาตให้ผู้ใช้ลงทะเบียนเพื่อสร้างบัญชีจากหน้าล็อกอิน"
+    },
+    "initial_status": {
+      "label": "สถานะเริ่มต้นสำหรับผู้ใช้ใหม่",
+      "description": "กำหนดสถานะเริ่มต้นสำหรับผู้ใช้ที่ลงทะเบียนด้วยตนเอง"
     },
     "external_login": {
       "label": "การล็อกอินของผู้ใช้ภายนอก",

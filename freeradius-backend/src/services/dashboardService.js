@@ -71,6 +71,9 @@ const getDashboardData = async () => {
     const totalOrgsCount = await prisma.organization.count();
     const totalNasCount = await prisma.nas.count();
     const serviceStatus = await getFreeradiusStatus();
+    // --- START: ADDED ---
+    const registeredUsersCount = await prisma.user.count({ where: { status: 'registered' } });
+    // --- END ---
 
     const recentLogins = await prisma.radacct.findMany({
         where: { acctstarttime: { not: null } },
@@ -95,7 +98,6 @@ const getDashboardData = async () => {
         full_name: userMap.get(l.username) || 'N/A',
         acctstarttime: adjustToLocalTime(l.acctstarttime),
     }));
-
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -140,6 +142,7 @@ const getDashboardData = async () => {
             totalOrgs: totalOrgsCount,
             totalNas: totalNasCount,
             serviceStatus: serviceStatus.status,
+            registeredUsers: registeredUsersCount, // <-- ADDED
         },
         recentLogins: enrichedRecentLogins,
         topUsersToday: enrichedTopUsers,

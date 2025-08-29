@@ -1,6 +1,7 @@
 {
   "account_settings": "Account Settings",
   "logout": "Log Out",
+  "registered_users": "ผู้ใช้ลงทะเบียนใหม่",
   "nav": {
     "dashboard": "Dashboard",
     "online_users": "Online Users",
@@ -43,7 +44,8 @@
     "failed": "Failed",
     "unknown": "Unknown",
     "still_online": "Still Online",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "registered": "Registered" 
   },
   "all_packages": "All Packages",
   "saving": "Saving...",
@@ -717,6 +719,10 @@
     "self_registration": {
       "label": "User Self-Registration",
       "description": "Allow users to register for an account from the login page."
+    },
+    "initial_status": {
+      "label": "Initial Status for New Users",
+      "description": "Set the default status for users who self-register."
     },
     "external_login": {
       "label": "External User Login",

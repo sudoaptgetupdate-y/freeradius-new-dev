@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Users, Building, Server, Wifi, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle } from 'lucide-react';
+import { Users, Building, Server, Wifi, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle, UserPlus } from 'lucide-react'; // <-- ADDED UserPlus
 import { format } from 'date-fns';
 import OnlineUsersChartCard from '@/components/ui/OnlineUsersChartCard';
 import {
@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next'; // <-- 1. Import useTranslation
+import { useTranslation } from 'react-i18next';
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -34,7 +34,6 @@ const formatBytes = (bytes, decimals = 2) => {
     return `${parseFloat((Number(b) / Number(k ** BigInt(i))).toFixed(dm))} ${sizes[i]}`;
 };
 
-// --- 2. อัปเดต StatCard component ให้รับ t function ---
 const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor, t }) => (
     <Card
         className="shadow-sm border-subtle cursor-pointer hover:bg-muted/50 transition-colors"
@@ -53,7 +52,6 @@ const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor, t }) => (
     </Card>
 );
 
-// --- 3. อัปเดต StatusCard component ให้รับ t function ---
 const StatusCard = ({ status, onRestart, isSuperAdmin, t }) => {
     const getStatusInfo = () => {
         switch (status) {
@@ -141,7 +139,7 @@ const RecentActivityTable = ({ title, description, data, columns, viewAllLink, v
 
 
 export default function DashboardPage() {
-    const { t } = useTranslation(); // <-- 4. เรียกใช้ useTranslation hook
+    const { t } = useTranslation();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuthStore();
@@ -198,7 +196,6 @@ export default function DashboardPage() {
         return <p>{t('dashboard_load_error')}</p>;
     }
 
-    // --- 5. แปลภาษาในส่วนของ Columns ---
     const recentLoginsColumns = [
         { key: 'user', header: t('table_headers.user'), render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
         { key: 'ip', header: t('table_headers.ip_address'), render: (row) => row.framedipaddress, className: "font-mono" },
@@ -211,7 +208,6 @@ export default function DashboardPage() {
         { key: 'data', header: t('table_headers.data_usage'), render: (row) => formatBytes(row.total_data), className: "text-right font-medium" },
     ];
 
-    // --- 6. แปลภาษาในส่วนของ JSX ---
     return (
         <>
             <div className="space-y-8">
@@ -220,14 +216,15 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground">{t('dashboard_subtitle')}</p>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+                {/* --- START: MODIFIED GRID --- */}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6">
                     <StatCard 
                         title={t('online_users')}
                         value={stats.summary.onlineUsers || 0}
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
                         iconBgColor="bg-blue-500"
-                        t={t} // ส่ง t function ไปให้ component ลูก
+                        t={t}
                     />
                     <StatCard 
                         title={t('total_users')}
@@ -235,6 +232,15 @@ export default function DashboardPage() {
                         icon={Users}
                         onClick={() => navigate('/users')}
                         iconBgColor="bg-emerald-500"
+                        t={t}
+                    />
+                    {/* --- ADDED CARD --- */}
+                     <StatCard 
+                        title={t('registered_users')}
+                        value={stats.summary.registeredUsers || 0}
+                        icon={UserPlus}
+                        onClick={() => navigate('/users', { state: { statusFilter: 'registered' } })}
+                        iconBgColor="bg-yellow-500"
                         t={t}
                     />
                     <StatCard 
@@ -260,6 +266,7 @@ export default function DashboardPage() {
                         t={t}
                     />
                 </div>
+                {/* --- END MODIFIED GRID --- */}
 
                 <div className="grid grid-cols-1 gap-6">
                     <div className="h-[350px]">

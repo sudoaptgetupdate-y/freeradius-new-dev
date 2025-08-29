@@ -95,7 +95,8 @@ async function main() {
       { key: 'backgroundUrl', value: '/uploads/nt-background.png' },
       { key: 'voucherLogoUrl', value: '/uploads/nt-voucherLogo.png' },
       { key: 'registrationEnabled', value: 'false' },
-      { key: 'externalLoginEnabled', value: 'false' }
+      { key: 'externalLoginEnabled', value: 'false' },
+      { key: 'initialUserStatus', value: 'registered' }
   ];
 
   for (const setting of settingsToSeed) {

@@ -23,7 +23,8 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { format } from 'date-fns';
-import { useTranslation, Trans } from "react-i18next"; // <-- 1. Import hook
+import { useTranslation } from "react-i18next";
+import { useLocation } from 'react-router-dom'; // <-- ADDED
 
 const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
     const isSorted = sortConfig.key === columnKey;
@@ -46,15 +47,30 @@ const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
     );
 };
 
+// --- START: ADDED ---
+const StatusBadge = ({ status, t }) => {
+    const statusConfig = {
+        active: { variant: "success", label: t('status.active') },
+        disabled: { variant: "secondary", label: t('status.disabled') },
+        registered: { variant: "outline", label: t('status.registered') },
+    };
+    const config = statusConfig[status] || { variant: "secondary", label: status };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+// --- END ---
+
 
 export default function UsersPage() {
-    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
+    const { t } = useTranslation(); 
     const token = useAuthStore((state) => state.token);
     const navigate = useNavigate();
+    const location = useLocation(); // <-- ADDED
 
     const [organizations, setOrganizations] = useState([]);
     const [orgFilter, setOrgFilter] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
+    // --- START: MODIFIED ---
+    const [statusFilter, setStatusFilter] = useState(location.state?.statusFilter || "all");
+    // --- END ---
     const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
 
     const {
@@ -68,7 +84,7 @@ export default function UsersPage() {
         refreshData
     } = usePaginatedFetch(
         "/users",
-        15, // <-- เพิ่มจำนวนแถวเริ่มต้น
+        15, 
         { 
             organizationId: orgFilter,
             sortBy: sortConfig.key,
@@ -194,7 +210,6 @@ export default function UsersPage() {
         navigate(`/users/${username}`);
     };
     
-    // --- 3. แปลภาษาในส่วน JSX ---
     return (
         <>
             <Card>
@@ -251,6 +266,7 @@ export default function UsersPage() {
                             </SelectContent>
                         </Select>
                         
+                        {/* --- START: MODIFIED --- */}
                         <Select onValueChange={setStatusFilter} value={statusFilter}>
                             <SelectTrigger>
                                 <SelectValue placeholder={t('users_page.filter_status_placeholder')} />
@@ -258,9 +274,11 @@ export default function UsersPage() {
                             <SelectContent>
                                 <SelectItem value="all">{t('all_statuses')}</SelectItem>
                                 <SelectItem value="active">{t('status.active')}</SelectItem>
+                                <SelectItem value="registered">{t('status.registered')}</SelectItem>
                                 <SelectItem value="disabled">{t('status.disabled')}</SelectItem>
                             </SelectContent>
                         </Select>
+                        {/* --- END --- */}
                     </div>
 
                     {!isBulkActionsEnabled && (
@@ -310,9 +328,7 @@ export default function UsersPage() {
                                                 <TableCell>{user.username}</TableCell>
                                                 <TableCell>{user.organization.name}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
-                                                        {user.status === 'active' ? t('status.active') : t('status.disabled')}
-                                                    </Badge>
+                                                    <StatusBadge status={user.status} t={t} />
                                                 </TableCell>
                                                 <TableCell>{format(new Date(user.createdAt), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
                                                 <TableCell className="text-center">

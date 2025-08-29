@@ -1,6 +1,6 @@
 // src/pages/SettingsPage.jsx
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,13 +8,15 @@ import { toast } from "sonner";
 import { SlidersHorizontal, Save } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
-import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
+import { useTranslation } from 'react-i18next';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // <-- ADDED
 
 export default function SettingsPage() {
-    const { t } = useTranslation(); // <-- 2. เรียกใช้ hook
+    const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const [registrationEnabled, setRegistrationEnabled] = useState(true);
     const [externalLoginEnabled, setExternalLoginEnabled] = useState(true);
+    const [initialUserStatus, setInitialUserStatus] = useState('registered'); // <-- ADDED
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -24,6 +26,7 @@ export default function SettingsPage() {
               const settings = response.data.data;
               setRegistrationEnabled(settings.registrationEnabled === 'true');
               setExternalLoginEnabled(settings.externalLoginEnabled === 'true');
+              setInitialUserStatus(settings.initialUserStatus || 'registered'); // <-- ADDED
           })
           .catch(() => toast.error(t('toast.settings_load_failed')))
           .finally(() => setIsLoading(false));
@@ -33,6 +36,7 @@ export default function SettingsPage() {
         const payload = {
             registrationEnabled: String(registrationEnabled),
             externalLoginEnabled: String(externalLoginEnabled),
+            initialUserStatus: initialUserStatus, // <-- ADDED
         };
         toast.promise(axiosInstance.post('/settings', payload, { headers: { Authorization: `Bearer ${token}` } }),
             {
@@ -43,9 +47,8 @@ export default function SettingsPage() {
         );
     };
 
-    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
-        <Card className="max-w-2xl">
+        <Card className="max-w-3xl">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <SlidersHorizontal className="h-6 w-6" />
@@ -54,13 +57,36 @@ export default function SettingsPage() {
                 <CardDescription>{t('settings_page.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className="flex items-start justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                         <Label htmlFor="registration-switch" className="text-base">{t('settings_page.self_registration.label')}</Label>
                         <p className="text-sm text-muted-foreground">{t('settings_page.self_registration.description')}</p>
                     </div>
                     <Switch id="registration-switch" checked={registrationEnabled} onCheckedChange={setRegistrationEnabled} />
                 </div>
+
+                {/* --- START: ADDED SECTION --- */}
+                {registrationEnabled && (
+                    <div className="flex items-start justify-between rounded-lg border p-4 pl-6 bg-muted/30">
+                         <div className="space-y-1.5 flex-1">
+                            <Label className="text-base">{t('settings_page.initial_status.label')}</Label>
+                            <p className="text-sm text-muted-foreground">{t('settings_page.initial_status.description')}</p>
+                        </div>
+                        <div className="w-48">
+                            <Select value={initialUserStatus} onValueChange={setInitialUserStatus}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="registered">{t('status.registered')}</SelectItem>
+                                    <SelectItem value="active">{t('status.active')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                )}
+                {/* --- END: ADDED SECTION --- */}
+
                 <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                         <Label htmlFor="external-login-switch" className="text-base">{t('settings_page.external_login.label')}</Label>
@@ -69,12 +95,12 @@ export default function SettingsPage() {
                     <Switch id="external-login-switch" checked={externalLoginEnabled} onCheckedChange={setExternalLoginEnabled} />
                 </div>
             </CardContent>
-            <div className="flex justify-end p-6">
+            <CardFooter className="flex justify-end p-6">
                 <Button onClick={handleSave} disabled={isLoading}>
                     <Save className="mr-2 h-4 w-4" />
                     {isLoading ? t('saving') : t('save_settings')}
                 </Button>
-            </div>
+            </CardFooter>
         </Card>
     );
 }

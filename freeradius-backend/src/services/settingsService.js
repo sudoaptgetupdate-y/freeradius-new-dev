@@ -21,16 +21,15 @@ const getSettings = async () => {
 };
 
 const saveSettings = async (files, body) => {
-  // --- START: เพิ่ม appName ---
   const {
     appName,
-    // --- END ---
     terms,
     voucherSsid,
     voucherHeaderText,
     voucherFooterText,
     registrationEnabled,
-    externalLoginEnabled
+    externalLoginEnabled,
+    initialUserStatus, // <-- ADDED
   } = body;
 
   const deleteOldFile = async (settingKey) => {
@@ -64,11 +63,9 @@ const saveSettings = async (files, body) => {
     await upsertSetting('voucherLogoUrl', voucherLogoPath);
   }
 
-  // --- START: เพิ่ม logic บันทึก appName ---
   if (appName !== undefined) {
     await upsertSetting('appName', appName);
   }
-  // --- END ---
 
   if (terms !== undefined) {
     await upsertSetting('terms', terms);
@@ -81,6 +78,12 @@ const saveSettings = async (files, body) => {
   if (externalLoginEnabled !== undefined) {
     await upsertSetting('externalLoginEnabled', externalLoginEnabled);
   }
+  
+  // --- START: ADDED ---
+  if (initialUserStatus !== undefined) {
+    await upsertSetting('initialUserStatus', initialUserStatus);
+  }
+  // --- END ---
 
   if (voucherSsid !== undefined) await upsertSetting('voucherSsid', voucherSsid);
   if (voucherHeaderText !== undefined) await upsertSetting('voucherHeaderText', voucherHeaderText);
