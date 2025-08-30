@@ -9,14 +9,15 @@ import { SlidersHorizontal, Save } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { useTranslation } from 'react-i18next';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // <-- ADDED
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SettingsPage() {
     const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const [registrationEnabled, setRegistrationEnabled] = useState(true);
     const [externalLoginEnabled, setExternalLoginEnabled] = useState(true);
-    const [initialUserStatus, setInitialUserStatus] = useState('registered'); // <-- ADDED
+    const [initialUserStatus, setInitialUserStatus] = useState('registered');
+    const [operatingMode, setOperatingMode] = useState('AAA'); // <-- ADDED
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -26,7 +27,8 @@ export default function SettingsPage() {
               const settings = response.data.data;
               setRegistrationEnabled(settings.registrationEnabled === 'true');
               setExternalLoginEnabled(settings.externalLoginEnabled === 'true');
-              setInitialUserStatus(settings.initialUserStatus || 'registered'); // <-- ADDED
+              setInitialUserStatus(settings.initialUserStatus || 'registered');
+              setOperatingMode(settings.operating_mode || 'AAA'); // <-- ADDED
           })
           .catch(() => toast.error(t('toast.settings_load_failed')))
           .finally(() => setIsLoading(false));
@@ -36,7 +38,8 @@ export default function SettingsPage() {
         const payload = {
             registrationEnabled: String(registrationEnabled),
             externalLoginEnabled: String(externalLoginEnabled),
-            initialUserStatus: initialUserStatus, // <-- ADDED
+            initialUserStatus: initialUserStatus,
+            operatingMode: operatingMode, // <-- ADDED
         };
         toast.promise(axiosInstance.post('/settings', payload, { headers: { Authorization: `Bearer ${token}` } }),
             {
@@ -57,6 +60,28 @@ export default function SettingsPage() {
                 <CardDescription>{t('settings_page.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                {/* --- START: ADDED SECTION --- */}
+                <div className="flex items-start justify-between rounded-lg border p-4">
+                    <div className="space-y-1.5 flex-1">
+                        <Label className="text-base">Operating Mode</Label>
+                        <p className="text-sm text-muted-foreground">
+                            Switch between standard AAA mode and Mikrotik-specific mode.
+                        </p>
+                    </div>
+                    <div className="w-48">
+                        <Select value={operatingMode} onValueChange={setOperatingMode}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a mode" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="AAA">AAA Mode (Standard)</SelectItem>
+                                <SelectItem value="Mikrotik">Mikrotik Mode</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {/* --- END: ADDED SECTION --- */}
+                
                 <div className="flex items-start justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                         <Label htmlFor="registration-switch" className="text-base">{t('settings_page.self_registration.label')}</Label>
@@ -65,7 +90,6 @@ export default function SettingsPage() {
                     <Switch id="registration-switch" checked={registrationEnabled} onCheckedChange={setRegistrationEnabled} />
                 </div>
 
-                {/* --- START: ADDED SECTION --- */}
                 {registrationEnabled && (
                     <div className="flex items-start justify-between rounded-lg border p-4 pl-6 bg-muted/30">
                          <div className="space-y-1.5 flex-1">
@@ -85,7 +109,6 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 )}
-                {/* --- END: ADDED SECTION --- */}
 
                 <div className="flex items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">

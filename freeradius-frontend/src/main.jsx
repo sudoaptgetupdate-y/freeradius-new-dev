@@ -38,6 +38,9 @@ import UserPortalLoginPage from './pages/UserPortalLoginPage.jsx';
 import UserPortalDashboardPage from './pages/UserPortalDashboardPage.jsx';
 import LoggedOutPage from './pages/LoggedOutPage.jsx';
 import LogManagementPage from './pages/LogManagementPage.jsx';
+import MikrotikApiPage from './pages/MikrotikApiPage.jsx';
+import MikrotikGroupsPage from './pages/MikrotikGroupsPage.jsx';
+import IpBindingsPage from './pages/IpBindingsPage.jsx';
 
 
 const router = createBrowserRouter([
@@ -85,6 +88,9 @@ const router = createBrowserRouter([
               { path: 'account-settings', element: <AdminProfilePage /> },
               { path: 'radius-profiles', element: <RadiusProfilesPage /> },
               { path: 'log-management', element: <LogManagementPage /> },
+              { path: 'mikrotik/api', element: <MikrotikApiPage /> },
+              { path: 'mikrotik/groups', element: <MikrotikGroupsPage /> },
+              { path: 'mikrotik/bindings', element: <IpBindingsPage /> },
             ]
           }
         ]

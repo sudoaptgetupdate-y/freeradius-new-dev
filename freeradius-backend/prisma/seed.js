@@ -87,16 +87,16 @@ async function main() {
   // --- 4. Seed Default Settings ---
   console.log('Seeding default settings...');
   const settingsToSeed = [
-      // --- START: เพิ่ม appName ---
       { key: 'appName', value: 'Freeradius UI' },
-      // --- END ---
       { key: 'terms', value: DEFAULT_TERMS_OF_SERVICE },
       { key: 'logoUrl', value: '/uploads/nt-logo.png' },
       { key: 'backgroundUrl', value: '/uploads/nt-background.png' },
       { key: 'voucherLogoUrl', value: '/uploads/nt-voucherLogo.png' },
       { key: 'registrationEnabled', value: 'false' },
       { key: 'externalLoginEnabled', value: 'false' },
-      { key: 'initialUserStatus', value: 'registered' }
+      { key: 'initialUserStatus', value: 'registered' },
+      { key: 'operating_mode', value: 'AAA' }
+
   ];
 
   for (const setting of settingsToSeed) {
@@ -110,6 +110,7 @@ async function main() {
           });
           console.log(`✅ Default setting for '${setting.key}' created.`);
       } else {
+          // In case you want to update existing values during seed, otherwise this can be removed.
           await prisma.setting.update({
               where: { key: setting.key },
               data: { value: setting.value },
@@ -121,10 +122,16 @@ async function main() {
   // --- 5. Seed Default Radius Attributes ---
   console.log('Seeding default RADIUS attributes...');
   const allAttributes = [
+    // --- START: ADDED MIKROTIK ATTRIBUTE ---
+    { name: 'Mikrotik-Rate-Limit', description: 'Mikrotik rate limit in format rx-rate[/tx-rate]', type: 'reply' },
+    // --- END: ADDED ---
     ...COMMON_ATTRIBUTES.reply.map(attr => ({ ...attr, type: 'reply' })),
     ...COMMON_ATTRIBUTES.check.map(attr => ({ ...attr, type: 'check' }))
   ];
-  for (const attr of allAttributes) {
+  // Use a Set to ensure unique attribute names before seeding
+  const uniqueAttributes = Array.from(new Map(allAttributes.map(item => [item.name, item])).values());
+
+  for (const attr of uniqueAttributes) {
     await prisma.radiusAttributeDefinition.upsert({
       where: { name: attr.name },
       update: { description: attr.description, type: attr.type },

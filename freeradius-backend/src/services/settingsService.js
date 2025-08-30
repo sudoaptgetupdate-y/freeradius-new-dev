@@ -29,7 +29,8 @@ const saveSettings = async (files, body) => {
     voucherFooterText,
     registrationEnabled,
     externalLoginEnabled,
-    initialUserStatus, // <-- ADDED
+    initialUserStatus,
+    operatingMode, // <-- ADDED
   } = body;
 
   const deleteOldFile = async (settingKey) => {
@@ -79,11 +80,13 @@ const saveSettings = async (files, body) => {
     await upsertSetting('externalLoginEnabled', externalLoginEnabled);
   }
   
-  // --- START: ADDED ---
   if (initialUserStatus !== undefined) {
     await upsertSetting('initialUserStatus', initialUserStatus);
   }
-  // --- END ---
+
+  if (operatingMode !== undefined) {
+    await upsertSetting('operating_mode', operatingMode);
+  }
 
   if (voucherSsid !== undefined) await upsertSetting('voucherSsid', voucherSsid);
   if (voucherHeaderText !== undefined) await upsertSetting('voucherHeaderText', voucherHeaderText);

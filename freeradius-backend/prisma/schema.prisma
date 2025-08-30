@@ -276,3 +276,12 @@ model LogDownloadHistory {
   @@index([adminId])
   @@index([hostname])
 }
+
+model MikrotikDevice {
+  id        Int      @id @default(autoincrement())
+  host      String   @unique
+  user      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

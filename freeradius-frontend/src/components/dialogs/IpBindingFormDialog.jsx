@@ -1,0 +1,93 @@
+// src/components/dialogs/IpBindingFormDialog.jsx
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import axiosInstance from "@/api/axiosInstance";
+import useAuthStore from "@/store/authStore";
+
+const initialFormData = {
+    macAddress: '',
+    address: '',
+    toAddress: '',
+    comment: '',
+    type: 'bypassed',
+};
+
+export default function IpBindingFormDialog({ isOpen, setIsOpen, onSave }) {
+    const token = useAuthStore((state) => state.token);
+    const [formData, setFormData] = useState(initialFormData);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.id]: e.target.value });
+    };
+
+    const handleSelectChange = (value) => {
+        setFormData({ ...formData, type: value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        toast.promise(
+            axiosInstance.post('/mikrotik/bindings', formData, { headers: { Authorization: `Bearer ${token}` } }),
+            {
+                loading: "Adding IP Binding...",
+                success: () => {
+                    onSave();
+                    setIsOpen(false);
+                    return "IP Binding added successfully.";
+                },
+                error: (err) => err.response?.data?.message || "Failed to add binding.",
+                finally: () => setIsLoading(false)
+            }
+        );
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Add New IP Binding</DialogTitle>
+                </DialogHeader>
+                <form id="ip-binding-form" onSubmit={handleSubmit} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="macAddress">MAC Address</Label>
+                        <Input id="macAddress" value={formData.macAddress} onChange={handleInputChange} placeholder="00:11:22:33:44:55" required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="address">IP Address (Optional)</Label>
+                        <Input id="address" value={formData.address} onChange={handleInputChange} placeholder="e.g., 192.168.88.10" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="toAddress">To Address (Optional)</Label>
+                        <Input id="toAddress" value={formData.toAddress} onChange={handleInputChange} placeholder="e.g., 192.168.88.10" />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="type">Type</Label>
+                         <Select value={formData.type} onValueChange={handleSelectChange}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="bypassed">Bypassed</SelectItem>
+                                <SelectItem value="blocked">Blocked</SelectItem>
+                                <SelectItem value="regular">Regular</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="comment">Comment (Optional)</Label>
+                        <Input id="comment" value={formData.comment} onChange={handleInputChange} placeholder="e.g., Admin PC" />
+                    </div>
+                </form>
+                <DialogFooter>
+                    <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button type="submit" form="ip-binding-form" disabled={isLoading}>{isLoading ? 'Adding...' : 'Add Binding'}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

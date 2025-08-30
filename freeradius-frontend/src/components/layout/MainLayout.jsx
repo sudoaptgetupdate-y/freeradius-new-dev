@@ -8,7 +8,7 @@ import {
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal,
-    Megaphone,ShieldCheck
+    Megaphone,ShieldCheck, Aperture, Link2
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -52,25 +52,30 @@ const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
 export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, logout } = useAuthStore();
+    const { user, logout, token } = useAuthStore(); // <-- Get token
     const isSuperAdmin = user?.role === 'superadmin';
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [appName, setAppName] = useState('Freeradius UI');
-    
+    const [operatingMode, setOperatingMode] = useState('AAA'); // <-- State for operating mode
+
     const { t, i18n } = useTranslation();
 
     useEffect(() => {
-        axiosInstance.get('/settings')
+        // Fetch settings including appName and operatingMode
+        axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
             .then(response => {
-                const fetchedAppName = response.data.data.appName;
-                if (fetchedAppName) {
-                    setAppName(fetchedAppName);
-                    document.title = fetchedAppName;
+                const fetchedSettings = response.data.data;
+                if (fetchedSettings.appName) {
+                    setAppName(fetchedSettings.appName);
+                    document.title = fetchedSettings.appName;
+                }
+                if (fetchedSettings.operating_mode) {
+                    setOperatingMode(fetchedSettings.operating_mode);
                 }
             })
-            .catch(() => console.warn("Could not load app name setting."));
-    }, []);
+            .catch(() => console.warn("Could not load app settings."));
+    }, [token]);
 
     const handleIdle = useCallback(() => {
         toast.warning("Logged out due to inactivity", {
@@ -149,8 +154,20 @@ export default function MainLayout() {
                            {t('nav.section_config')}
                         </p>
                          <div className="space-y-1">
-                            <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                            {/* --- START: Conditional Menu Rendering --- */}
+                            {operatingMode === 'AAA' ? (
+                                <>
+                                    <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                </>
+                            ) : (
+                                <>
+                                    <NavItem to="/mikrotik/api" icon={<Aperture size={18} />} text="Mikrotik API" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    <NavItem to="/mikrotik/groups" icon={<Users size={18} />} text="Mikrotik Groups" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    <NavItem to="/mikrotik/bindings" icon={<Link2 size={18} />} text="IP Bindings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                </>
+                            )}
+                            {/* --- END: Conditional Menu Rendering --- */}
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text={t('nav.advertisements')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text={t('nav.customization')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
@@ -164,7 +181,9 @@ export default function MainLayout() {
                             {isSuperAdmin && (
                                 <>
                                     <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                    <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    {operatingMode === 'AAA' && (
+                                        <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    )}
                                 </>
                             )}
                             <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />

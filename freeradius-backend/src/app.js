@@ -24,6 +24,9 @@ const externalAuthRoutes = require('./routes/externalAuthRoutes');
 const advertisementRoutes = require('./routes/advertisementRoutes'); 
 const userPortalRoutes = require('./routes/userPortalRoutes');
 const logManagerRoutes = require('./routes/logManagerRoutes');
+const mikrotikApiRoutes = require('./routes/mikrotikApiRoutes');
+const mikrotikProfileRoutes = require('./routes/mikrotikProfileRoutes');
+const mikrotikBindingRoutes = require('./routes/mikrotikBindingRoutes');
 
 const app = express();
 app.use(cors());
@@ -56,6 +59,9 @@ app.use('/api/vouchers', voucherRoutes);
 app.use('/api/advertisements', advertisementRoutes);
 app.use('/api/portal', userPortalRoutes);
 app.use('/api/logs', logManagerRoutes);
+app.use('/api/mikrotik', mikrotikApiRoutes);
+app.use('/api/mikrotik-profiles', mikrotikProfileRoutes);
+app.use('/api/mikrotik/bindings', mikrotikBindingRoutes);
 
 // --- Error Handler Middleware ---
 app.use(errorHandler);
