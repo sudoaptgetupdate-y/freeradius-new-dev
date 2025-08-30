@@ -45,23 +45,18 @@ const PaperStatCard = ({ title, value, icon: Icon, onClick, borderColor, bgColor
         )}
         onClick={onClick}
     >
-        {/* Element นี้คือพื้นหลังที่จะสไลด์เข้ามาเมื่อ Hover */}
         <div
             className={cn(
-                "absolute inset-0 origin-left scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100",
-                bgColor // <-- ใช้ Prop ใหม่ที่ส่งเข้ามาโดยตรง
+                "absolute inset-0 opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100",
+                bgColor
             )}
         />
-
-        {/* ไอคอนที่มุมขวา */}
         <div className={cn(
-            "absolute right-5 top-2 text-5xl opacity-20 transition-transform duration-300 ease-in-out group-hover:scale-125 group-hover:text-white/50",
+            "absolute right-5 top-2 text-5xl opacity-20 transition-transform duration-300 ease-in-out group-hover:scale-125 group-hover:text-white",
             iconColor
         )}>
             <Icon size={48} />
         </div>
-
-        {/* เนื้อหาของการ์ด (ตัวเลขและข้อความ) */}
         <div className="relative z-10 transition-colors duration-300 ease-in-out">
             <p className="mb-1 text-sm font-medium text-gray-500 group-hover:text-white/80">{title}</p>
             <p className="m-0 text-3xl font-bold text-gray-800 group-hover:text-white">{value}</p>
@@ -174,13 +169,13 @@ export default function DashboardPage() {
     const getStatusInfo = (status) => {
         switch (status) {
             case 'active':
-                return { value: t('status.active'), Icon: CheckCircle2, borderColor: 'border-l-green-500', iconColor: 'text-green-500' };
+                return { value: t('status.active'), Icon: CheckCircle2, borderColor: 'border-l-green-500', iconColor: 'text-green-500', bgColor: 'bg-green-300' };
             case 'inactive':
-                return { value: t('status.inactive'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400' };
+                return { value: t('status.inactive'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400', bgColor: 'bg-gray-200' };
             case 'failed':
-                return { value: t('status.failed'), Icon: XCircle, borderColor: 'border-l-red-500', iconColor: 'text-red-500' };
+                return { value: t('status.failed'), Icon: XCircle, borderColor: 'border-l-red-500', iconColor: 'text-red-500', bgColor: 'bg-red-300' };
             default:
-                return { value: t('status.unknown'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400' };
+                return { value: t('status.unknown'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400', bgColor: 'bg-gray-200' };
         }
     };
 
@@ -191,7 +186,7 @@ export default function DashboardPage() {
         return <p>{t('dashboard_load_error')}</p>;
     }
 
-    const { value: statusValue, Icon: StatusIcon, borderColor: statusBorderColor, iconColor: statusIconColor } = getStatusInfo(stats.summary.serviceStatus);
+    const { value: statusValue, Icon: StatusIcon, borderColor: statusBorderColor, iconColor: statusIconColor, bgColor: statusBgColor } = getStatusInfo(stats.summary.serviceStatus);
 
     const recentLoginsColumns = [
         { key: 'user', header: t('table_headers.user'), render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
@@ -220,7 +215,7 @@ export default function DashboardPage() {
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
                         borderColor="border-l-emerald-500"
-                        bgColor="bg-emerald-500" 
+                        bgColor="bg-emerald-300"
                         iconColor="text-emerald-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -231,7 +226,7 @@ export default function DashboardPage() {
                         icon={Users}
                         onClick={() => navigate('/users')}
                         borderColor="border-l-blue-500"
-                        bgColor="bg-blue-500" 
+                        bgColor="bg-blue-300"
                         iconColor="text-blue-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -242,7 +237,7 @@ export default function DashboardPage() {
                         icon={UserPlus}
                         onClick={() => navigate('/users', { state: { statusFilter: 'registered' } })}
                         borderColor="border-l-yellow-500"
-                        bgColor="bg-yellow-500" 
+                        bgColor="bg-yellow-300"
                         iconColor="text-yellow-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -253,7 +248,7 @@ export default function DashboardPage() {
                         icon={Building}
                         onClick={() => navigate('/organizations')}
                         borderColor="border-l-orange-500"
-                        bgColor="bg-orange-500" 
+                        bgColor="bg-orange-300"
                         iconColor="text-orange-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -265,7 +260,7 @@ export default function DashboardPage() {
                         onClick={isSuperAdmin ? () => setIsRestartDialogOpen(true) : undefined}
                         borderColor={statusBorderColor}
                         iconColor={statusIconColor}
-                        bgColor="bg-emerald-500" 
+                        bgColor={statusBgColor}
                         footerText={isSuperAdmin ? t('restart_service') : 'Service Status'}
                         t={t}
                     />
@@ -316,4 +311,3 @@ export default function DashboardPage() {
         </>
     );
 }
-
