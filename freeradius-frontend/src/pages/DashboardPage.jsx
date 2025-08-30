@@ -35,23 +35,37 @@ const formatBytes = (bytes, decimals = 2) => {
 };
 
 // "Paper Dashboard" Style Card Component
-const PaperStatCard = ({ title, value, icon: Icon, onClick, borderColor, iconColor, footerText, t }) => (
+const PaperStatCard = ({ title, value, icon: Icon, onClick, borderColor, bgColor, iconColor, footerText, t }) => (
     <div
         className={cn(
-            "bg-white p-5 rounded-lg shadow-md relative overflow-hidden transition-colors hover:bg-muted/50",
-            "border-l-4", 
+            "group relative overflow-hidden rounded-lg bg-white p-5 shadow-md",
+            "border-l-4 transition-all duration-300 ease-in-out",
             borderColor,
             onClick && "cursor-pointer"
         )}
         onClick={onClick}
     >
-        <div className={cn("absolute top-2 right-5 text-5xl opacity-20", iconColor)}>
+        {/* Element นี้คือพื้นหลังที่จะสไลด์เข้ามาเมื่อ Hover */}
+        <div
+            className={cn(
+                "absolute inset-0 origin-left scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100",
+                bgColor // <-- ใช้ Prop ใหม่ที่ส่งเข้ามาโดยตรง
+            )}
+        />
+
+        {/* ไอคอนที่มุมขวา */}
+        <div className={cn(
+            "absolute right-5 top-2 text-5xl opacity-20 transition-transform duration-300 ease-in-out group-hover:scale-125 group-hover:text-white/50",
+            iconColor
+        )}>
             <Icon size={48} />
         </div>
-        <div className="relative">
-            <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-            <p className="text-3xl font-bold text-gray-800 m-0">{value}</p>
-            <div className="mt-3 text-xs text-gray-500">{footerText}</div>
+
+        {/* เนื้อหาของการ์ด (ตัวเลขและข้อความ) */}
+        <div className="relative z-10 transition-colors duration-300 ease-in-out">
+            <p className="mb-1 text-sm font-medium text-gray-500 group-hover:text-white/80">{title}</p>
+            <p className="m-0 text-3xl font-bold text-gray-800 group-hover:text-white">{value}</p>
+            <div className="mt-3 text-xs text-gray-500 group-hover:text-white/80">{footerText}</div>
         </div>
     </div>
 );
@@ -206,6 +220,7 @@ export default function DashboardPage() {
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
                         borderColor="border-l-emerald-500"
+                        bgColor="bg-emerald-500" 
                         iconColor="text-emerald-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -216,6 +231,7 @@ export default function DashboardPage() {
                         icon={Users}
                         onClick={() => navigate('/users')}
                         borderColor="border-l-blue-500"
+                        bgColor="bg-blue-500" 
                         iconColor="text-blue-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -226,6 +242,7 @@ export default function DashboardPage() {
                         icon={UserPlus}
                         onClick={() => navigate('/users', { state: { statusFilter: 'registered' } })}
                         borderColor="border-l-yellow-500"
+                        bgColor="bg-yellow-500" 
                         iconColor="text-yellow-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -236,6 +253,7 @@ export default function DashboardPage() {
                         icon={Building}
                         onClick={() => navigate('/organizations')}
                         borderColor="border-l-orange-500"
+                        bgColor="bg-orange-500" 
                         iconColor="text-orange-500"
                         footerText={t('click_to_view_details')}
                         t={t}
@@ -247,6 +265,7 @@ export default function DashboardPage() {
                         onClick={isSuperAdmin ? () => setIsRestartDialogOpen(true) : undefined}
                         borderColor={statusBorderColor}
                         iconColor={statusIconColor}
+                        bgColor="bg-emerald-500" 
                         footerText={isSuperAdmin ? t('restart_service') : 'Service Status'}
                         t={t}
                     />
