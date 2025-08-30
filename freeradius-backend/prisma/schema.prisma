@@ -282,6 +282,7 @@ model MikrotikDevice {
   host      String   @unique
   user      String
   password  String
+  useTls    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

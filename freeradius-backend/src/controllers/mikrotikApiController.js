@@ -28,6 +28,8 @@ const saveConfig = async (req, res, next) => {
 
 const testConnection = async (req, res, next) => {
     try {
+        console.log('--- [CONTROLLER] Request received at /test-connection ---');
+        console.log('Request Body (req.body):', req.body);
         const result = await mikrotikApiService.testApiConnection(req.body);
         res.status(200).json({ success: true, message: result.message });
     } catch (error) {
