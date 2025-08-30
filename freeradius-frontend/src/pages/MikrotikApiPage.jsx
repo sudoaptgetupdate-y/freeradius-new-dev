@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'; // <-- **เพิ่ม useRef**
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +11,8 @@ import axiosInstance from '@/api/axiosInstance';
 
 export default function MikrotikApiPage() {
     const token = useAuthStore((state) => state.token);
-    // --- START: **แก้ไข** ---
-    // ใช้ state แยกสำหรับข้อมูลที่แสดงผล และข้อมูลที่จะส่ง
     const [displayData, setDisplayData] = useState({ host: '', user: '', useTls: false });
-    const passwordRef = useRef(''); // ใช้ Ref ในการเก็บค่า password โดยตรง
-    // --- END: **แก้ไข** ---
-
+    const passwordRef = useRef('');
     const [isLoading, setIsLoading] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
 
@@ -54,7 +50,7 @@ export default function MikrotikApiPage() {
             {
                 loading: "Saving API settings...",
                 success: () => {
-                    passwordRef.current.value = ''; // Clear password field after save
+                    passwordRef.current.value = '';
                     return "Mikrotik API settings saved successfully!";
                 },
                 error: (err) => err.response?.data?.message || "Failed to save settings.",
@@ -70,18 +66,12 @@ export default function MikrotikApiPage() {
             return;
         }
         
-        // --- START: **แก้ไข** ---
-        // รวบรวมข้อมูลล่าสุดจาก Form เพื่อส่งไปทดสอบเสมอ
         const dataToTest = {
             host: displayData.host,
             user: displayData.user,
             useTls: displayData.useTls,
             password: password,
         };
-
-        // DEBUG: เพิ่ม console.log เพื่อดูข้อมูลที่กำลังจะถูกส่งไป
-        console.log("--- Data being sent for test ---", dataToTest);
-        // --- END: **แก้ไข** ---
 
         setIsTesting(true);
         toast.promise(
@@ -112,9 +102,7 @@ export default function MikrotikApiPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="password">API Password</Label>
-                    {/* --- START: **แก้ไข** --- */}
                     <Input id="password" type="password" ref={passwordRef} placeholder="Enter password to save or test" />
-                    {/* --- END: **แก้ไข** --- */}
                     <p className="text-xs text-muted-foreground">For security, the password is not displayed. Enter it only when you need to save or test.</p>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border p-3">

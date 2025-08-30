@@ -1,4 +1,3 @@
-// freeradius-frontend/src/components/layout/MainLayout.jsx
 import { useState, useEffect, useCallback } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { 
     LogOut, LayoutDashboard, Server, Building, Users, Settings, 
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
-    Ticket, PlusSquare, History as HistoryIcon, SlidersHorizontal,
-    Megaphone,ShieldCheck, Aperture, Link2
+    Ticket, History as HistoryIcon, SlidersHorizontal,
+    Megaphone, ShieldCheck, Aperture, Link2
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -52,17 +51,19 @@ const NavItem = ({ to, icon, text, isCollapsed, onClick }) => (
 export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, logout, token } = useAuthStore(); // <-- Get token
+    const { user, logout, token } = useAuthStore();
     const isSuperAdmin = user?.role === 'superadmin';
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [appName, setAppName] = useState('Freeradius UI');
-    const [operatingMode, setOperatingMode] = useState('AAA'); // <-- State for operating mode
-
     const { t, i18n } = useTranslation();
 
+    const operatingMode = useAuthStore((state) => state.operatingMode);
+    const fetchOperatingMode = useAuthStore((state) => state.fetchOperatingMode);
+
     useEffect(() => {
-        // Fetch settings including appName and operatingMode
+        fetchOperatingMode(); 
+        
         axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
             .then(response => {
                 const fetchedSettings = response.data.data;
@@ -70,12 +71,9 @@ export default function MainLayout() {
                     setAppName(fetchedSettings.appName);
                     document.title = fetchedSettings.appName;
                 }
-                if (fetchedSettings.operating_mode) {
-                    setOperatingMode(fetchedSettings.operating_mode);
-                }
             })
             .catch(() => console.warn("Could not load app settings."));
-    }, [token]);
+    }, [token, fetchOperatingMode]);
 
     const handleIdle = useCallback(() => {
         toast.warning("Logged out due to inactivity", {
@@ -154,7 +152,6 @@ export default function MainLayout() {
                            {t('nav.section_config')}
                         </p>
                          <div className="space-y-1">
-                            {/* --- START: Conditional Menu Rendering --- */}
                             {operatingMode === 'AAA' ? (
                                 <>
                                     <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
@@ -167,7 +164,6 @@ export default function MainLayout() {
                                     <NavItem to="/mikrotik/bindings" icon={<Link2 size={18} />} text="IP Bindings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 </>
                             )}
-                            {/* --- END: Conditional Menu Rendering --- */}
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text={t('nav.advertisements')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text={t('nav.customization')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
@@ -209,7 +205,6 @@ export default function MainLayout() {
                         </h2>
                     </div>
                     <div className="flex items-center gap-4">
-                        
                         <div className="flex items-center gap-1">
                             <Button
                                 variant="ghost"
@@ -231,7 +226,6 @@ export default function MainLayout() {
                                 English
                             </Button>
                         </div>
-
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="flex items-center gap-2 h-10 px-3">

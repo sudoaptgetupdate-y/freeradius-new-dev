@@ -1,6 +1,6 @@
 const { RouterOSAPI } = require('routeros-api');
 const prisma = require('../prisma');
-const { encrypt, decrypt } = require('../utils/crypto');
+const { encrypt } = require('../utils/crypto');
 
 const getApiConfig = async () => {
     return prisma.mikrotikDevice.findFirst();
@@ -42,10 +42,13 @@ const testApiConnection = async (configData) => {
 
     try {
         await conn.connect();
-        await conn.write('/system/resource/print'); // Verify by running a command
+        await conn.write('/system/resource/print');
         return { success: true, message: 'Connection successful!' };
 
     } catch (error) {
+        // Log the error on the server for maintenance purposes
+        console.error('Mikrotik Connection Test Failed:', error);
+        
         let errorMessage = `Connection failed: ${error.message || 'An unknown error occurred.'}`;
         if (error.code === 'ETIMEDOUT' || (error.message && error.message.toLowerCase().includes('timeout'))) {
             errorMessage = `Connection failed: Timed out while trying to connect to '${host}'. Please check the IP address and firewall.`;

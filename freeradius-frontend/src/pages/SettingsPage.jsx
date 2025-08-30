@@ -1,4 +1,3 @@
-// src/pages/SettingsPage.jsx
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,9 +16,21 @@ export default function SettingsPage() {
     const [registrationEnabled, setRegistrationEnabled] = useState(true);
     const [externalLoginEnabled, setExternalLoginEnabled] = useState(true);
     const [initialUserStatus, setInitialUserStatus] = useState('registered');
-    const [operatingMode, setOperatingMode] = useState('AAA'); // <-- ADDED
     const [isLoading, setIsLoading] = useState(false);
 
+    // ดึงค่าและฟังก์ชันจาก Global Store (Zustand)
+    const currentOperatingMode = useAuthStore((state) => state.operatingMode);
+    const setOperatingModeInStore = useAuthStore((state) => state.setOperatingMode);
+    
+    // State ของฟอร์มในหน้านี้
+    const [operatingMode, setOperatingMode] = useState(currentOperatingMode);
+
+    // Sync state ของฟอร์มกับ Global Store เมื่อมีการเปลี่ยนแปลง
+    useEffect(() => {
+        setOperatingMode(currentOperatingMode);
+    }, [currentOperatingMode]);
+
+    // ดึงข้อมูลการตั้งค่าอื่นๆ ตอนโหลดหน้าครั้งแรก
     useEffect(() => {
         setIsLoading(true);
         axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
@@ -28,7 +39,8 @@ export default function SettingsPage() {
               setRegistrationEnabled(settings.registrationEnabled === 'true');
               setExternalLoginEnabled(settings.externalLoginEnabled === 'true');
               setInitialUserStatus(settings.initialUserStatus || 'registered');
-              setOperatingMode(settings.operating_mode || 'AAA'); // <-- ADDED
+              // อัปเดต state ของฟอร์มให้ตรงกับข้อมูลล่าสุดจาก server
+              setOperatingMode(settings.operating_mode || 'AAA');
           })
           .catch(() => toast.error(t('toast.settings_load_failed')))
           .finally(() => setIsLoading(false));
@@ -39,9 +51,17 @@ export default function SettingsPage() {
             registrationEnabled: String(registrationEnabled),
             externalLoginEnabled: String(externalLoginEnabled),
             initialUserStatus: initialUserStatus,
-            operatingMode: operatingMode, // <-- ADDED
+            operatingMode: operatingMode,
         };
-        toast.promise(axiosInstance.post('/settings', payload, { headers: { Authorization: `Bearer ${token}` } }),
+        
+        const promise = axiosInstance.post('/settings', payload, { headers: { Authorization: `Bearer ${token}` } })
+            .then((response) => {
+                // *** จุดสำคัญ: เมื่อบันทึกสำเร็จ ให้อัปเดตค่าใน Global Store ทันที ***
+                setOperatingModeInStore(operatingMode);
+                return response;
+            });
+
+        toast.promise(promise,
             {
                 loading: t('toast.saving_settings'),
                 success: t('toast.settings_save_success_main'),
@@ -60,7 +80,6 @@ export default function SettingsPage() {
                 <CardDescription>{t('settings_page.description')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* --- START: ADDED SECTION --- */}
                 <div className="flex items-start justify-between rounded-lg border p-4">
                     <div className="space-y-1.5 flex-1">
                         <Label className="text-base">Operating Mode</Label>
@@ -68,19 +87,18 @@ export default function SettingsPage() {
                             Switch between standard AAA mode and Mikrotik-specific mode.
                         </p>
                     </div>
-                    <div className="w-48">
+                    <div className="w-60">
                         <Select value={operatingMode} onValueChange={setOperatingMode}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a mode" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="AAA">AAA Mode (Standard)</SelectItem>
-                                <SelectItem value="Mikrotik">Mikrotik Mode</SelectItem>
+                                <SelectItem value="AAA">โหมดมาตรฐาน (Standard AAA)</SelectItem>
+                                <SelectItem value="Mikrotik">โหมด Mikrotik (สำหรับ Hotspot)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                 </div>
-                {/* --- END: ADDED SECTION --- */}
                 
                 <div className="flex items-start justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
