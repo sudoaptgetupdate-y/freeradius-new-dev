@@ -1,7 +1,7 @@
 {
   "account_settings": "ตั้งค่าบัญชี",
   "logout": "ออกจากระบบ",
-  "registered_users": "Registered Users",
+  "registered_users": "ผู้ใช้รออนุมัติ",
   "nav": {
     "dashboard": "แดชบอร์ด",
     "online_users": "ผู้ใช้ออนไลน์",
@@ -316,7 +316,8 @@
     "delete_admin": "ลบผู้ดูแล",
     "edit_attribute": "แก้ไขแอตทริบิวต์",
     "delete_attribute": "ลบแอตทริบิวต์",
-    "edit_user": "แก้ไขผู้ใช้"
+    "edit_user": "แก้ไขผู้ใช้",
+    "approve_users": "อนุมัติ ({{count}})"
   },
   "users_page": {
     "title": "ผู้ใช้งาน",
@@ -486,7 +487,10 @@
     "registering": "กำลังลงทะเบียน...",
     "register_success_title": "ลงทะเบียนสำเร็จ!",
     "register_failed_desc": "เกิดข้อผิดพลาดที่ไม่คาดคิด",
-    "user_detail_load_failed": "ไม่สามารถโหลดรายละเอียดผู้ใช้ได้"
+    "user_detail_load_failed": "ไม่สามารถโหลดรายละเอียดผู้ใช้ได้",
+    "approving_users": "กำลังอนุมัติผู้ใช้...",
+    "approve_success": "อนุมัติผู้ใช้ {{count}} คนสำเร็จ!",
+    "approve_failed": "การอนุมัติผู้ใช้ล้มเหลว"
   },
   "charts": {
     "online_users_trend": {
@@ -871,5 +875,10 @@
       "description": "ตรวจสอบเซสชันที่ผ่านมาของผู้ใช้นี้",
       "no_records": "ไม่พบประวัติการใช้งานสำหรับผู้ใช้นี้"
     }
+  },
+  "approve_dialog": {
+    "title": "ยืนยันการอนุมัติผู้ใช้",
+    "description": "การดำเนินการนี้จะอนุมัติผู้ใช้ที่เลือก <strong>{{count}} คน</strong>, เปลี่ยนสถานะเป็น 'ใช้งานได้', และอนุญาตให้ล็อกอินเข้าสู่ระบบได้",
+    "confirm": "ยืนยันการอนุมัติ"
   }
 }

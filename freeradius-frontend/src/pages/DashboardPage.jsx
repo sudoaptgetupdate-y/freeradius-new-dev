@@ -1,14 +1,12 @@
 // src/pages/DashboardPage.jsx
-import { useEffect, useState } from 'react';
-import axiosInstance from '@/api/axiosInstance';
-import useAuthStore from '@/store/authStore';
-import { toast } from 'sonner';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useNavigate } from 'react-router-dom';
-import { Users, Building, Server, Wifi, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle, UserPlus } from 'lucide-react'; // <-- ADDED UserPlus
+import { Wifi, Users, Building, ArrowRight, RefreshCw, CheckCircle2, XCircle, PauseCircle, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import OnlineUsersChartCard from '@/components/ui/OnlineUsersChartCard';
 import {
@@ -16,7 +14,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next';
+import axiosInstance from '@/api/axiosInstance';
+import useAuthStore from '@/store/authStore';
+import { toast } from 'sonner';
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -34,69 +34,44 @@ const formatBytes = (bytes, decimals = 2) => {
     return `${parseFloat((Number(b) / Number(k ** BigInt(i))).toFixed(dm))} ${sizes[i]}`;
 };
 
-const StatCard = ({ title, value, icon: Icon, onClick, iconBgColor, t }) => (
-    <Card
-        className="shadow-sm border-subtle cursor-pointer hover:bg-muted/50 transition-colors"
+// "Paper Dashboard" Style Card Component
+const PaperStatCard = ({ title, value, icon: Icon, onClick, borderColor, iconColor, footerText, t }) => (
+    <div
+        className={cn(
+            "bg-white p-5 rounded-lg shadow-md relative overflow-hidden transition-colors hover:bg-muted/50",
+            "border-l-4", 
+            borderColor,
+            onClick && "cursor-pointer"
+        )}
         onClick={onClick}
     >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            <div className={cn("p-2 rounded-md", iconBgColor)}>
-                <Icon className="h-5 w-5 text-primary-foreground" />
-            </div>
-        </CardHeader>
-        <CardContent>
-            <p className="text-3xl font-bold">{value}</p>
-            <p className="text-xs text-muted-foreground">{t('click_to_view_details')}</p>
-        </CardContent>
-    </Card>
+        <div className={cn("absolute top-2 right-5 text-5xl opacity-20", iconColor)}>
+            <Icon size={48} />
+        </div>
+        <div className="relative">
+            <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+            <p className="text-3xl font-bold text-gray-800 m-0">{value}</p>
+            <div className="mt-3 text-xs text-gray-500">{footerText}</div>
+        </div>
+    </div>
 );
 
-const StatusCard = ({ status, onRestart, isSuperAdmin, t }) => {
-    const getStatusInfo = () => {
-        switch (status) {
-            case 'active':
-                return { variant: 'success', text: t('status.active'), Icon: CheckCircle2 };
-            case 'inactive':
-                return { variant: 'secondary', text: t('status.inactive'), Icon: PauseCircle };
-            case 'failed':
-                return { variant: 'destructive', text: t('status.failed'), Icon: XCircle };
-            default:
-                return { variant: 'secondary', text: t('status.unknown'), Icon: PauseCircle };
-        }
-    };
-    const { variant, text, Icon } = getStatusInfo();
-    return (
-        <Card className="shadow-sm border-subtle flex flex-col">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t('freeradius_status')}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col justify-center items-center">
-                <Badge variant={variant} className="text-sm h-10 px-4">
-                    <Icon className="mr-2 h-4 w-4" />
-                    {text}
-                </Badge>
-            </CardContent>
-            {isSuperAdmin && (
-                <CardFooter>
-                    <Button variant="outline" size="sm" className="w-full" onClick={onRestart}>
-                        <RefreshCw className="mr-2 h-4 w-4" /> {t('restart_service')}
-                    </Button>
-                </CardFooter>
-            )}
-        </Card>
-    );
-};
-
-const RecentActivityTable = ({ title, description, data, columns, viewAllLink, viewAllText }) => {
+// Updated RecentActivityTable with Hover Effect
+const RecentActivityTable = ({ title, description, data, columns, viewAllLink }) => {
     const navigate = useNavigate();
     return (
-        <Card className="shadow-sm border-subtle h-full flex flex-col">
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
+        <Card 
+            className="shadow-sm border-subtle h-full flex flex-col transition-colors hover:bg-muted/50 cursor-pointer"
+            onClick={() => viewAllLink && navigate(viewAllLink)}
+        >
+            <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </div>
+                {viewAllLink && <ArrowRight className="h-5 w-5 text-slate-400" />}
             </CardHeader>
-            <CardContent className="flex-1">
+            <CardContent className="flex-1 pt-0">
                 <div className="border rounded-md">
                     <Table>
                         <TableHeader>
@@ -126,13 +101,6 @@ const RecentActivityTable = ({ title, description, data, columns, viewAllLink, v
                     </Table>
                 </div>
             </CardContent>
-            {viewAllLink && (
-                <CardFooter>
-                    <Button variant="outline" size="sm" className="ml-auto" onClick={() => navigate(viewAllLink)}>
-                        {viewAllText} <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </CardFooter>
-            )}
         </Card>
     );
 };
@@ -162,7 +130,7 @@ export default function DashboardPage() {
             setLoading(false);
         }
     };
-    
+
     useEffect(() => {
         fetchStats();
     }, [token]);
@@ -189,6 +157,19 @@ export default function DashboardPage() {
         }
     };
 
+    const getStatusInfo = (status) => {
+        switch (status) {
+            case 'active':
+                return { value: t('status.active'), Icon: CheckCircle2, borderColor: 'border-l-green-500', iconColor: 'text-green-500' };
+            case 'inactive':
+                return { value: t('status.inactive'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400' };
+            case 'failed':
+                return { value: t('status.failed'), Icon: XCircle, borderColor: 'border-l-red-500', iconColor: 'text-red-500' };
+            default:
+                return { value: t('status.unknown'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400' };
+        }
+    };
+
     if (loading) {
         return <p>{t('loading_dashboard')}</p>;
     }
@@ -196,12 +177,14 @@ export default function DashboardPage() {
         return <p>{t('dashboard_load_error')}</p>;
     }
 
+    const { value: statusValue, Icon: StatusIcon, borderColor: statusBorderColor, iconColor: statusIconColor } = getStatusInfo(stats.summary.serviceStatus);
+
     const recentLoginsColumns = [
         { key: 'user', header: t('table_headers.user'), render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
         { key: 'ip', header: t('table_headers.ip_address'), render: (row) => row.framedipaddress, className: "font-mono" },
         { key: 'time', header: t('table_headers.time'), render: (row) => format(new Date(row.acctstarttime), 'dd/MM/yyyy HH:mm'), className: "text-right" },
     ];
-    
+
     const topUsersColumns = [
         { key: 'user', header: t('table_headers.user'), render: (row) => <div><p className="font-medium">{row.full_name}</p><p className="text-xs text-muted-foreground">{row.username}</p></div> },
         { key: 'org', header: t('table_headers.organization'), render: (row) => row.org_name },
@@ -216,62 +199,61 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground">{t('dashboard_subtitle')}</p>
                 </div>
 
-                {/* --- START: MODIFIED GRID --- */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6">
-                    <StatCard 
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+                    <PaperStatCard
                         title={t('online_users')}
                         value={stats.summary.onlineUsers || 0}
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
-                        iconBgColor="bg-blue-500"
+                        borderColor="border-l-emerald-500"
+                        iconColor="text-emerald-500"
+                        footerText={t('click_to_view_details')}
                         t={t}
                     />
-                    <StatCard 
+                    <PaperStatCard
                         title={t('total_users')}
                         value={stats.summary.totalUsers || 0}
                         icon={Users}
                         onClick={() => navigate('/users')}
-                        iconBgColor="bg-emerald-500"
+                        borderColor="border-l-blue-500"
+                        iconColor="text-blue-500"
+                        footerText={t('click_to_view_details')}
                         t={t}
                     />
-                    {/* --- ADDED CARD --- */}
-                     <StatCard 
+                     <PaperStatCard
                         title={t('registered_users')}
                         value={stats.summary.registeredUsers || 0}
                         icon={UserPlus}
                         onClick={() => navigate('/users', { state: { statusFilter: 'registered' } })}
-                        iconBgColor="bg-yellow-500"
+                        borderColor="border-l-yellow-500"
+                        iconColor="text-yellow-500"
+                        footerText={t('click_to_view_details')}
                         t={t}
                     />
-                    <StatCard 
+                    <PaperStatCard
                         title={t('organizations')}
                         value={stats.summary.totalOrgs || 0}
                         icon={Building}
                         onClick={() => navigate('/organizations')}
-                        iconBgColor="bg-orange-500"
+                        borderColor="border-l-orange-500"
+                        iconColor="text-orange-500"
+                        footerText={t('click_to_view_details')}
                         t={t}
                     />
-                    <StatCard 
-                        title={t('nas_clients')}
-                        value={stats.summary.totalNas || 0}
-                        icon={Server}
-                        onClick={() => navigate('/nas')}
-                        iconBgColor="bg-purple-500"
-                        t={t}
-                    />
-                    <StatusCard 
-                        status={stats.summary.serviceStatus} 
-                        isSuperAdmin={isSuperAdmin}
-                        onRestart={() => setIsRestartDialogOpen(true)} 
+                    <PaperStatCard
+                        title={t('freeradius_status')}
+                        value={statusValue}
+                        icon={StatusIcon}
+                        onClick={isSuperAdmin ? () => setIsRestartDialogOpen(true) : undefined}
+                        borderColor={statusBorderColor}
+                        iconColor={statusIconColor}
+                        footerText={isSuperAdmin ? t('restart_service') : 'Service Status'}
                         t={t}
                     />
                 </div>
-                {/* --- END MODIFIED GRID --- */}
 
-                <div className="grid grid-cols-1 gap-6">
-                    <div className="h-[350px]">
-                        <OnlineUsersChartCard />
-                    </div>
+                <div className="h-[350px]">
+                    <OnlineUsersChartCard />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -282,7 +264,6 @@ export default function DashboardPage() {
                             data={stats.recentLogins}
                             columns={recentLoginsColumns}
                             viewAllLink="/history"
-                            viewAllText={t('view_all_history')}
                         />
                     </div>
                     <div className="lg:col-span-1">
@@ -292,12 +273,11 @@ export default function DashboardPage() {
                             data={stats.topUsersToday}
                             columns={topUsersColumns}
                             viewAllLink="/history"
-                            viewAllText={t('view_all_history')}
                         />
                     </div>
                 </div>
             </div>
-            
+
             <AlertDialog open={isRestartDialogOpen} onOpenChange={setIsRestartDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -317,3 +297,4 @@ export default function DashboardPage() {
         </>
     );
 }
+

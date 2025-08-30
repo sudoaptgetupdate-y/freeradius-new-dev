@@ -10,7 +10,7 @@ const createUser = async (req, res, next) => {
     const adminId = req.admin.id;
 
     const result = await userService.createUserAndSync(req.body, adminId);
-    
+
     res.status(201).json({
       success: true,
       message: 'User created successfully',
@@ -132,6 +132,26 @@ const importUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+// --- START: ADDED CONTROLLER ---
+const approveMultipleUsers = async (req, res, next) => {
+    try {
+        const { usernames } = req.body;
+        if (!usernames || !Array.isArray(usernames) || usernames.length === 0) {
+            return res.status(400).json({ success: false, message: 'Usernames array is required.' });
+        }
+        const result = await userService.approveUsersByUsernames(usernames);
+        res.status(200).json({
+            success: true,
+            message: `${result.approvedCount} user(s) approved successfully.`,
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+// --- END: ADDED CONTROLLER ---
+
 // --- END ---
 
 module.exports = {
@@ -144,4 +164,5 @@ module.exports = {
   deleteMultipleUsers,
   toggleUserStatus,
   importUsers,
+  approveMultipleUsers, // <-- Export the new controller
 };

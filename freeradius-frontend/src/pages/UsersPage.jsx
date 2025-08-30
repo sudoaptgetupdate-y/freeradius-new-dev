@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle, Upload, ArrowUpDown } from "lucide-react";
+import { Users, PlusCircle, Edit, Trash2, Move, Eye, Ban, CheckCircle, Upload, ArrowUpDown, Check } from "lucide-react"; // <-- ADDED Check
 import UserFormDialog from "@/components/dialogs/UserFormDialog";
 import UserMoveDialog from "@/components/dialogs/UserMoveDialog";
 import UserImportDialog from "@/components/dialogs/UserImportDialog";
@@ -24,7 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { format } from 'date-fns';
 import { useTranslation } from "react-i18next";
-import { useLocation } from 'react-router-dom'; // <-- ADDED
+import { useLocation } from 'react-router-dom';
 
 const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
     const isSorted = sortConfig.key === columnKey;
@@ -47,7 +47,6 @@ const SortableHeader = ({ children, columnKey, sortConfig, setSortConfig }) => {
     );
 };
 
-// --- START: ADDED ---
 const StatusBadge = ({ status, t }) => {
     const statusConfig = {
         active: { variant: "success", label: t('status.active') },
@@ -57,20 +56,17 @@ const StatusBadge = ({ status, t }) => {
     const config = statusConfig[status] || { variant: "secondary", label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
 };
-// --- END ---
 
 
 export default function UsersPage() {
-    const { t } = useTranslation(); 
+    const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
     const navigate = useNavigate();
-    const location = useLocation(); // <-- ADDED
+    const location = useLocation();
 
     const [organizations, setOrganizations] = useState([]);
     const [orgFilter, setOrgFilter] = useState("");
-    // --- START: MODIFIED ---
     const [statusFilter, setStatusFilter] = useState(location.state?.statusFilter || "all");
-    // --- END ---
     const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
 
     const {
@@ -84,8 +80,8 @@ export default function UsersPage() {
         refreshData
     } = usePaginatedFetch(
         "/users",
-        15, 
-        { 
+        15,
+        {
             organizationId: orgFilter,
             sortBy: sortConfig.key,
             sortOrder: sortConfig.direction,
@@ -101,6 +97,7 @@ export default function UsersPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [userToDelete, setUserToDelete] = useState(null);
+    const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false); // <-- ADDED
 
     const isBulkActionsEnabled = !!orgFilter;
 
@@ -128,7 +125,7 @@ export default function UsersPage() {
     };
 
     const handleSelectSingle = (checked, user) => {
-        setSelectedUsers(prev => 
+        setSelectedUsers(prev =>
             checked ? [...prev, user] : prev.filter(u => u.id !== user.id)
         );
     };
@@ -205,11 +202,31 @@ export default function UsersPage() {
             }
         );
     };
-    
+
     const handleViewDetails = (username) => {
         navigate(`/users/${username}`);
     };
-    
+
+    // --- START: ADDED FUNCTION ---
+    const confirmApprove = async () => {
+        if (selectedUsers.length === 0) return;
+        toast.promise(
+            axiosInstance.post('/users/bulk-approve', { usernames: selectedUsers.map(u => u.username) }, {
+                headers: { Authorization: `Bearer ${token}` }
+            }),
+            {
+                loading: t('toast.approving_users'),
+                success: (res) => {
+                    onActionSuccess();
+                    return t('toast.approve_success', { count: res.data.data.approvedCount });
+                },
+                error: (err) => err.response?.data?.message || t('toast.approve_failed'),
+                finally: () => setIsApproveDialogOpen(false),
+            }
+        );
+    };
+    // --- END: ADDED FUNCTION ---
+
     return (
         <>
             <Card>
@@ -223,6 +240,14 @@ export default function UsersPage() {
                             <CardDescription>{t('users_page.description')}</CardDescription>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+                            {/* --- START: MODIFIED --- */}
+                            {selectedUsers.length > 0 && statusFilter === 'registered' && (
+                                <Button variant="default" size="sm" onClick={() => setIsApproveDialogOpen(true)}>
+                                    <Check className="mr-2 h-4 w-4" />
+                                    {t('actions.approve_users', { count: selectedUsers.length })}
+                                </Button>
+                            )}
+                            {/* --- END: MODIFIED --- */}
                             {selectedUsers.length > 0 && isBulkActionsEnabled && (
                                 <>
                                     <Button variant="outline" size="sm" onClick={() => setIsMoveDialogOpen(true)}>
@@ -265,8 +290,7 @@ export default function UsersPage() {
                                 ))}
                             </SelectContent>
                         </Select>
-                        
-                        {/* --- START: MODIFIED --- */}
+
                         <Select onValueChange={setStatusFilter} value={statusFilter}>
                             <SelectTrigger>
                                 <SelectValue placeholder={t('users_page.filter_status_placeholder')} />
@@ -278,52 +302,57 @@ export default function UsersPage() {
                                 <SelectItem value="disabled">{t('status.disabled')}</SelectItem>
                             </SelectContent>
                         </Select>
-                        {/* --- END --- */}
                     </div>
 
-                    {!isBulkActionsEnabled && (
+                    {/* --- START: MODIFIED --- */}
+                    {!isBulkActionsEnabled && statusFilter !== 'registered' && (
                         <p className="flex-shrink-0 text-sm text-muted-foreground mb-4">
                             {t('users_page.bulk_actions_prompt')}
                         </p>
                     )}
+                     {/* --- END: MODIFIED --- */}
 
                     <div className="border rounded-md">
                         <TooltipProvider delayDuration={0}>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                         {isBulkActionsEnabled && (
-                                        <TableHead className="w-[50px]">
-                                            <Checkbox
-                                                checked={users.length > 0 && selectedUsers.length === users.length}
-                                                onCheckedChange={handleSelectAll}
-                                            />
-                                        </TableHead>
-                                    )}
-                                    <SortableHeader columnKey="full_name" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.full_name')}</SortableHeader>
-                                    <SortableHeader columnKey="username" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.username')}</SortableHeader>
-                                    <TableHead>{t('table_headers.organization')}</TableHead>
-                                    <TableHead>{t('table_headers.status')}</TableHead>
-                                    <SortableHeader columnKey="createdAt" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.created_at')}</SortableHeader>
-                                    <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
+                                        {/* --- START: MODIFIED --- */}
+                                        {(isBulkActionsEnabled || statusFilter === 'registered') && (
+                                            <TableHead className="w-[50px]">
+                                                <Checkbox
+                                                    checked={users.length > 0 && selectedUsers.length === users.length}
+                                                    onCheckedChange={handleSelectAll}
+                                                />
+                                            </TableHead>
+                                        )}
+                                        {/* --- END: MODIFIED --- */}
+                                        <SortableHeader columnKey="full_name" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.full_name')}</SortableHeader>
+                                        <SortableHeader columnKey="username" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.username')}</SortableHeader>
+                                        <TableHead>{t('table_headers.organization')}</TableHead>
+                                        <TableHead>{t('table_headers.status')}</TableHead>
+                                        <SortableHeader columnKey="createdAt" sortConfig={sortConfig} setSortConfig={setSortConfig}>{t('table_headers.created_at')}</SortableHeader>
+                                        <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {isLoading ? (
                                         Array.from({ length: pagination.itemsPerPage }).map((_, i) => (
-                                            <TableRow key={i}><TableCell colSpan={isBulkActionsEnabled ? 7 : 6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                            <TableRow key={i}><TableCell colSpan={(isBulkActionsEnabled || statusFilter === 'registered') ? 7 : 6}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                         ))
                                     ) : users.length > 0 ? (
                                         users.map((user) => (
                                             <TableRow key={user.id} data-state={selectedUsers.some(u => u.id === user.id) && "selected"}>
-                                                {isBulkActionsEnabled && (
-                                                <TableCell>
-                                                    <Checkbox
-                                                        checked={selectedUsers.some(u => u.id === user.id)}
-                                                        onCheckedChange={(checked) => handleSelectSingle(checked, user)}
-                                                    />
-                                                </TableCell>
+                                                {/* --- START: MODIFIED --- */}
+                                                {(isBulkActionsEnabled || statusFilter === 'registered') && (
+                                                    <TableCell>
+                                                        <Checkbox
+                                                            checked={selectedUsers.some(u => u.id === user.id)}
+                                                            onCheckedChange={(checked) => handleSelectSingle(checked, user)}
+                                                        />
+                                                    </TableCell>
                                                 )}
+                                                {/* --- END: MODIFIED --- */}
                                                 <TableCell className="font-medium">{user.full_name}</TableCell>
                                                 <TableCell>{user.username}</TableCell>
                                                 <TableCell>{user.organization.name}</TableCell>
@@ -343,7 +372,7 @@ export default function UsersPage() {
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={isBulkActionsEnabled ? 7 : 6} className="h-24 text-center">{t('users_page.no_users_found')}</TableCell>
+                                            <TableCell colSpan={(isBulkActionsEnabled || statusFilter === 'registered') ? 7 : 6} className="h-24 text-center">{t('users_page.no_users_found')}</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -378,7 +407,7 @@ export default function UsersPage() {
             {isDialogOpen && ( <UserFormDialog isOpen={isDialogOpen} setIsOpen={setIsDialogOpen} user={editingUser} onSave={refreshData} /> )}
             {isMoveDialogOpen && ( <UserMoveDialog isOpen={isMoveDialogOpen} setIsOpen={setIsMoveDialogOpen} selectedUsers={selectedUsers} onMoveSuccess={onActionSuccess} /> )}
             {isImportDialogOpen && ( <UserImportDialog isOpen={isImportDialogOpen} setIsOpen={setIsImportDialogOpen} onImportSuccess={onActionSuccess} /> )}
-            
+
             <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -409,6 +438,20 @@ export default function UsersPage() {
                     <AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('delete_dialog.confirm')}</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            {/* --- START: ADDED DIALOG --- */}
+            <AlertDialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('approve_dialog.title')}</AlertDialogTitle>
+                        <AlertDialogDescription dangerouslySetInnerHTML={{ __html: t('approve_dialog.description', { count: selectedUsers.length }) }} />
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmApprove}>{t('approve_dialog.confirm')}</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* --- END: ADDED DIALOG --- */}
         </>
     );
 }

@@ -5,20 +5,20 @@ const fs = require('fs');
 const csv = require('csv-parser');
 
 const createUserAndSync = async (userData, adminId) => {
-  const { 
-    organizationId, 
-    password, 
-    full_name, 
-    national_id, 
-    employee_id, 
-    student_id, 
+  const {
+    organizationId,
+    password,
+    full_name,
+    national_id,
+    employee_id,
+    student_id,
     username: manualUsername,
     email,
     phoneNumber
   } = userData;
 
   if (!organizationId) throw new Error('Organization ID is required.');
-  
+
   const organization = await prisma.organization.findUnique({
     where: { id: parseInt(organizationId, 10) },
     include: { radiusProfile: true },
@@ -40,7 +40,7 @@ const createUserAndSync = async (userData, adminId) => {
       if (student_id) throw new Error('Student ID must be empty for manual type.');
       username = manualUsername;
       dataForDb.employee_id = null;
-      dataForDb.student_id = null; 
+      dataForDb.student_id = null;
       break;
     case 'national_id':
       if (!national_id) throw new Error('National ID is required for this organization type.');
@@ -105,7 +105,7 @@ const importUsersFromCSV = (filePath) => {
       const existingEmails = new Set(allUsers.filter(u => u.email).map(u => u.email));
       const usernamesInFile = new Set();
       const emailsInFile = new Set();
-      
+
       fs.createReadStream(filePath, { encoding: 'utf8' })
         .pipe(csv({ mapHeaders: ({ header }) => header.trim(), bom: true }))
         .on('data', (row) => {
@@ -119,12 +119,12 @@ const importUsersFromCSV = (filePath) => {
           const org = orgMap.get(organizationName.toLowerCase());
           if (!org) return errors.push({ row: rowIndex, message: `Organization '${organizationName}' not found.` });
           if (!org.radiusProfile) return errors.push({ row: rowIndex, message: `Organization '${organizationName}' has no assigned Radius Profile.`});
-          
+
           if (email && (existingEmails.has(email) || emailsInFile.has(email))) {
             return errors.push({ row: rowIndex, message: `Email '${email}' already exists.` });
           }
           if(email) emailsInFile.add(email);
-          
+
           let finalUsername = '';
           // --- START: อัปเดตเงื่อนไขการตรวจสอบข้อมูล CSV ---
           switch (org.login_identifier_type) {
@@ -162,7 +162,7 @@ const importUsersFromCSV = (filePath) => {
         .on('end', async () => {
           fs.unlinkSync(filePath);
           if (errors.length > 0) return reject({ errors });
-          
+
           try {
             await prisma.$transaction(async (tx) => {
               for (const userData of usersToCreate) {
@@ -209,7 +209,7 @@ const importUsersFromCSV = (filePath) => {
 const getAllUsers = async (filters) => {
   // 1. เพิ่ม status เข้าไปใน destructuring
   const { searchTerm, organizationId, page = 1, pageSize = 10, sortBy = 'createdAt', sortOrder = 'desc', status } = filters;
-  
+
   const whereClause = {};
 
   if (searchTerm) {
@@ -464,6 +464,36 @@ const toggleUserStatusByUsername = async (username) => {
   });
 };
 
+// --- START: ADDED FUNCTION ---
+const approveUsersByUsernames = async (usernames) => {
+    if (!usernames || !Array.isArray(usernames) || usernames.length === 0) {
+        throw new Error("Usernames array is required.");
+    }
+
+    return prisma.$transaction(async (tx) => {
+        // 1. Update user status to 'active'
+        const updatedUsersResult = await tx.user.updateMany({
+            where: {
+                username: { in: usernames },
+                status: 'registered', // Only approve users that are in 'registered' state
+            },
+            data: { status: 'active' },
+        });
+
+        // 2. Remove the 'Auth-Type := Reject' rule from radcheck to allow login
+        await tx.radcheck.deleteMany({
+            where: {
+                username: { in: usernames },
+                attribute: 'Auth-Type',
+                value: 'Reject',
+            },
+        });
+
+        return { approvedCount: updatedUsersResult.count };
+    });
+};
+// --- END: ADDED FUNCTION ---
+
 module.exports = {
   createUserAndSync,
   getAllUsers,
@@ -474,4 +504,5 @@ module.exports = {
   deleteUsersByUsernames,
   toggleUserStatusByUsername,
   importUsersFromCSV,
+  approveUsersByUsernames, // <-- Export the new function
 };

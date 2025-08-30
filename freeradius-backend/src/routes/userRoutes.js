@@ -1,16 +1,17 @@
 // freeradius-backend/src/routes/userRoutes.js
 const express = require('express');
 const multer = require('multer'); // 👈 1. Import multer
-const { 
-  createUser, 
-  getUsers, 
-  deleteUser, 
-  updateUser, 
+const {
+  createUser,
+  getUsers,
+  deleteUser,
+  updateUser,
   getUser,
   moveUsersToOrganization,
   deleteMultipleUsers,
   toggleUserStatus,
-  importUsers // 👈 2. Import controller ใหม่
+  importUsers, // 👈 2. Import controller ใหม่
+  approveMultipleUsers, // <-- ADDED
 } = require('../controllers/userController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
@@ -28,6 +29,7 @@ router.post('/', createUser);
 router.get('/', getUsers);
 router.post('/bulk-move', moveUsersToOrganization);
 router.post('/bulk-delete', deleteMultipleUsers);
+router.post('/bulk-approve', approveMultipleUsers); // <-- ADDED
 router.put('/:username/status', toggleUserStatus);
 router.get('/:username', getUser);
 router.delete('/:username', deleteUser);

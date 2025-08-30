@@ -1,7 +1,7 @@
 {
   "account_settings": "Account Settings",
   "logout": "Log Out",
-  "registered_users": "ผู้ใช้ลงทะเบียนใหม่",
+  "registered_users": "Registered Users",
   "nav": {
     "dashboard": "Dashboard",
     "online_users": "Online Users",
@@ -45,7 +45,7 @@
     "unknown": "Unknown",
     "still_online": "Still Online",
     "disabled": "Disabled",
-    "registered": "Registered" 
+    "registered": "Registered"
   },
   "all_packages": "All Packages",
   "saving": "Saving...",
@@ -316,7 +316,8 @@
     "delete_admin": "Delete Admin",
     "edit_attribute": "Edit Attribute",
     "delete_attribute": "Delete Attribute",
-    "edit_user": "Edit User"
+    "edit_user": "Edit User",
+    "approve_users": "Approve ({{count}})"
   },
   "users_page": {
     "title": "Users",
@@ -486,7 +487,10 @@
     "registering": "Registering...",
     "register_success_title": "Registration Successful!",
     "register_failed_desc": "An unexpected error occurred.",
-    "user_detail_load_failed": "Failed to fetch user details."
+    "user_detail_load_failed": "Failed to fetch user details.",
+    "approving_users": "Approving users...",
+    "approve_success": "{{count}} user(s) approved successfully!",
+    "approve_failed": "Failed to approve users."
   },
   "charts": {
     "online_users_trend": {
@@ -871,5 +875,10 @@
       "description": "Reviewing past sessions for this user.",
       "no_records": "No history records found for this user."
     }
+  },
+  "approve_dialog": {
+    "title": "Confirm Approve Users",
+    "description": "This will approve <strong>{{count}} selected user(s)</strong>, change their status to 'active', and allow them to log in.",
+    "confirm": "Confirm Approve"
   }
 }
