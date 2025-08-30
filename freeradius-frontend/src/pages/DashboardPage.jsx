@@ -70,7 +70,7 @@ const RecentActivityTable = ({ title, description, data, columns, viewAllLink })
     const navigate = useNavigate();
     return (
         <Card 
-            className="shadow-sm border-subtle h-full flex flex-col transition-colors hover:bg-muted/50 cursor-pointer"
+            className="shadow-sm border-subtle h-full flex flex-col"
             onClick={() => viewAllLink && navigate(viewAllLink)}
         >
             <CardHeader className="flex flex-row items-start justify-between">
@@ -83,10 +83,10 @@ const RecentActivityTable = ({ title, description, data, columns, viewAllLink })
             <CardContent className="flex-1 pt-0">
                 <div className="border rounded-md">
                     <Table>
-                        <TableHeader>
-                            <TableRow>
+                        <TableHeader className="bg-slate-100">
+                            <TableRow className="border-b-0">
                                 {columns.map((col) => (
-                                    <TableHead key={col.key} className={col.className}>{col.header}</TableHead>
+                                    <TableHead key={col.key} className={cn("text-xs uppercase text-slate-500", col.className)}>{col.header}</TableHead>
                                 ))}
                             </TableRow>
                         </TableHeader>
@@ -169,13 +169,13 @@ export default function DashboardPage() {
     const getStatusInfo = (status) => {
         switch (status) {
             case 'active':
-                return { value: t('status.active'), Icon: CheckCircle2, borderColor: 'border-l-green-500', iconColor: 'text-green-500', bgColor: 'bg-green-300' };
+                return { value: t('status.active'), Icon: CheckCircle2, borderColor: 'border-l-green-500', iconColor: 'text-green-500', bgColor: 'bg-green-500' };
             case 'inactive':
-                return { value: t('status.inactive'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400', bgColor: 'bg-gray-200' };
+                return { value: t('status.inactive'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400', bgColor: 'bg-gray-400' };
             case 'failed':
-                return { value: t('status.failed'), Icon: XCircle, borderColor: 'border-l-red-500', iconColor: 'text-red-500', bgColor: 'bg-red-300' };
+                return { value: t('status.failed'), Icon: XCircle, borderColor: 'border-l-red-500', iconColor: 'text-red-500', bgColor: 'bg-red-500' };
             default:
-                return { value: t('status.unknown'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400', bgColor: 'bg-gray-200' };
+                return { value: t('status.unknown'), Icon: PauseCircle, borderColor: 'border-l-gray-400', iconColor: 'text-gray-400', bgColor: 'bg-gray-400' };
         }
     };
 
@@ -214,9 +214,9 @@ export default function DashboardPage() {
                         value={stats.summary.onlineUsers || 0}
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
-                        borderColor="border-l-emerald-500"
+                        borderColor="border-l-emerald-300"
                         bgColor="bg-emerald-300"
-                        iconColor="text-emerald-500"
+                        iconColor="text-emerald-300"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
@@ -225,9 +225,9 @@ export default function DashboardPage() {
                         value={stats.summary.totalUsers || 0}
                         icon={Users}
                         onClick={() => navigate('/users')}
-                        borderColor="border-l-blue-500"
+                        borderColor="border-l-blue-300"
                         bgColor="bg-blue-300"
-                        iconColor="text-blue-500"
+                        iconColor="text-blue-300"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
@@ -236,9 +236,9 @@ export default function DashboardPage() {
                         value={stats.summary.registeredUsers || 0}
                         icon={UserPlus}
                         onClick={() => navigate('/users', { state: { statusFilter: 'registered' } })}
-                        borderColor="border-l-yellow-500"
-                        bgColor="bg-yellow-300"
-                        iconColor="text-yellow-500"
+                        borderColor="border-l-teal-300"
+                        bgColor="bg-teal-300"
+                        iconColor="text-teal-300"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
@@ -247,9 +247,9 @@ export default function DashboardPage() {
                         value={stats.summary.totalOrgs || 0}
                         icon={Building}
                         onClick={() => navigate('/organizations')}
-                        borderColor="border-l-orange-500"
+                        borderColor="border-l-orange-300"
                         bgColor="bg-orange-300"
-                        iconColor="text-orange-500"
+                        iconColor="text-orange-300"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
