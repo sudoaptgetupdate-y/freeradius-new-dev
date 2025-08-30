@@ -214,9 +214,9 @@ export default function DashboardPage() {
                         value={stats.summary.onlineUsers || 0}
                         icon={Wifi}
                         onClick={() => navigate('/online-users')}
-                        borderColor="border-l-emerald-300"
-                        bgColor="bg-emerald-300"
-                        iconColor="text-emerald-300"
+                        borderColor="border-l-emerald-500"
+                        bgColor="bg-emerald-500"
+                        iconColor="text-emerald-500"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
@@ -225,9 +225,9 @@ export default function DashboardPage() {
                         value={stats.summary.totalUsers || 0}
                         icon={Users}
                         onClick={() => navigate('/users')}
-                        borderColor="border-l-blue-300"
-                        bgColor="bg-blue-300"
-                        iconColor="text-blue-300"
+                        borderColor="border-l-blue-500"
+                        bgColor="bg-blue-500"
+                        iconColor="text-blue-500"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
@@ -236,9 +236,9 @@ export default function DashboardPage() {
                         value={stats.summary.registeredUsers || 0}
                         icon={UserPlus}
                         onClick={() => navigate('/users', { state: { statusFilter: 'registered' } })}
-                        borderColor="border-l-teal-300"
-                        bgColor="bg-teal-300"
-                        iconColor="text-teal-300"
+                        borderColor="border-l-teal-500"
+                        bgColor="bg-teal-500"
+                        iconColor="text-teal-500"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
@@ -247,9 +247,9 @@ export default function DashboardPage() {
                         value={stats.summary.totalOrgs || 0}
                         icon={Building}
                         onClick={() => navigate('/organizations')}
-                        borderColor="border-l-orange-300"
-                        bgColor="bg-orange-300"
-                        iconColor="text-orange-300"
+                        borderColor="border-l-orange-500"
+                        bgColor="bg-orange-500"
+                        iconColor="text-orange-500"
                         footerText={t('click_to_view_details')}
                         t={t}
                     />
