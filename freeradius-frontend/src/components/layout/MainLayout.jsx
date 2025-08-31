@@ -153,13 +153,9 @@ export default function MainLayout() {
                         </p>
                          <div className="space-y-1">
                             {operatingMode === 'AAA' ? (
-                                <>
-                                    <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                    <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                </>
+                                <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             ) : (
                                 <>
-                                    <NavItem to="/mikrotik/api" icon={<Aperture size={18} />} text="Mikrotik API" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                     <NavItem to="/mikrotik/groups" icon={<Users size={18} />} text="Mikrotik Groups" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                     <NavItem to="/mikrotik/bindings" icon={<Link2 size={18} />} text="IP Bindings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 </>
@@ -169,25 +165,32 @@ export default function MainLayout() {
                          </div>
                     </div>
 
-                    <div className="pt-2">
-                        <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                            {t('nav.section_system')}
-                        </p>
-                        <div className="space-y-1">
-                            {isSuperAdmin && (
-                                <>
-                                    <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                    {operatingMode === 'AAA' && (
-                                        <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                    )}
-                                </>
-                            )}
-                            <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            {isSuperAdmin && (
+                    {/* --- START: **แก้ไข** --- */}
+                    {/* เพิ่ม isSuperAdmin เพื่อครอบทั้งหมวดหมู่ SYSTEM */}
+                    {isSuperAdmin && (
+                        <div className="pt-2">
+                            <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                                {t('nav.section_system')}
+                            </p>
+                            <div className="space-y-1">
+                                <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                
+                                {/* NAS จะแสดงในทุกโหมดสำหรับ SuperAdmin */}
+                                <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+
+                                {operatingMode === 'AAA' ? (
+                                    <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                ) : (
+                                    <NavItem to="/mikrotik/api" icon={<Aperture size={18} />} text="Mikrotik API" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                )}
+                                
+                                <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/log-management" icon={<ShieldCheck size={18} />} text={t('nav.log_management')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            )}
+                            </div>
                         </div>
-                    </div>
+                    )}
+                    {/* --- END: **แก้ไข** --- */}
+
                 </nav>
             </aside>
 
