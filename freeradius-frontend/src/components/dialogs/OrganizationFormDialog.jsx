@@ -32,15 +32,12 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
     useEffect(() => {
         if (isOpen) {
             if (org) {
-                // --- Edit Mode (แก้ไขส่วนนี้) ---
+                // --- Edit Mode ---
                 setFormData({
                     name: org.name || '',
                     radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
                     login_identifier_type: org.login_identifier_type || 'manual',
-                    // --- START: EDIT ---
-                    // แก้ไข: ถ้า org.advertisementId ไม่มีค่า ให้ใช้ null แทน string ว่าง
                     advertisementId: org.advertisementId ? String(org.advertisementId) : null,
-                    // --- END: EDIT ---
                 });
             } else {
                 // --- Add New Mode ---
@@ -49,7 +46,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     name: '',
                     radiusProfileId: defaultProfile ? String(defaultProfile.id) : '',
                     login_identifier_type: 'manual',
-                    advertisementId: null, 
+                    advertisementId: null,
                 });
             }
         }
@@ -69,29 +66,22 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
         setFormData(prev => ({ ...prev, [id]: value === 'null' ? null : value }));
     };
 
-    // --- START: EDIT ---
-    // แก้ไข handleSubmit ให้จัดการข้อมูลก่อนส่ง
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // สร้าง payload ที่สะอาดก่อนส่งข้อมูล
+        const url = org ? `/organizations/${org.id}` : '/organizations';
+        const method = org ? 'put' : 'post';
+
         const payload = {
             ...formData,
             radiusProfileId: formData.radiusProfileId ? parseInt(formData.radiusProfileId, 10) : null,
             advertisementId: formData.advertisementId ? parseInt(String(formData.advertisementId), 10) : null,
         };
 
-        // ตรวจสอบว่าถ้าแปลงค่าแล้วเป็น NaN ให้ส่งเป็น null แทน
-        if (isNaN(payload.radiusProfileId)) {
-            payload.radiusProfileId = null;
-        }
-        if (isNaN(payload.advertisementId)) {
-            payload.advertisementId = null;
-        }
+        if (isNaN(payload.radiusProfileId)) payload.radiusProfileId = null;
+        if (isNaN(payload.advertisementId)) payload.advertisementId = null;
 
-        const url = org ? `/organizations/${org.id}` : '/organizations';
-        const method = org ? 'put' : 'post';
 
         toast.promise(
             axiosInstance[method](url, payload, { headers: { Authorization: `Bearer ${token}` } }),
@@ -107,7 +97,6 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
             }
         );
     };
-    // --- END: EDIT ---
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
