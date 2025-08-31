@@ -4,81 +4,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import { useTranslation } from "react-i18next";
-import { Search } from 'lucide-react';
-import useSWR from 'swr'; // <-- 1. Import useSWR
+import OrganizationCombobox from "@/components/shared/OrganizationCombobox"; // <-- 1. Import component ที่สร้างใหม่
 
 const RequiredLabel = ({ htmlFor, children }) => (
     <Label htmlFor={htmlFor}>
         {children} <span className="text-red-500">*</span>
     </Label>
 );
-
-// --- 2. แก้ไข OrganizationCombobox ทั้งหมด ---
-const OrganizationCombobox = ({ selectedValue, onSelect, compatibleOrgs, placeholder }) => {
-    const { t } = useTranslation();
-    const token = useAuthStore((state) => state.token);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-    // Debounce effect
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 300); // รอ 300ms หลังจากผู้ใช้หยุดพิมพ์
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchTerm]);
-
-    const fetcher = (url) => axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { searchTerm: debouncedSearchTerm, pageSize: 50 } // ค้นหาและจำกัดผลลัพธ์ที่ 50
-    }).then(res => res.data.data.organizations);
-
-    const { data: searchedOrgs, error } = useSWR(
-      // จะเริ่ม fetch ก็ต่อเมื่อมีการพิมพ์ค้นหา
-      debouncedSearchTerm ? `/organizations` : null, 
-      fetcher
-    );
-
-    const organizations = debouncedSearchTerm ? searchedOrgs : compatibleOrgs;
-    
-    return (
-        <Select value={selectedValue ? String(selectedValue) : ""} onValueChange={onSelect}>
-            <SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger>
-            <SelectContent>
-                <div className="p-2">
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder={t('import_dialog.format_preview.search_org_placeholder', 'ค้นหากลุ่มผู้ใช้...')}
-                            className="pl-8"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                </div>
-                <div className="max-h-[200px] overflow-y-auto">
-                    {error && <div className="p-4 text-sm text-destructive text-center">Error fetching data.</div>}
-                    {organizations && organizations.length > 0 ? (
-                        organizations.map(org => (
-                            <SelectItem key={org.id} value={String(org.id)}>{org.name}</SelectItem>
-                        ))
-                    ) : (
-                        !error && <div className="p-4 text-sm text-muted-foreground text-center">{t('import_dialog.format_preview.no_orgs_found', 'ไม่พบข้อมูล')}</div>
-                    )}
-                </div>
-            </SelectContent>
-        </Select>
-    );
-};
 
 const initialFormData = {
     organizationId: '',
@@ -106,10 +42,9 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
     useEffect(() => {
         if (isOpen) {
             setIsDataReady(false);
-            // --- 3. แก้ไขกลับมาใช้ Paging เหมือนเดิม เพื่อให้โหลดครั้งแรกเร็ว ---
             axiosInstance.get('/organizations', { 
                 headers: { Authorization: `Bearer ${token}` },
-                params: { pageSize: 10 } // ดึงแค่ 10 รายการแรกมาแสดงก่อน
+                params: { pageSize: 10 }
             })
                 .then(response => {
                     const fetchedOrgs = response.data.data.organizations;
@@ -139,8 +74,6 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                 });
         }
     }, [isOpen, user, token, setIsOpen, t]);
-    
-    // ... (ส่วนที่เหลือของไฟล์ UserFormDialog.jsx เหมือนเดิมทั้งหมด) ...
 
     const compatibleOrgs = useMemo(() => {
         if (!isDataReady) return [];
@@ -211,10 +144,11 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
                             <RequiredLabel htmlFor="organizationId">{t('form_labels.organization')}</RequiredLabel>
+                            {/* 2. ใช้งาน Component ที่ import มา */}
                             <OrganizationCombobox
                                 selectedValue={formData.organizationId}
                                 onSelect={handleOrgChange}
-                                compatibleOrgs={compatibleOrgs} // ส่ง compatibleOrgs ไปแทน
+                                compatibleOrgs={compatibleOrgs}
                                 placeholder={t('form_labels.select_org_placeholder')}
                             />
                         </div>
