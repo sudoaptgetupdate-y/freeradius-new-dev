@@ -1,147 +1,103 @@
+// src/pages/SettingsPage.jsx
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"; // <-- แก้ไขบรรทัดนี้
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { SlidersHorizontal, Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Save, SlidersHorizontal } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
 import { useTranslation } from 'react-i18next';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import NasPage from './NasPage';
+import MikrotikApiPage from './MikrotikApiPage';
 
-export default function SettingsPage() {
+const OperatingModeSetting = () => {
     const { t } = useTranslation();
     const token = useAuthStore((state) => state.token);
-    const [registrationEnabled, setRegistrationEnabled] = useState(true);
-    const [externalLoginEnabled, setExternalLoginEnabled] = useState(true);
-    const [initialUserStatus, setInitialUserStatus] = useState('registered');
-    const [isLoading, setIsLoading] = useState(false);
-
-    // ดึงค่าและฟังก์ชันจาก Global Store (Zustand)
     const currentOperatingMode = useAuthStore((state) => state.operatingMode);
     const setOperatingModeInStore = useAuthStore((state) => state.setOperatingMode);
-    
-    // State ของฟอร์มในหน้านี้
     const [operatingMode, setOperatingMode] = useState(currentOperatingMode);
 
-    // Sync state ของฟอร์มกับ Global Store เมื่อมีการเปลี่ยนแปลง
     useEffect(() => {
         setOperatingMode(currentOperatingMode);
     }, [currentOperatingMode]);
-
-    // ดึงข้อมูลการตั้งค่าอื่นๆ ตอนโหลดหน้าครั้งแรก
-    useEffect(() => {
-        setIsLoading(true);
-        axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
-          .then(response => {
-              const settings = response.data.data;
-              setRegistrationEnabled(settings.registrationEnabled === 'true');
-              setExternalLoginEnabled(settings.externalLoginEnabled === 'true');
-              setInitialUserStatus(settings.initialUserStatus || 'registered');
-              // อัปเดต state ของฟอร์มให้ตรงกับข้อมูลล่าสุดจาก server
-              setOperatingMode(settings.operating_mode || 'AAA');
-          })
-          .catch(() => toast.error(t('toast.settings_load_failed')))
-          .finally(() => setIsLoading(false));
-    }, [token, t]);
-
-    const handleSave = async () => {
-        const payload = {
-            registrationEnabled: String(registrationEnabled),
-            externalLoginEnabled: String(externalLoginEnabled),
-            initialUserStatus: initialUserStatus,
-            operatingMode: operatingMode,
-        };
-        
+    
+    const handleSave = () => {
+        const payload = { operatingMode };
         const promise = axiosInstance.post('/settings', payload, { headers: { Authorization: `Bearer ${token}` } })
-            .then((response) => {
-                // *** จุดสำคัญ: เมื่อบันทึกสำเร็จ ให้อัปเดตค่าใน Global Store ทันที ***
+            .then(() => {
                 setOperatingModeInStore(operatingMode);
-                return response;
             });
 
-        toast.promise(promise,
-            {
-                loading: t('toast.saving_settings'),
-                success: t('toast.settings_save_success_main'),
-                error: (err) => err.response?.data?.message || t('toast.settings_save_failed'),
-            }
-        );
+        toast.promise(promise, {
+            loading: t('toast.saving_settings'),
+            success: t('toast.settings_save_success_main'),
+            error: (err) => err.response?.data?.message || t('toast.settings_save_failed'),
+        });
     };
 
     return (
-        <Card className="max-w-3xl">
+        <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-6 w-6" />
-                    {t('settings_page.title')}
-                </CardTitle>
-                <CardDescription>{t('settings_page.description')}</CardDescription>
+                <CardTitle>Operating Mode</CardTitle>
+                <CardDescription>Switch between standard AAA and Mikrotik-specific modes.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex items-start justify-between rounded-lg border p-4">
-                    <div className="space-y-1.5 flex-1">
-                        <Label className="text-base">Operating Mode</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Switch between standard AAA mode and Mikrotik-specific mode.
-                        </p>
-                    </div>
-                    <div className="w-60">
-                        <Select value={operatingMode} onValueChange={setOperatingMode}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a mode" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="AAA">โหมดมาตรฐาน (Standard AAA)</SelectItem>
-                                <SelectItem value="Mikrotik">โหมด Mikrotik (สำหรับ Hotspot)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                
-                <div className="flex items-start justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                        <Label htmlFor="registration-switch" className="text-base">{t('settings_page.self_registration.label')}</Label>
-                        <p className="text-sm text-muted-foreground">{t('settings_page.self_registration.description')}</p>
-                    </div>
-                    <Switch id="registration-switch" checked={registrationEnabled} onCheckedChange={setRegistrationEnabled} />
-                </div>
-
-                {registrationEnabled && (
-                    <div className="flex items-start justify-between rounded-lg border p-4 pl-6 bg-muted/30">
-                         <div className="space-y-1.5 flex-1">
-                            <Label className="text-base">{t('settings_page.initial_status.label')}</Label>
-                            <p className="text-sm text-muted-foreground">{t('settings_page.initial_status.description')}</p>
-                        </div>
-                        <div className="w-48">
-                            <Select value={initialUserStatus} onValueChange={setInitialUserStatus}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="registered">{t('status.registered')}</SelectItem>
-                                    <SelectItem value="active">{t('status.active')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                )}
-
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                        <Label htmlFor="external-login-switch" className="text-base">{t('settings_page.external_login.label')}</Label>
-                        <p className="text-sm text-muted-foreground">{t('settings_page.external_login.description')}</p>
-                    </div>
-                    <Switch id="external-login-switch" checked={externalLoginEnabled} onCheckedChange={setExternalLoginEnabled} />
+            <CardContent>
+                <div className="max-w-md space-y-2">
+                    <Label htmlFor="operating-mode">Mode</Label>
+                    <Select value={operatingMode} onValueChange={setOperatingMode}>
+                        <SelectTrigger id="operating-mode">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="AAA">Standard AAA Mode</SelectItem>
+                            <SelectItem value="Mikrotik">Mikrotik Hotspot Mode</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-end p-6">
-                <Button onClick={handleSave} disabled={isLoading}>
+            <CardFooter>
+                 <Button onClick={handleSave} className="ml-auto">
                     <Save className="mr-2 h-4 w-4" />
-                    {isLoading ? t('saving') : t('save_settings')}
+                    {t('save_settings')}
                 </Button>
             </CardFooter>
         </Card>
+    );
+}
+
+export default function SettingsPage() {
+    const { t } = useTranslation();
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center">
+                <div>
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                        <SlidersHorizontal className="h-6 w-6" /> 
+                        {t('nav.system_settings')}
+                    </h1>
+                    <p className="text-muted-foreground">{t('settings_page.description')}</p>
+                </div>
+            </div>
+            <Tabs defaultValue="mode" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="mode">Operating Mode</TabsTrigger>
+                    <TabsTrigger value="nas">NAS / Clients</TabsTrigger>
+                    <TabsTrigger value="mikrotik">Mikrotik API</TabsTrigger>
+                </TabsList>
+                <TabsContent value="mode" className="mt-4">
+                    <OperatingModeSetting />
+                </TabsContent>
+                <TabsContent value="nas" className="mt-4">
+                   <NasPage />
+                </TabsContent>
+                <TabsContent value="mikrotik" className="mt-4">
+                    <MikrotikApiPage />
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 }

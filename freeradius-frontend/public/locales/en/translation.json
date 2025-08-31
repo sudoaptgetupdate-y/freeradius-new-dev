@@ -3,6 +3,7 @@
   "logout": "Log Out",
   "registered_users": "Registered Users",
   "nav": {
+    "login_registration": "Login & Registration",
     "dashboard": "Dashboard",
     "online_users": "Online Users",
     "history": "History",
@@ -21,6 +22,10 @@
     "attributes": "Attributes",
     "system_settings": "System Settings",
     "log_management": "Log Management"
+  },
+  "login_registration_page": {
+    "title": "Login & Registration Settings",
+    "description": "Manage user-facing policies like self-registration and login methods."
   },
   "dashboard": "Dashboard",
   "welcome_back": "Welcome back, {{name}}!",

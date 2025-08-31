@@ -3,6 +3,7 @@
   "logout": "ออกจากระบบ",
   "registered_users": "ผู้ใช้รออนุมัติ",
   "nav": {
+    "login_registration": "การล็อกอินและลงทะเบียน",
     "dashboard": "แดชบอร์ด",
     "online_users": "ผู้ใช้ออนไลน์",
     "history": "ประวัติการใช้งาน",
@@ -21,6 +22,10 @@
     "attributes": "จัดการแอตทริบิวต์",
     "system_settings": "ตั้งค่าระบบ",
     "log_management": "จัดการล็อกไฟล์"
+  },
+  "login_registration_page": {
+    "title": "ตั้งค่าการล็อกอินและลงทะเบียน",
+    "description": "จัดการนโยบายที่เกี่ยวข้องกับผู้ใช้ เช่น การลงทะเบียน และช่องทางการล็อกอิน"
   },
   "dashboard": "แดชบอร์ด",
   "welcome_back": "ยินดีต้อนรับกลับมา, {{name}}!",

@@ -1,16 +1,15 @@
 // src/main.jsx
-import React, { Suspense } from 'react'; 
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
-import './i18n'; 
+import './i18n';
 
 // Import components
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
 import ProtectedRouteUser from './components/auth/ProtectedRouteUser.jsx';
-
 
 import AuthLayout from './pages/AuthLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -41,10 +40,10 @@ import LogManagementPage from './pages/LogManagementPage.jsx';
 import MikrotikApiPage from './pages/MikrotikApiPage.jsx';
 import MikrotikGroupsPage from './pages/MikrotikGroupsPage.jsx';
 import IpBindingsPage from './pages/IpBindingsPage.jsx';
+import LoginRegistrationSettingsPage from './pages/LoginRegistrationSettingsPage.jsx';
 
 
 const router = createBrowserRouter([
-  // ... (โค้ด router ของคุณยังคงเหมือนเดิม)
   {
     path: '/',
     element: <App />,
@@ -76,19 +75,18 @@ const router = createBrowserRouter([
               { path: 'users', element: <UsersPage /> },
               { path: 'users/:username', element: <UserDetailPage /> },
               { path: 'history', element: <HistoryPage /> },
-              { path: 'nas', element: <NasPage /> },
               { path: 'online-users', element: <OnlineUsersPage /> },
               { path: 'admins', element: <AdminsPage /> },
               { path: 'attribute-management', element: <AttributeManagementPage /> },
               { path: 'advertisements', element: <AdvertisementPage /> },
               { path: 'customization', element: <CustomizationPage /> },
               { path: 'settings', element: <SettingsPage /> },
+              { path: 'login-registration', element: <LoginRegistrationSettingsPage /> },
               { path: 'vouchers/packages', element: <VoucherPackagesPage /> },
               { path: 'vouchers/batches', element: <VoucherBatchesPage /> },
               { path: 'account-settings', element: <AdminProfilePage /> },
               { path: 'radius-profiles', element: <RadiusProfilesPage /> },
               { path: 'log-management', element: <LogManagementPage /> },
-              { path: 'mikrotik/api', element: <MikrotikApiPage /> },
               { path: 'mikrotik/groups', element: <MikrotikGroupsPage /> },
               { path: 'mikrotik/bindings', element: <IpBindingsPage /> },
             ]
@@ -108,7 +106,6 @@ const router = createBrowserRouter([
   }
 ]);
 
-// --- 3. แก้ไขส่วน render ---
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Suspense fallback="Loading...">

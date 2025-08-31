@@ -1,13 +1,14 @@
+// src/components/layout/MainLayout.jsx
 import { useState, useEffect, useCallback } from "react";
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-import { 
-    LogOut, LayoutDashboard, Server, Building, Users, Settings, 
+import {
+    LogOut, LayoutDashboard, Server, Building, Users, Settings,
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, History as HistoryIcon, SlidersHorizontal,
-    Megaphone, ShieldCheck, Aperture, Link2
+    Megaphone, ShieldCheck, Aperture, Link2, KeyRound
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -62,8 +63,8 @@ export default function MainLayout() {
     const fetchOperatingMode = useAuthStore((state) => state.fetchOperatingMode);
 
     useEffect(() => {
-        fetchOperatingMode(); 
-        
+        fetchOperatingMode();
+
         axiosInstance.get('/settings', { headers: { Authorization: `Bearer ${token}` }})
             .then(response => {
                 const fetchedSettings = response.data.data;
@@ -118,9 +119,9 @@ export default function MainLayout() {
                 isSidebarCollapsed ? "md:w-20" : "md:w-64"
             )}>
                 <div className="p-4 border-b flex items-center gap-3 h-[65px] overflow-hidden">
-                    <img 
-                        src="/uploads/nt-head-logo.png" 
-                        alt="Logo" 
+                    <img
+                        src="/uploads/nt-head-logo.png"
+                        alt="Logo"
                         className="h-9 w-9 object-contain flex-shrink-0"
                     />
                     <h1 className={cn(
@@ -134,7 +135,7 @@ export default function MainLayout() {
                     <NavItem to="/dashboard" icon={<LayoutDashboard size={18} />} text={t('nav.dashboard')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/online-users" icon={<Wifi size={18} />} text={t('nav.online_users')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                     <NavItem to="/history" icon={<History size={18} />} text={t('nav.history')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                    
+
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                            {t('nav.section_users')}
@@ -142,11 +143,11 @@ export default function MainLayout() {
                         <div className="space-y-1">
                             <NavItem to="/users" icon={<Users size={18} />} text={t('nav.all_users')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/organizations" icon={<Building size={18} />} text={t('nav.organizations')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                            <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text={t('nav.voucher_batches')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />                    
+                            <NavItem to="/vouchers/batches" icon={<HistoryIcon size={18} />} text={t('nav.voucher_batches')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/vouchers/packages" icon={<Ticket size={18} />} text={t('nav.voucher_packages')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                         </div>
                     </div>
-                    
+
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
                            {t('nav.section_config')}
@@ -160,13 +161,12 @@ export default function MainLayout() {
                                     <NavItem to="/mikrotik/bindings" icon={<Link2 size={18} />} text="IP Bindings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 </>
                             )}
+                            <NavItem to="/login-registration" icon={<KeyRound size={18} />} text={t('nav.login_registration')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/advertisements" icon={<Megaphone size={18} />} text={t('nav.advertisements')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             <NavItem to="/customization" icon={<Palette size={18} />} text={t('nav.customization')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                          </div>
                     </div>
-
-                    {/* --- START: **แก้ไข** --- */}
-                    {/* เพิ่ม isSuperAdmin เพื่อครอบทั้งหมวดหมู่ SYSTEM */}
+                    
                     {isSuperAdmin && (
                         <div className="pt-2">
                             <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
@@ -174,22 +174,14 @@ export default function MainLayout() {
                             </p>
                             <div className="space-y-1">
                                 <NavItem to="/admins" icon={<UserCog size={18} />} text={t('nav.admins')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                
-                                {/* NAS จะแสดงในทุกโหมดสำหรับ SuperAdmin */}
-                                <NavItem to="/nas" icon={<Server size={18} />} text={t('nav.nas')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-
-                                {operatingMode === 'AAA' ? (
+                                {operatingMode === 'AAA' && (
                                     <NavItem to="/attribute-management" icon={<ListChecks size={18} />} text={t('nav.attributes')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                ) : (
-                                    <NavItem to="/mikrotik/api" icon={<Aperture size={18} />} text="Mikrotik API" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 )}
-                                
                                 <NavItem to="/settings" icon={<SlidersHorizontal size={18} />} text={t('nav.system_settings')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 <NavItem to="/log-management" icon={<ShieldCheck size={18} />} text={t('nav.log_management')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             </div>
                         </div>
                     )}
-                    {/* --- END: **แก้ไข** --- */}
 
                 </nav>
             </aside>
