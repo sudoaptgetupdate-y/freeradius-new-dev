@@ -24,33 +24,36 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
     const isEditMode = !!org;
 
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
-    const { data: profiles, error: profilesError } = useSWR('/radius-profiles', fetcher);
-    const { data: advertisements, error: adsError } = useSWR('/advertisements', fetcher);
+    const { data: profiles, error: profilesError } = useSWR(isOpen ? '/radius-profiles' : null, fetcher);
+    const { data: advertisements, error: adsError } = useSWR(isOpen ? '/advertisements' : null, fetcher);
 
     const isProtectedOrg = isEditMode && (org.name === 'Register' || org.name === 'Voucher');
 
     useEffect(() => {
         if (isOpen) {
             if (org) {
-                // --- Edit Mode ---
+                // --- Edit Mode (แก้ไขส่วนนี้) ---
                 setFormData({
                     name: org.name || '',
                     radiusProfileId: org.radiusProfileId ? String(org.radiusProfileId) : '',
                     login_identifier_type: org.login_identifier_type || 'manual',
-                    advertisementId: org.advertisementId ? String(org.advertisementId) : '',
+                    // --- START: EDIT ---
+                    // แก้ไข: ถ้า org.advertisementId ไม่มีค่า ให้ใช้ null แทน string ว่าง
+                    advertisementId: org.advertisementId ? String(org.advertisementId) : null,
+                    // --- END: EDIT ---
                 });
             } else {
-                // --- Add New Mode (แก้ไขส่วนนี้) ---
+                // --- Add New Mode ---
                 const defaultProfile = profiles?.find(p => p.name === 'default-profile');
                 setFormData({
                     name: '',
                     radiusProfileId: defaultProfile ? String(defaultProfile.id) : '',
                     login_identifier_type: 'manual',
-                    advertisementId: null, // <-- ตั้งค่าเริ่มต้นเป็น null (None)
+                    advertisementId: null, 
                 });
             }
         }
-    }, [org, isOpen, profiles]); // <-- เพิ่ม profiles ใน dependency array
+    }, [org, isOpen, profiles]);
 
     if (profilesError || adsError) {
         toast.error(t('toast.form_data_load_failed'));
@@ -66,15 +69,32 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
         setFormData(prev => ({ ...prev, [id]: value === 'null' ? null : value }));
     };
 
+    // --- START: EDIT ---
+    // แก้ไข handleSubmit ให้จัดการข้อมูลก่อนส่ง
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+
+        // สร้าง payload ที่สะอาดก่อนส่งข้อมูล
+        const payload = {
+            ...formData,
+            radiusProfileId: formData.radiusProfileId ? parseInt(formData.radiusProfileId, 10) : null,
+            advertisementId: formData.advertisementId ? parseInt(String(formData.advertisementId), 10) : null,
+        };
+
+        // ตรวจสอบว่าถ้าแปลงค่าแล้วเป็น NaN ให้ส่งเป็น null แทน
+        if (isNaN(payload.radiusProfileId)) {
+            payload.radiusProfileId = null;
+        }
+        if (isNaN(payload.advertisementId)) {
+            payload.advertisementId = null;
+        }
 
         const url = org ? `/organizations/${org.id}` : '/organizations';
         const method = org ? 'put' : 'post';
 
         toast.promise(
-            axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
+            axiosInstance[method](url, payload, { headers: { Authorization: `Bearer ${token}` } }),
             {
                 loading: t('toast.saving_org'),
                 success: () => {
@@ -87,6 +107,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
             }
         );
     };
+    // --- END: EDIT ---
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -114,7 +135,7 @@ export default function OrganizationFormDialog({ isOpen, setIsOpen, org, onSave 
                     <div className="space-y-2">
                         <Label htmlFor="radiusProfileId">{t('form_labels.radius_profile')}</Label>
                         <Select
-                            value={formData.radiusProfileId}
+                            value={formData.radiusProfileId || ""}
                             onValueChange={(value) => handleSelectChange('radiusProfileId', value)}
                             required
                         >

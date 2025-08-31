@@ -1,57 +1,81 @@
 // src/controllers/organizationController.js
+
 const organizationService = require('../services/organizationService');
 
-const createNewOrganization = async (req, res, next) => {
-  try {
-    const newOrg = await organizationService.createOrganization(req.body);
-    res.status(201).json({ success: true, data: newOrg });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getAllOrgs = async (req, res, next) => {
-  try {
-    const orgs = await organizationService.getAllOrganizations(req.query);
-    res.status(200).json({ success: true, data: orgs });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getOrgById = async (req, res, next) => {
-  try {
-    const org = await organizationService.getOrganizationById(req.params.id);
-    res.status(200).json({ success: true, data: org });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const updateOrg = async (req, res, next) => {
-  try {
-    const updatedOrg = await organizationService.updateOrganization(req.params.id, req.body);
-    res.status(200).json({ success: true, data: updatedOrg });
-  } catch (error) {
-    // ส่งข้อผิดพลาดกลับไปให้ Frontend โดยตรง
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-const deleteOrg = async (req, res, next) => {
+// Get all organizations
+exports.getAllOrganizations = async (req, res, next) => {
     try {
-        await organizationService.deleteOrganization(req.params.id);
-        res.status(200).json({ success: true, message: 'Organization deleted successfully'});
+        const { page = 1, pageSize = 10, search } = req.query;
+        const result = await organizationService.getAllOrganizations(parseInt(page), parseInt(pageSize), search);
+        res.json({
+            message: 'Organizations retrieved successfully',
+            data: result,
+        });
     } catch (error) {
-        // ส่งข้อผิดพลาดกลับไปให้ Frontend โดยตรง
-        res.status(400).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
-module.exports = {
-  createNewOrganization,
-  getAllOrgs,
-  getOrgById,
-  updateOrg,
-  deleteOrg,
+// Create a new organization
+exports.createOrganization = async (req, res, next) => {
+    try {
+        // --- START: EDIT ---
+        const { name, login_identifier_type, auto_create_user, default_profile_id, advertisementCampaignId } = req.body;
+
+        const orgData = {
+            name,
+            login_identifier_type,
+            auto_create_user,
+            default_profile_id,
+            advertisementCampaignId: advertisementCampaignId === '' ? null : advertisementCampaignId,
+        };
+        
+        const organization = await organizationService.createOrganization(orgData);
+        // --- END: EDIT ---
+        res.status(201).json({
+            message: 'Organization created successfully',
+            data: organization,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Get an organization by ID
+exports.getOrganizationById = async (req, res, next) => {
+    try {
+        const organization = await organizationService.getOrganizationById(parseInt(req.params.id));
+        if (!organization) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+        res.json({
+            message: 'Organization retrieved successfully',
+            data: organization,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Update an organization
+exports.updateOrganization = async (req, res, next) => {
+    try {
+        const organization = await organizationService.updateOrganization(parseInt(req.params.id), req.body);
+        res.json({
+            message: 'Organization updated successfully',
+            data: organization,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Delete an organization
+exports.deleteOrganization = async (req, res, next) => {
+    try {
+        await organizationService.deleteOrganization(parseInt(req.params.id));
+        res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
 };

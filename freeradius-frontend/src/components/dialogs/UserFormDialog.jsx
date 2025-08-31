@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import { useTranslation } from "react-i18next";
-import OrganizationCombobox from "@/components/shared/OrganizationCombobox"; // 1. Import component ที่แยกออกไป
+import OrganizationCombobox from "@/components/shared/OrganizationCombobox";
 
 const RequiredLabel = ({ htmlFor, children }) => (
     <Label htmlFor={htmlFor}>
@@ -42,10 +42,9 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
     useEffect(() => {
         if (isOpen) {
             setIsDataReady(false);
-            // 2. แก้ไขให้ดึงข้อมูล Organization ทั้งหมดในครั้งเดียว
             axiosInstance.get('/organizations', {
                 headers: { Authorization: `Bearer ${token}` },
-                params: { pageSize: -1 } // pageSize: -1 เพื่อดึงข้อมูลทั้งหมด
+                params: { pageSize: -1 }
             })
                 .then(response => {
                     const fetchedOrgs = response.data.data.organizations;
@@ -107,9 +106,22 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
         setFormData(prev => ({ ...prev, [id]: value }));
     };
 
+    // --- START: EDIT ---
+    // ปรับปรุงฟังก์ชันนี้เพื่อไม่ให้ล้างข้อมูลที่ไม่จำเป็น
     const handleOrgChange = (value) => {
-        setFormData(prev => ({ ...initialFormData, organizationId: value }));
+        setFormData(prev => ({
+            ...prev, // คงค่าเดิมของฟอร์มไว้ เช่น full_name, email
+            organizationId: value,
+            // รีเซ็ตเฉพาะค่าที่เกี่ยวข้องกับประเภทการล็อกอิน
+            username: '',
+            national_id: '',
+            employee_id: '',
+            student_id: '',
+            password: '',
+        }));
     };
+    // --- END: EDIT ---
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -145,7 +157,6 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
                             <RequiredLabel htmlFor="organizationId">{t('form_labels.organization')}</RequiredLabel>
-                            {/* 3. ส่ง prop ที่ถูกต้องเป็น allOrgs */}
                             <OrganizationCombobox
                                 selectedValue={formData.organizationId}
                                 onSelect={handleOrgChange}
