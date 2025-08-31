@@ -8,12 +8,17 @@ import { CardContent, CardDescription, CardTitle, CardFooter } from '@/component
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from "sonner";
-import { useTranslation } from 'react-i18next'; // <-- Import hook
+import { useTranslation } from 'react-i18next';
 
 export default function LoginPage() {
-    const { t, i18n } = useTranslation(); // <-- เรียกใช้ hook
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
-    const { login, token } = useAuthStore();
+    
+    // --- START: **แก้ไข** ---
+    // ดึงฟังก์ชันและ state ที่ถูกต้องจาก authStore เวอร์ชันล่าสุด
+    const { setToken, setUser, fetchOperatingMode, token } = useAuthStore();
+    // --- END: **แก้ไข** ---
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -35,10 +40,18 @@ export default function LoginPage() {
         e.preventDefault();
         setIsLoading(true);
         try {
+            // --- START: **แก้ไข** ---
+            // Logic การ Login ที่ทำงานร่วมกับ authStore และ Backend ได้ถูกต้อง
             const response = await axiosInstance.post('/auth/login', { username, password });
-            const { token, user: userData } = response.data;
-            login(token, userData);
-            toast.success(t('toast.welcome', { name: userData.fullName || userData.username }));
+            const { token, user } = response.data; // Backend ส่งข้อมูลกลับมาที่ response.data
+
+            // เรียกใช้ฟังก์ชันจาก store ทีละขั้นตอน
+            setToken(token);
+            setUser(user);
+            await fetchOperatingMode(); // ดึงค่า operatingMode หลัง Login สำเร็จ
+            
+            toast.success(t('toast.welcome', { name: user.fullName || user.username }));
+            // --- END: **แก้ไข** ---
             navigate('/dashboard');
         } catch (error) {
             toast.error(t('toast.login_failed_title'), {
@@ -53,6 +66,7 @@ export default function LoginPage() {
         return <Navigate to="/dashboard" replace />;
     }
 
+    // --- คงโครงสร้าง JSX เดิมของคุณไว้ทั้งหมด ---
     return (
         <>
             <CardContent className="pt-0">

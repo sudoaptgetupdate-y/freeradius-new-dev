@@ -37,8 +37,12 @@ const getAllOrganizations = async (filters = {}) => {
     };
   }
   
-  const skip = (parseInt(page) - 1) * parseInt(pageSize);
-  const take = parseInt(pageSize);
+  // --- START: แก้ไขส่วนนี้ ---
+  const isPagingDisabled = parseInt(pageSize, 10) === -1;
+
+  const skip = isPagingDisabled ? 0 : (parseInt(page) - 1) * parseInt(pageSize);
+  const take = isPagingDisabled ? undefined : parseInt(pageSize);
+  // --- END ---
 
   const [organizations, totalOrgs] = await prisma.$transaction([
     prisma.organization.findMany({
@@ -70,8 +74,8 @@ const getAllOrganizations = async (filters = {}) => {
   return {
     organizations,
     totalOrgs,
-    totalPages: Math.ceil(totalOrgs / take),
-    currentPage: parseInt(page),
+    totalPages: isPagingDisabled ? 1 : Math.ceil(totalOrgs / take),
+    currentPage: isPagingDisabled ? 1 : parseInt(page),
   };
 };
 
