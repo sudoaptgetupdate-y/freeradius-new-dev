@@ -1,44 +1,23 @@
 // src/components/shared/OrganizationCombobox.jsx
-import { useState, useEffect } from 'react';
-import useSWR from 'swr';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
-
-import useAuthStore from '@/store/authStore';
-import axiosInstance from '@/api/axiosInstance';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
-const OrganizationCombobox = ({ selectedValue, onSelect, compatibleOrgs, placeholder }) => {
+const OrganizationCombobox = ({ selectedValue, onSelect, allOrgs, placeholder }) => {
     const { t } = useTranslation();
-    const token = useAuthStore((state) => state.token);
     const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
-    // Debounce effect
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 300); // รอ 300ms หลังจากผู้ใช้หยุดพิมพ์
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchTerm]);
-
-    const fetcher = (url) => axiosInstance.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { searchTerm: debouncedSearchTerm, pageSize: 50 } // ค้นหาและจำกัดผลลัพธ์ที่ 50
-    }).then(res => res.data.data.organizations);
-
-    const { data: searchedOrgs, error } = useSWR(
-      // จะเริ่ม fetch ก็ต่อเมื่อมีการพิมพ์ค้นหา
-      debouncedSearchTerm ? `/organizations` : null, 
-      fetcher
-    );
-
-    const organizations = debouncedSearchTerm ? searchedOrgs : compatibleOrgs;
+    const filteredOrgs = useMemo(() => {
+        if (!searchTerm) {
+            return allOrgs;
+        }
+        return allOrgs.filter(org => 
+            org.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [searchTerm, allOrgs]);
     
     return (
         <Select value={selectedValue ? String(selectedValue) : ""} onValueChange={onSelect}>
@@ -57,13 +36,12 @@ const OrganizationCombobox = ({ selectedValue, onSelect, compatibleOrgs, placeho
                     </div>
                 </div>
                 <div className="max-h-[200px] overflow-y-auto">
-                    {error && <div className="p-4 text-sm text-destructive text-center">Error fetching data.</div>}
-                    {organizations && organizations.length > 0 ? (
-                        organizations.map(org => (
+                    {filteredOrgs && filteredOrgs.length > 0 ? (
+                        filteredOrgs.map(org => (
                             <SelectItem key={org.id} value={String(org.id)}>{org.name}</SelectItem>
                         ))
                     ) : (
-                        !error && <div className="p-4 text-sm text-muted-foreground text-center">{t('import_dialog.format_preview.no_orgs_found', 'ไม่พบข้อมูล')}</div>
+                        <div className="p-4 text-sm text-muted-foreground text-center">{t('import_dialog.format_preview.no_orgs_found', 'ไม่พบข้อมูล')}</div>
                     )}
                 </div>
             </SelectContent>

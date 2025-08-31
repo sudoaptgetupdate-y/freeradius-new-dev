@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import { useTranslation } from "react-i18next";
-import OrganizationCombobox from "@/components/shared/OrganizationCombobox"; // <-- 1. Import component ที่สร้างใหม่
+import OrganizationCombobox from "@/components/shared/OrganizationCombobox"; // 1. Import component ที่แยกออกไป
 
 const RequiredLabel = ({ htmlFor, children }) => (
     <Label htmlFor={htmlFor}>
@@ -42,9 +42,10 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
     useEffect(() => {
         if (isOpen) {
             setIsDataReady(false);
-            axiosInstance.get('/organizations', { 
+            // 2. แก้ไขให้ดึงข้อมูล Organization ทั้งหมดในครั้งเดียว
+            axiosInstance.get('/organizations', {
                 headers: { Authorization: `Bearer ${token}` },
-                params: { pageSize: 10 }
+                params: { pageSize: -1 } // pageSize: -1 เพื่อดึงข้อมูลทั้งหมด
             })
                 .then(response => {
                     const fetchedOrgs = response.data.data.organizations;
@@ -74,7 +75,7 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                 });
         }
     }, [isOpen, user, token, setIsOpen, t]);
-
+    
     const compatibleOrgs = useMemo(() => {
         if (!isDataReady) return [];
         if (!isEditMode) return allOrganizations;
@@ -144,11 +145,11 @@ export default function UserFormDialog({ isOpen, setIsOpen, user, onSave }) {
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
                             <RequiredLabel htmlFor="organizationId">{t('form_labels.organization')}</RequiredLabel>
-                            {/* 2. ใช้งาน Component ที่ import มา */}
+                            {/* 3. ส่ง prop ที่ถูกต้องเป็น allOrgs */}
                             <OrganizationCombobox
                                 selectedValue={formData.organizationId}
                                 onSelect={handleOrgChange}
-                                compatibleOrgs={compatibleOrgs}
+                                allOrgs={compatibleOrgs}
                                 placeholder={t('form_labels.select_org_placeholder')}
                             />
                         </div>
