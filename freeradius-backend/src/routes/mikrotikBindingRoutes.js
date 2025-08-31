@@ -1,6 +1,6 @@
 // freeradius-backend/src/routes/mikrotikBindingRoutes.js
 const express = require('express');
-const { getBindings, addBinding, removeBinding } = require('../controllers/mikrotikBindingController');
+const { getBindings, addBinding, updateBinding, removeBinding } = require('../controllers/mikrotikBindingController'); // <-- Import new controller
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
 
@@ -14,6 +14,7 @@ router.route('/')
     .post(addBinding);
 
 router.route('/:id')
+    .put(updateBinding) // <-- Add PUT route for updates
     .delete(removeBinding);
 
 module.exports = router;

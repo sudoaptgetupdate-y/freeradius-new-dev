@@ -1,5 +1,5 @@
 // src/components/dialogs/IpBindingFormDialog.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +17,25 @@ const initialFormData = {
     type: 'bypassed',
 };
 
-export default function IpBindingFormDialog({ isOpen, setIsOpen, onSave }) {
+export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave }) {
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
+    const isEditMode = !!binding;
+
+    useEffect(() => {
+        if (binding) {
+            setFormData({
+                macAddress: binding['mac-address'] || '',
+                address: binding.address || '',
+                toAddress: binding['to-address'] || '',
+                comment: binding.comment || '',
+                type: binding.type || 'bypassed',
+            });
+        } else {
+            setFormData(initialFormData);
+        }
+    }, [binding, isOpen]);
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -33,16 +48,20 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, onSave }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        
+        const url = isEditMode ? `/mikrotik/bindings/${binding['.id']}` : '/mikrotik/bindings';
+        const method = isEditMode ? 'put' : 'post';
+
         toast.promise(
-            axiosInstance.post('/mikrotik/bindings', formData, { headers: { Authorization: `Bearer ${token}` } }),
+            axiosInstance[method](url, formData, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: "Adding IP Binding...",
+                loading: isEditMode ? "Updating IP Binding..." : "Adding IP Binding...",
                 success: () => {
                     onSave();
                     setIsOpen(false);
-                    return "IP Binding added successfully.";
+                    return `IP Binding ${isEditMode ? 'updated' : 'added'} successfully.`;
                 },
-                error: (err) => err.response?.data?.message || "Failed to add binding.",
+                error: (err) => err.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'add'} binding.`,
                 finally: () => setIsLoading(false)
             }
         );
@@ -52,7 +71,7 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, onSave }) {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Add New IP Binding</DialogTitle>
+                    <DialogTitle>{isEditMode ? 'Edit' : 'Add New'} IP Binding</DialogTitle>
                 </DialogHeader>
                 <form id="ip-binding-form" onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
@@ -85,7 +104,7 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, onSave }) {
                 </form>
                 <DialogFooter>
                     <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="ip-binding-form" disabled={isLoading}>{isLoading ? 'Adding...' : 'Add Binding'}</Button>
+                    <Button type="submit" form="ip-binding-form" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

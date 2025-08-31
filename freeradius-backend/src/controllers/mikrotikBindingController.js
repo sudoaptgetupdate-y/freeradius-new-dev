@@ -3,7 +3,8 @@ const bindingService = require('../services/mikrotikBindingService');
 
 const getBindings = async (req, res, next) => {
     try {
-        const bindings = await bindingService.getIpBindings();
+        // Pass query params to the service for filtering
+        const bindings = await bindingService.getIpBindings(req.query);
         res.status(200).json({ success: true, data: bindings });
     } catch (error) {
         next(error);
@@ -19,6 +20,17 @@ const addBinding = async (req, res, next) => {
     }
 };
 
+// --- ADDED CONTROLLER ---
+const updateBinding = async (req, res, next) => {
+    try {
+        await bindingService.updateIpBinding(req.params.id, req.body);
+        res.status(200).json({ success: true, message: 'IP Binding updated successfully.'});
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+// --- END ---
+
 const removeBinding = async (req, res, next) => {
     try {
         await bindingService.removeIpBinding(req.params.id);
@@ -31,5 +43,6 @@ const removeBinding = async (req, res, next) => {
 module.exports = {
     getBindings,
     addBinding,
+    updateBinding, // <-- Export new controller
     removeBinding,
 };

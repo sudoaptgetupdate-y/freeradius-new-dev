@@ -1,3 +1,4 @@
+// freeradius-backend/src/services/mikrotikApiService.js
 const { RouterOSAPI } = require('routeros-api');
 const prisma = require('../prisma');
 const { encrypt } = require('../utils/crypto');
@@ -37,7 +38,8 @@ const testApiConnection = async (configData) => {
         user, 
         password, 
         tls: !!useTls, 
-        timeout: 3 
+        timeout: 3,
+        charset: 'utf8'
     });
 
     try {
@@ -46,7 +48,6 @@ const testApiConnection = async (configData) => {
         return { success: true, message: 'Connection successful!' };
 
     } catch (error) {
-        // Log the error on the server for maintenance purposes
         console.error('Mikrotik Connection Test Failed:', error);
         
         let errorMessage = `Connection failed: ${error.message || 'An unknown error occurred.'}`;
