@@ -76,38 +76,38 @@ const addIpBinding = async (data) => {
 };
 
 
-// --- START: MODIFIED SECTION (FINAL CORRECTED LOGIC) ---
+// --- START: MODIFIED SECTION (REPLACE STRATEGY) ---
 const updateIpBinding = async (id, data) => {
     let conn;
     try {
         conn = await connectToMikrotik();
-        const encodedComment = encodeToMikrotikHex(data.comment);
 
-        // This is the correct way to structure the command for 'set'.
-        // We will send all relevant fields. Sending an empty string ('') for 'address'
-        // or 'to-address' WILL correctly clear the value on Mikrotik with this command structure.
-        const command = [
-            '/ip/hotspot/ip-binding/set',
-            `=.id=${id}`,
+        // Step 1: Remove the existing binding using its .id.
+        // This is the most reliable way to ensure old values are cleared.
+        await conn.write('/ip/hotspot/ip-binding/remove', [`=.id=${id}`]);
+
+        // Step 2: Add a new binding with the updated information.
+        // This re-uses the same logic as the 'addIpBinding' function.
+        const addCommand = [
+            '/ip/hotspot/ip-binding/add',
             `=mac-address=${data.macAddress}`,
             `=type=${data.type}`,
-            `=address=${data.address || ''}`,
-            `=to-address=${data.toAddress || ''}`,
-            `=comment=${encodedComment || ''}`,
         ];
-
-        await conn.write(command);
+        if (data.address) {
+            addCommand.push(`=address=${data.address}`);
+        }
+        if (data.toAddress) {
+            addCommand.push(`=to-address=${data.toAddress}`);
+        }
+        if (data.comment) {
+            addCommand.push(`=comment=${encodeToMikrotikHex(data.comment)}`);
+        }
+        
+        await conn.write(addCommand);
         return { success: true };
 
     } catch (error) {
-        console.error("Mikrotik API Error (updateIpBinding):", error);
-        // We re-add this specific error check, as sending "" might still be rejected on older RouterOS versions.
-        // If so, the fallback is to use the 'unset' logic, which is now corrected.
-        if (error.message && error.message.includes("expects range of ip addresses")) {
-             console.warn("RouterOS version might not support clearing IP with empty string. Falling back to unset.");
-             // Fallback logic for older RouterOS versions that require 'unset'
-             return await updateIpBindingWithUnset(id, data, conn);
-        }
+        console.error("Mikrotik API Error (updateIpBinding with Replace Strategy):", error);
         throw new Error(`Failed to update IP binding: ${error.message}`);
     } finally {
         if (conn && conn.connected) {
@@ -115,48 +115,6 @@ const updateIpBinding = async (id, data) => {
         }
     }
 };
-
-// This is a helper function for older RouterOS versions if the main 'set' command fails.
-// It is NOT called directly from the controller.
-const updateIpBindingWithUnset = async (id, data, existingConnection) => {
-    let conn = existingConnection;
-    try {
-        // If no connection is passed, create a new one.
-        if (!conn || !conn.connected) {
-            conn = await connectToMikrotik();
-        }
-        
-        const setCommand = [
-            '/ip/hotspot/ip-binding/set',
-            `=.id=${id}`,
-            `=mac-address=${data.macAddress}`,
-            `=type=${data.type}`,
-            `=comment=${encodeToMikrotikHex(data.comment) || ''}`,
-        ];
-        if (data.address) setCommand.push(`=address=${data.address}`);
-        if (data.toAddress) setCommand.push(`=to-address=${data.toAddress}`);
-        await conn.write(setCommand);
-
-        // The correct command is not 'unset', but 'remove' on the value.
-        // The API command is to 'set' the value to nothing.
-        // The previous error was a complete misdiagnosis. The initial error message was correct.
-        // We will revert to the logic of only setting if a value exists, and explicitly clearing otherwise.
-        // After deep re-evaluation, the correct command is indeed 'set' with an empty value.
-        // The persistent error indicates a problem in how the library is formatting the command.
-        // The final, simplest logic should be the correct one.
-        
-        // The previous solution was the correct one. I'm reverting to it with a clearer explanation.
-        // Let's go back to the code that sends all fields.
-        throw new Error("Fallback logic failed, the issue is persistent.");
-
-    } catch (err) {
-         console.error("Fallback update logic failed:", err);
-         throw err;
-    }
-    // No finally block here, as connection is managed by the main function
-};
-
-
 // --- END: MODIFIED SECTION ---
 
 const removeIpBinding = async (id) => {
