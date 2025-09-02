@@ -21,12 +21,11 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
-    // Edit mode is when 'binding' is provided, NOT 'initialData'
     const isEditMode = !!binding;
 
     useEffect(() => {
         if (isOpen) {
-            if (binding) { // Editing existing binding
+            if (binding) {
                 setFormData({
                     macAddress: binding['mac-address'] || '',
                     address: binding.address || '',
@@ -34,16 +33,16 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                     comment: binding.comment || '',
                     type: binding.type || 'bypassed',
                 });
-            } else if (initialData) { // Creating new binding from an active host
+            } else if (initialData) {
                  setFormData({
                     macAddress: initialData['mac-address'] || '',
                     address: initialData.address || '',
-                    toAddress: '', // Default to empty
+                    toAddress: '',
                     comment: initialData.comment || '',
                     type: initialData.type || 'bypassed',
                 });
             }
-            else { // Creating a new manual binding
+            else {
                 setFormData(initialFormData);
             }
         }
@@ -83,7 +82,7 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? 'Edit' : 'Add New'} IP Binding</DialogTitle>
+                    <DialogTitle>{isEditMode ? 'Edit' : 'Add'} IP Binding</DialogTitle>
                 </DialogHeader>
                 <form id="ip-binding-form" onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
@@ -91,12 +90,12 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                         <Input id="macAddress" value={formData.macAddress} onChange={handleInputChange} placeholder="00:11:22:33:44:55" required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="address">IP Address</Label>
+                        <Label htmlFor="address">IP Address (Optional)</Label>
                         <Input id="address" value={formData.address} onChange={handleInputChange} placeholder="e.g., 192.168.88.10" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="toAddress">To Address (Optional)</Label>
-                        <Input id="toAddress" value={formData.toAddress} onChange={handleInputChange} placeholder="e.g., 192.168.88.10" />
+                        <Input id="toAddress" value={formData.toAddress} onChange={handleInputChange} placeholder="e.g., 192.168.88.20" />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="type">Type</Label>

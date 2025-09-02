@@ -10,6 +10,15 @@ const getActiveHosts = async (req, res, next) => {
     }
 };
 
+const getHosts = async (req, res, next) => {
+    try {
+        const hosts = await hotspotService.getHotspotHosts(req.query);
+        res.status(200).json({ success: true, data: hosts });
+    } catch (error) {
+        next(error);
+    }
+};
+
 const kickHosts = async (req, res, next) => {
     try {
         const { ids } = req.body;
@@ -38,6 +47,7 @@ const createBindings = async (req, res, next) => {
 
 module.exports = {
     getActiveHosts,
+    getHosts,
     kickHosts,
     createBindings,
 };

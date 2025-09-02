@@ -51,13 +51,41 @@ const getHotspotActiveHosts = async (filters = {}) => {
     }
 };
 
+const getHotspotHosts = async (filters = {}) => {
+    let conn;
+    try {
+        conn = await connectToMikrotik();
+        const hosts = await conn.write('/ip/hotspot/host/print');
+        
+        const decodedHosts = hosts.map(host => ({
+            ...host,
+            comment: decodeFromMikrotikHex(host.comment)
+        }));
+
+        const { searchTerm } = filters;
+        if (!searchTerm) {
+            return decodedHosts;
+        }
+
+        const lowercasedFilter = searchTerm.toLowerCase();
+        return decodedHosts.filter(host =>
+            Object.values(host).some(val =>
+                String(val).toLowerCase().includes(lowercasedFilter)
+            )
+        );
+    } catch (error) {
+        console.error("Mikrotik API Error (getHotspotHosts):", error);
+        throw new Error('Failed to fetch hosts from Mikrotik.');
+    } finally {
+        if (conn && conn.connected) await conn.close();
+    }
+};
+
 const removeHotspotActiveHosts = async (hostIds) => {
     let conn;
     try {
         conn = await connectToMikrotik();
         const commands = hostIds.map(id => ['/ip/hotspot/active/remove', `=.id=${id}`]);
-        // Although routeros-api doesn't support batch commands in one write,
-        // we execute them sequentially. It's acceptable for this use case.
         for (const command of commands) {
             await conn.write(command[0], command.slice(1));
         }
@@ -70,7 +98,6 @@ const removeHotspotActiveHosts = async (hostIds) => {
     }
 };
 
-
 const makeBindingForHosts = async (hostsData, bindingType) => {
     let conn;
     try {
@@ -82,9 +109,9 @@ const makeBindingForHosts = async (hostsData, bindingType) => {
                 '/ip/hotspot/ip-binding/add',
                 `=mac-address=${host['mac-address']}`,
                 `=address=${host.address}`,
-                `=server=${host.server || 'all'}`, // Use 'all' as a fallback if server is not present
+                `=server=${host.server || 'all'}`,
                 `=type=${bindingType}`,
-                `=comment=${encodeToMikrotikHex(host.user || `Bound on ${new Date().toLocaleDateString()}`)}`,
+                `=comment=${encodeToMikrotikHex(host.comment || `Bound on ${new Date().toLocaleDateString()}`)}`,
             ];
             await conn.write(command);
             createdCount++;
@@ -98,8 +125,23 @@ const makeBindingForHosts = async (hostsData, bindingType) => {
     }
 };
 
+const getHotspotServers = async () => {
+    let conn;
+    try {
+        conn = await connectToMikrotik();
+        const results = await conn.write('/ip/hotspot/print');
+        return results.map(server => server.name);
+    } catch (error) {
+        console.error("Mikrotik API Error (getHotspotServers):", error);
+        throw new Error('Failed to fetch hotspot servers from Mikrotik.');
+    } finally {
+        if (conn && conn.connected) await conn.close();
+    }
+};
+
 module.exports = {
     getHotspotActiveHosts,
+    getHotspotHosts,
     removeHotspotActiveHosts,
     makeBindingForHosts,
 };

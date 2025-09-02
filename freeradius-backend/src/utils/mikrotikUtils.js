@@ -1,53 +1,43 @@
 // freeradius-backend/src/utils/mikrotikUtils.js
 
 /**
- * Encodes a UTF-8 string into MikroTik-compatible hexadecimal escape sequences.
+ * Encodes a UTF-8 string into a consistent hexadecimal format for Mikrotik comments.
+ * This ensures all characters (Thai, English, numbers, symbols) are stored safely.
+ * @param {string} str The string to encode.
+ * @returns {string} The hex-encoded string.
  */
 const encodeToMikrotikHex = (str) => {
-    if (!str) {
-        return '';
-    }
-    // Buffer.from handles the UTF-8 string to bytes conversion.
-    const buffer = Buffer.from(str, 'utf8');
-    let hexString = '';
-    for (const byte of buffer) {
-        // Convert each byte to a two-digit uppercase hexadecimal string, prefixed with '\\'.
-        hexString += '\\' + byte.toString(16).padStart(2, '0').toUpperCase();
-    }
-    return hexString;
+    if (!str) return '';
+    // Convert the entire string to a hex representation of its UTF-8 bytes.
+    return Buffer.from(str, 'utf8').toString('hex');
 };
 
 /**
- * Decodes a MikroTik-compatible hexadecimal string back to a UTF-8 string.
- * This new version is more robust and correctly handles the hex format.
+ * Decodes a hex string from a Mikrotik comment back to a UTF-8 string.
+ * It includes a fallback to handle non-encoded legacy comments.
+ * @param {string} hex The hex string to decode.
+ * @returns {string} The decoded UTF-8 string.
  */
-const decodeFromMikrotikHex = (hexStr) => {
-    // 1. Validate input: Check if it's a string and seems to be in our hex format.
-    //    Thai characters in UTF-8 hex often start with '\E0', making it a good check.
-    if (typeof hexStr !== 'string' || !hexStr.startsWith('\\E0')) {
-        return hexStr || '';
-    }
+const decodeFromMikrotikHex = (hex) => {
+    if (!hex) return '';
 
-    try {
-        // 2. Clean the string: Remove all backslash characters ('\') to get a pure hex string.
-        const cleanedHex = hexStr.replace(/\\/g, '');
+    // Check if the string is potentially hex-encoded (even number of hex characters).
+    // This is a simple check; more robust validation could be added if needed.
+    const isHex = /^[0-9a-fA-F]+$/.test(hex) && hex.length % 2 === 0;
 
-        // 3. Validate format: Ensure the cleaned string contains only valid hex characters.
-        if (/[^0-9A-F]/i.test(cleanedHex)) {
-            return hexStr; // Return original if it contains non-hex characters after cleaning.
+    if (isHex) {
+        try {
+            // Attempt to decode from hex.
+            const decodedStr = Buffer.from(hex, 'hex').toString('utf8');
+            return decodedStr;
+        } catch (error) {
+            // If decoding fails for any reason, return the original string.
+            return hex;
         }
-
-        // 4. Convert: Use Buffer.from with 'hex' encoding to directly convert the hex string to bytes.
-        const buffer = Buffer.from(cleanedHex, 'hex');
-        
-        // 5. Decode: Convert the buffer of bytes back to a readable UTF-8 string.
-        return buffer.toString('utf8');
-
-    } catch (error) {
-        // In case of any unexpected error during conversion, log it and return the original string.
-        console.error("Failed to decode Mikrotik hex string:", hexStr, error);
-        return hexStr;
     }
+
+    // If it's not a valid hex string, it's likely a legacy comment that wasn't encoded.
+    return hex;
 };
 
 module.exports = {

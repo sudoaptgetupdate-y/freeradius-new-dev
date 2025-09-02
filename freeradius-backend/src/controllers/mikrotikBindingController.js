@@ -3,46 +3,54 @@ const bindingService = require('../services/mikrotikBindingService');
 
 const getBindings = async (req, res, next) => {
     try {
-        // Pass query params to the service for filtering
-        const bindings = await bindingService.getIpBindings(req.query);
-        res.status(200).json({ success: true, data: bindings });
+        const result = await bindingService.getBindings(req.query);
+        res.status(200).json({
+            success: true,
+            data: result.data,
+            pagination: {
+                totalItems: result.totalItems,
+                totalPages: result.totalPages,
+                currentPage: result.currentPage,
+                itemsPerPage: parseInt(req.query.limit, 10) || 10,
+            }
+        });
     } catch (error) {
         next(error);
     }
 };
 
-const addBinding = async (req, res, next) => {
+const createBinding = async (req, res, next) => {
     try {
-        await bindingService.addIpBinding(req.body);
-        res.status(201).json({ success: true, message: 'IP Binding added successfully.' });
+        const result = await bindingService.addBinding(req.body);
+        res.status(201).json({ success: true, data: result });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
-// --- ADDED CONTROLLER ---
 const updateBinding = async (req, res, next) => {
     try {
-        await bindingService.updateIpBinding(req.params.id, req.body);
-        res.status(200).json({ success: true, message: 'IP Binding updated successfully.'});
+        const { id } = req.params;
+        const result = await bindingService.updateBinding(id, req.body);
+        res.status(200).json({ success: true, data: result });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        next(error);
     }
 };
-// --- END ---
 
-const removeBinding = async (req, res, next) => {
+const deleteBinding = async (req, res, next) => {
     try {
-        await bindingService.removeIpBinding(req.params.id);
-        res.status(200).json({ success: true, message: 'IP Binding removed successfully.' });
+        const { id } = req.params;
+        await bindingService.deleteBinding(id);
+        res.status(200).json({ success: true, message: 'Binding deleted successfully.' });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 module.exports = {
     getBindings,
-    addBinding,
-    updateBinding, // <-- Export new controller
-    removeBinding,
+    createBinding,
+    updateBinding,
+    deleteBinding,
 };
