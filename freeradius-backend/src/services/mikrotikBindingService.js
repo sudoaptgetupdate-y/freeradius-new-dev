@@ -2,138 +2,153 @@
 const { RouterOSAPI } = require('routeros-api');
 const prisma = require('../prisma');
 const { decrypt } = require('../utils/crypto');
+// VVVV เพิ่มการ import ฟังก์ชัน decode และ encode VVVV
 const { encodeToMikrotikHex, decodeFromMikrotikHex } = require('../utils/mikrotikUtils');
+
 
 const connectToMikrotik = async () => {
     const config = await prisma.mikrotikDevice.findFirst();
     if (!config) throw new Error('Mikrotik API settings are not configured.');
+
     const decryptedPassword = decrypt(config.password);
-    if (!decryptedPassword) throw new Error('Failed to decrypt Mikrotik password. Check encryption key.');
+    if (!decryptedPassword) {
+        throw new Error('Failed to decrypt Mikrotik password. Check encryption key.');
+    }
+
     const conn = new RouterOSAPI({
         host: config.host,
         user: config.user,
         password: decryptedPassword,
         tls: config.useTls || false,
-        charset: 'utf8'
+        charset: 'utf8' // Ensure charset is set for proper encoding handling
     });
+
     await conn.connect();
     return conn;
 };
 
-const getIpBindings = async (filters = {}) => {
+const getBindings = async (filters) => {
     let conn;
     try {
         conn = await connectToMikrotik();
-        const results = await conn.write(['/ip/hotspot/ip-binding/print']);
-        const decodedResults = results.map(binding => ({
+        
+        const query = ['/ip/hotspot/ip-binding/print'];
+        const whereClauses = [];
+        
+        if (filters.searchTerm) {
+            const term = filters.searchTerm;
+            whereClauses.push(`?mac-address=${term}`, `?address=${term}`, `?comment=${term}`);
+        }
+        if (filters.type) {
+            whereClauses.push(`?type=${filters.type}`);
+        }
+
+        // Note: RouterOS API doesn't support complex OR queries easily. 
+        // We'll fetch and filter in-app for more complex searches.
+        // For simplicity, this example will just fetch all if searchTerm is complex.
+        
+        const bindings = await conn.write(query);
+
+        // VVVV START: ส่วนที่แก้ไข VVVV
+        // Decode the comment field for each binding before sending it to the frontend
+        const decodedBindings = bindings.map(binding => ({
             ...binding,
             comment: decodeFromMikrotikHex(binding.comment)
         }));
-        
-        const { searchTerm, type } = filters;
-        let filteredResults = decodedResults;
-        if (searchTerm) {
-            const lowercasedFilter = searchTerm.toLowerCase();
-            filteredResults = decodedResults.filter(item =>
-                Object.values(item).some(val => 
-                    String(val).toLowerCase().includes(lowercasedFilter)
-                )
-            );
-        }
-        if (type) {
-            filteredResults = filteredResults.filter(item => item.type === type);
-        }
-        return filteredResults;
-    } catch (error) {
-        console.error("Mikrotik API Error (getIpBindings):", error);
-        throw new Error('Failed to fetch IP bindings from Mikrotik.');
-    } finally {
-        if (conn && conn.connected) await conn.close();
-    }
-};
-
-const addIpBinding = async (data) => {
-    let conn;
-    try {
-        conn = await connectToMikrotik();
-        const command = [
-            '/ip/hotspot/ip-binding/add',
-            `=mac-address=${data.macAddress}`,
-            `=type=${data.type}`,
-        ];
-        if (data.address) command.push(`=address=${data.address}`);
-        if (data.toAddress) command.push(`=to-address=${data.toAddress}`);
-        if (data.comment) command.push(`=comment=${encodeToMikrotikHex(data.comment)}`);
-        
-        await conn.write(command);
-        return { success: true };
-    } catch (error) {
-        console.error("Mikrotik API Error (addIpBinding):", error);
-        throw new Error(`Failed to add IP binding: ${error.message}`);
-    } finally {
-        if (conn && conn.connected) await conn.close();
-    }
-};
+        // VVVV END: ส่วนที่แก้ไข VVVV
 
 
-// --- START: MODIFIED SECTION (REPLACE STRATEGY) ---
-const updateIpBinding = async (id, data) => {
-    let conn;
-    try {
-        conn = await connectToMikrotik();
+        // Manual filtering for search term across multiple fields
+        const { searchTerm } = filters;
+        if (!searchTerm) {
+            return decodedBindings; // <-- ส่งข้อมูลที่ถอดรหัสแล้ว
+        }
 
-        // Step 1: Remove the existing binding using its .id.
-        // This is the most reliable way to ensure old values are cleared.
-        await conn.write('/ip/hotspot/ip-binding/remove', [`=.id=${id}`]);
+        const lowercasedFilter = searchTerm.toLowerCase();
 
-        // Step 2: Add a new binding with the updated information.
-        // This re-uses the same logic as the 'addIpBinding' function.
-        const addCommand = [
-            '/ip/hotspot/ip-binding/add',
-            `=mac-address=${data.macAddress}`,
-            `=type=${data.type}`,
-        ];
-        if (data.address) {
-            addCommand.push(`=address=${data.address}`);
-        }
-        if (data.toAddress) {
-            addCommand.push(`=to-address=${data.toAddress}`);
-        }
-        if (data.comment) {
-            addCommand.push(`=comment=${encodeToMikrotikHex(data.comment)}`);
-        }
-        
-        await conn.write(addCommand);
-        return { success: true };
+        return decodedBindings.filter(binding => // <-- กรองจากข้อมูลที่ถอดรหัสแล้ว
+            (binding['mac-address'] && binding['mac-address'].toLowerCase().includes(lowercasedFilter)) ||
+            (binding.address && binding.address.toLowerCase().includes(lowercasedFilter)) ||
+            (binding.comment && binding.comment.toLowerCase().includes(lowercasedFilter))
+        );
 
     } catch (error) {
-        console.error("Mikrotik API Error (updateIpBinding with Replace Strategy):", error);
-        throw new Error(`Failed to update IP binding: ${error.message}`);
+        console.error("Mikrotik API Error (getBindings):", error);
+        throw new Error(`Failed to fetch IP bindings: ${error.message}`);
     } finally {
         if (conn && conn.connected) {
             await conn.close();
         }
     }
 };
-// --- END: MODIFIED SECTION ---
 
-const removeIpBinding = async (id) => {
+const addBinding = async (bindingData) => {
+    let conn;
+    try {
+        conn = await connectToMikrotik();
+        const command = [
+            '/ip/hotspot/ip-binding/add',
+            `=mac-address=${bindingData.macAddress}`,
+            `=type=${bindingData.type}`,
+        ];
+        if (bindingData.address) command.push(`=address=${bindingData.address}`);
+        if (bindingData.toAddress) command.push(`=to-address=${bindingData.toAddress}`);
+        // Encode comment before sending to Mikrotik
+        if (bindingData.comment) command.push(`=comment=${encodeToMikrotikHex(bindingData.comment)}`);
+        
+        await conn.write(command);
+        return { success: true };
+    } catch (error) {
+        console.error("Mikrotik API Error (addBinding):", error);
+        throw new Error(`Failed to add IP binding: ${error.message}`);
+    } finally {
+        if (conn && conn.connected) await conn.close();
+    }
+};
+
+const updateBinding = async (id, bindingData) => {
+    let conn;
+    try {
+        conn = await connectToMikrotik();
+        const command = [
+            '/ip/hotspot/ip-binding/set',
+            `=.id=${id}`,
+            `=mac-address=${bindingData.macAddress}`,
+            `=type=${bindingData.type}`,
+        ];
+        if (bindingData.address) command.push(`=address=${bindingData.address}`);
+        if (bindingData.toAddress) command.push(`=to-address=${bindingData.toAddress}`);
+        // Encode comment before sending to Mikrotik
+        if (bindingData.comment) command.push(`=comment=${encodeToMikrotikHex(bindingData.comment)}`);
+
+        await conn.write(command);
+        return { success: true };
+    } catch (error) {
+        console.error("Mikrotik API Error (updateBinding):", error);
+        throw new Error(`Failed to update IP binding: ${error.message}`);
+    } finally {
+        if (conn && conn.connected) await conn.close();
+    }
+};
+
+const deleteBinding = async (id) => {
     let conn;
     try {
         conn = await connectToMikrotik();
         await conn.write('/ip/hotspot/ip-binding/remove', [`=.id=${id}`]);
         return { success: true };
     } catch (error) {
-        console.error("Mikrotik API Error (removeIpBinding):", error);
-        throw new Error('Failed to remove IP binding.');
+        console.error("Mikrotik API Error (deleteBinding):", error);
+        throw new Error(`Failed to delete IP binding: ${error.message}`);
     } finally {
         if (conn && conn.connected) await conn.close();
     }
 };
 
+
 module.exports = {
-    getIpBindings,
-    addIpBinding,
-    updateIpBinding,
-    removeIpBinding,
+    getBindings,
+    addBinding,
+    updateBinding,
+    deleteBinding,
 };

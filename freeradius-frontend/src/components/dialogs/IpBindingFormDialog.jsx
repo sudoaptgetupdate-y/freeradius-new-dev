@@ -17,25 +17,37 @@ const initialFormData = {
     type: 'bypassed',
 };
 
-export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave }) {
+export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave, initialData }) {
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
+    // Edit mode is when 'binding' is provided, NOT 'initialData'
     const isEditMode = !!binding;
 
     useEffect(() => {
-        if (binding) {
-            setFormData({
-                macAddress: binding['mac-address'] || '',
-                address: binding.address || '',
-                toAddress: binding['to-address'] || '',
-                comment: binding.comment || '',
-                type: binding.type || 'bypassed',
-            });
-        } else {
-            setFormData(initialFormData);
+        if (isOpen) {
+            if (binding) { // Editing existing binding
+                setFormData({
+                    macAddress: binding['mac-address'] || '',
+                    address: binding.address || '',
+                    toAddress: binding['to-address'] || '',
+                    comment: binding.comment || '',
+                    type: binding.type || 'bypassed',
+                });
+            } else if (initialData) { // Creating new binding from an active host
+                 setFormData({
+                    macAddress: initialData['mac-address'] || '',
+                    address: initialData.address || '',
+                    toAddress: '', // Default to empty
+                    comment: initialData.comment || '',
+                    type: initialData.type || 'bypassed',
+                });
+            }
+            else { // Creating a new manual binding
+                setFormData(initialFormData);
+            }
         }
-    }, [binding, isOpen]);
+    }, [binding, initialData, isOpen]);
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -79,7 +91,7 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                         <Input id="macAddress" value={formData.macAddress} onChange={handleInputChange} placeholder="00:11:22:33:44:55" required />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="address">IP Address (Optional)</Label>
+                        <Label htmlFor="address">IP Address</Label>
                         <Input id="address" value={formData.address} onChange={handleInputChange} placeholder="e.g., 192.168.88.10" />
                     </div>
                     <div className="space-y-2">

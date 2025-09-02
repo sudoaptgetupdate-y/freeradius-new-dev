@@ -10,22 +10,17 @@ const translateAndApplyAttributes = async (tx, profileName, data) => {
         acctInterimInterval
     } = data;
 
-    // Clear old attributes for this profile to ensure a clean slate
     await tx.radGroupReply.deleteMany({ where: { groupname: profileName } });
     await tx.radGroupCheck.deleteMany({ where: { groupname: profileName } });
 
     const attributesToCreate = { reply: [], check: [] };
 
-    // Translate to Reply Attributes
     if (rateLimit) attributesToCreate.reply.push({ attribute: 'Mikrotik-Rate-Limit', value: rateLimit });
     if (sessionTimeout) attributesToCreate.reply.push({ attribute: 'Session-Timeout', value: String(sessionTimeout) });
     if (idleTimeout) attributesToCreate.reply.push({ attribute: 'Idle-Timeout', value: String(idleTimeout) });
     if (acctInterimInterval) attributesToCreate.reply.push({ attribute: 'Acct-Interim-Interval', value: String(acctInterimInterval) });
-
-    // Translate to Check Attributes
     if (sharedUsers) attributesToCreate.check.push({ attribute: 'Simultaneous-Use', value: String(sharedUsers) });
     
-    // Batch create attributes
     if (attributesToCreate.reply.length > 0) {
         await tx.radGroupReply.createMany({
             data: attributesToCreate.reply.map(attr => ({ ...attr, groupname: profileName, op: ':=' })),
@@ -59,7 +54,6 @@ const updateMikrotikProfile = async (id, data) => {
         const existingProfile = await tx.radiusProfile.findUnique({ where: { id: profileId } });
         if (!existingProfile) throw new Error('Profile not found.');
 
-        // If name changes, we need to update the groupname reference everywhere
         if (name && name !== existingProfile.name) {
             await tx.radGroupReply.updateMany({ where: { groupname: existingProfile.name }, data: { groupname: name } });
             await tx.radGroupCheck.updateMany({ where: { groupname: existingProfile.name }, data: { groupname: name } });
@@ -75,17 +69,39 @@ const updateMikrotikProfile = async (id, data) => {
     });
 };
 
-const getMikrotikProfiles = async () => {
-    // This function can reuse the existing service logic for simplicity
-    const profiles = await prisma.radiusProfile.findMany({
-        orderBy: { name: 'asc' },
-        include: {
-            replyAttributes: true,
-            checkAttributes: true,
-        },
-    });
-    // Convert attributes into a simpler format for the frontend
-    return profiles.map(p => {
+const getMikrotikProfiles = async (filters = {}) => {
+    const { searchTerm, page = 1, pageSize = 10 } = filters;
+    const whereClause = {
+        description: {
+            startsWith: 'Mikrotik Profile -'
+        }
+    };
+
+    if (searchTerm) {
+        whereClause.OR = [
+            { name: { contains: searchTerm } },
+            { description: { contains: searchTerm } }
+        ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(pageSize);
+    const take = parseInt(pageSize);
+
+    const [profiles, totalItems] = await prisma.$transaction([
+        prisma.radiusProfile.findMany({
+            where: whereClause,
+            orderBy: { name: 'asc' },
+            include: {
+                replyAttributes: true,
+                checkAttributes: true,
+            },
+            skip,
+            take,
+        }),
+        prisma.radiusProfile.count({ where: whereClause }),
+    ]);
+
+    const formattedProfiles = profiles.map(p => {
         const findAttr = (type, attrName) => {
             const list = type === 'reply' ? p.replyAttributes : p.checkAttributes;
             return list.find(a => a.attribute === attrName)?.value;
@@ -95,11 +111,16 @@ const getMikrotikProfiles = async () => {
             name: p.name,
             rateLimit: findAttr('reply', 'Mikrotik-Rate-Limit'),
             sessionTimeout: findAttr('reply', 'Session-Timeout'),
-            idleTimeout: findAttr('reply', 'Idle-Timeout'),
             sharedUsers: findAttr('check', 'Simultaneous-Use'),
-            acctInterimInterval: findAttr('reply', 'Acct-Interim-Interval'),
         };
     });
+
+    return {
+        data: formattedProfiles,
+        totalItems,
+        totalPages: Math.ceil(totalItems / take),
+        currentPage: parseInt(page),
+    };
 };
 
 

@@ -13,8 +13,17 @@ const createProfile = async (req, res, next) => {
 
 const getProfiles = async (req, res, next) => {
     try {
-        const profiles = await mikrotikProfileService.getMikrotikProfiles();
-        res.status(200).json({ success: true, data: profiles });
+        const result = await mikrotikProfileService.getMikrotikProfiles(req.query);
+        res.status(200).json({
+            success: true,
+            data: {
+                // Ensure the array property key matches what the frontend hook expects
+                data: result.data, 
+                totalItems: result.totalItems,
+                totalPages: result.totalPages,
+                currentPage: result.currentPage,
+            }
+        });
     } catch (error) {
         next(error);
     }
@@ -31,7 +40,6 @@ const updateProfile = async (req, res, next) => {
 
 const deleteProfile = async (req, res, next) => {
     try {
-        // We can reuse the existing delete logic as it handles checks and transactions correctly
         await profileService.deleteProfile(req.params.id);
         res.status(200).json({ success: true, message: 'Profile deleted successfully' });
     } catch (error) {

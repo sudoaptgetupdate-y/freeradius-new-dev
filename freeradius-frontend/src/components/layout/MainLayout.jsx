@@ -150,15 +150,15 @@ export default function MainLayout() {
 
                     <div className="pt-2">
                         <p className="px-3 mt-4 mb-2 text-slate-400 text-xs font-semibold uppercase tracking-wider">
-                           {t('nav.section_config')}
+                            {t('nav.section_config')}
                         </p>
-                         <div className="space-y-1">
+                        <div className="space-y-1">
                             {operatingMode === 'AAA' ? (
                                 <NavItem to="/radius-profiles" icon={<Settings size={18} />} text={t('nav.radius_profiles')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                             ) : (
                                 <>
                                     <NavItem to="/mikrotik/groups" icon={<Users size={18} />} text="Mikrotik Groups" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
-                                    <NavItem to="/mikrotik/bindings" icon={<Link2 size={18} />} text="IP Bindings" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    <NavItem to="/mikrotik/hotspot" icon={<Link2 size={18} />} text="Hotspot Management" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 </>
                             )}
                             <NavItem to="/login-registration" icon={<KeyRound size={18} />} text={t('nav.login_registration')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />

@@ -1,26 +1,36 @@
 // src/pages/MikrotikGroupsPage.jsx
 import { useState } from "react";
-import useSWR from 'swr';
-import axiosInstance from "@/api/axiosInstance";
-import useAuthStore from "@/store/authStore";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Edit, Trash2, Users } from "lucide-react";
-import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Trash2, Edit, Users } from "lucide-react";
+import { toast } from "sonner";
+import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import useAuthStore from "@/store/authStore";
+import axiosInstance from "@/api/axiosInstance";
 import MikrotikGroupFormDialog from "@/components/dialogs/MikrotikGroupFormDialog";
-
-const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
 export default function MikrotikGroupsPage() {
     const token = useAuthStore((state) => state.token);
-    const { data: profiles, error, isLoading, mutate } = useSWR('/mikrotik-profiles', (url) => fetcher(url, token));
-
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState(null);
     const [profileToDelete, setProfileToDelete] = useState(null);
-    
+
+    const {
+        data: profiles,
+        pagination,
+        isLoading,
+        searchTerm,
+        handleSearchChange,
+        handlePageChange,
+        handleItemsPerPageChange,
+        refreshData
+    } = usePaginatedFetch("/mikrotik-profiles", 10, {}, 'data'); // Changed key to 'data' to match controller
+
     const handleAddNew = () => {
         setEditingProfile(null);
         setIsDialogOpen(true);
@@ -42,7 +52,7 @@ export default function MikrotikGroupsPage() {
             {
                 loading: "Deleting profile...",
                 success: () => {
-                    mutate(); // Re-fetch data
+                    refreshData();
                     return `Profile '${profileToDelete.name}' deleted successfully.`;
                 },
                 error: (err) => err.response?.data?.message || "Failed to delete profile.",
@@ -64,6 +74,14 @@ export default function MikrotikGroupsPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
+                    <div className="mb-4">
+                        <Input
+                            placeholder="Search by group name..."
+                            value={searchTerm}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            className="max-w-sm"
+                        />
+                    </div>
                     <div className="border rounded-md">
                         <Table>
                             <TableHeader>
@@ -76,10 +94,11 @@ export default function MikrotikGroupsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {isLoading && <TableRow><TableCell colSpan={5} className="text-center h-24">Loading profiles...</TableCell></TableRow>}
-                                {error && <TableRow><TableCell colSpan={5} className="text-center h-24 text-red-500">Failed to load data.</TableCell></TableRow>}
-                                {profiles && profiles.length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No Mikrotik groups found.</TableCell></TableRow>}
-                                {profiles?.map((profile) => (
+                                {isLoading && [...Array(pagination.itemsPerPage)].map((_, i) => (
+                                    <TableRow key={i}><TableCell colSpan={5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                ))}
+                                {!isLoading && profiles.length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No Mikrotik groups found.</TableCell></TableRow>}
+                                {profiles.map((profile) => (
                                     <TableRow key={profile.id}>
                                         <TableCell className="font-medium">{profile.name}</TableCell>
                                         <TableCell>{profile.rateLimit || 'N/A'}</TableCell>
@@ -95,6 +114,28 @@ export default function MikrotikGroupsPage() {
                         </Table>
                     </div>
                 </CardContent>
+                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                            <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
+                            Previous
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
+                            Next
+                        </Button>
+                    </div>
+                </CardFooter>
             </Card>
 
             {isDialogOpen && (
@@ -102,7 +143,7 @@ export default function MikrotikGroupsPage() {
                     isOpen={isDialogOpen}
                     setIsOpen={setIsDialogOpen}
                     profile={editingProfile}
-                    onSave={mutate}
+                    onSave={refreshData}
                 />
             )}
 

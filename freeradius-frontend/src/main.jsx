@@ -39,7 +39,7 @@ import LoggedOutPage from './pages/LoggedOutPage.jsx';
 import LogManagementPage from './pages/LogManagementPage.jsx';
 import MikrotikApiPage from './pages/MikrotikApiPage.jsx';
 import MikrotikGroupsPage from './pages/MikrotikGroupsPage.jsx';
-import IpBindingsPage from './pages/IpBindingsPage.jsx';
+import HotspotManagementPage from './pages/HotspotManagementPage.jsx';
 import LoginRegistrationSettingsPage from './pages/LoginRegistrationSettingsPage.jsx';
 
 
@@ -88,7 +88,7 @@ const router = createBrowserRouter([
               { path: 'radius-profiles', element: <RadiusProfilesPage /> },
               { path: 'log-management', element: <LogManagementPage /> },
               { path: 'mikrotik/groups', element: <MikrotikGroupsPage /> },
-              { path: 'mikrotik/bindings', element: <IpBindingsPage /> },
+              { path: 'mikrotik/hotspot', element: <HotspotManagementPage /> },
             ]
           }
         ]
