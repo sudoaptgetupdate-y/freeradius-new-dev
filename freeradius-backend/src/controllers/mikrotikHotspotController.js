@@ -45,9 +45,20 @@ const createBindings = async (req, res, next) => {
     }
 };
 
+// Add new controller function for getting servers
+const getServers = async (req, res, next) => {
+    try {
+        const servers = await hotspotService.getHotspotServers();
+        res.status(200).json({ success: true, data: servers });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getActiveHosts,
     getHosts,
     kickHosts,
     createBindings,
+    getServers, // Export the new controller
 };

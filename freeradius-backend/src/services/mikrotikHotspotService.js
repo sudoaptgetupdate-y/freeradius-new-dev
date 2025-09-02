@@ -108,11 +108,15 @@ const makeBindingForHosts = async (hostsData, bindingType) => {
             const command = [
                 '/ip/hotspot/ip-binding/add',
                 `=mac-address=${host['mac-address']}`,
-                `=address=${host.address}`,
+                // Ensure server is included, defaulting to 'all' if not provided
                 `=server=${host.server || 'all'}`,
                 `=type=${bindingType}`,
                 `=comment=${encodeToMikrotikHex(host.comment || `Bound on ${new Date().toLocaleDateString()}`)}`,
             ];
+             // Only add address if it exists, as per previous request
+            if (host.address) {
+                command.push(`=address=${host.address}`);
+            }
             await conn.write(command);
             createdCount++;
         }
@@ -144,4 +148,5 @@ module.exports = {
     getHotspotHosts,
     removeHotspotActiveHosts,
     makeBindingForHosts,
+    getHotspotServers, // Export the new function
 };

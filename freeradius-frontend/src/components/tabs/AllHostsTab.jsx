@@ -81,7 +81,18 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
     const handleSelectSingle = (checked, host) => setSelectedHosts(prev => checked ? [...prev, host] : prev.filter(h => h['.id'] !== host['.id']));
     const openConfirmation = (type, data) => setActionState({ isOpen: true, type, data });
     const closeConfirmation = () => setActionState({ isOpen: false, type: null, data: null });
-    const handleMakeBypassSingle = (host) => setBindingFromHost({ 'mac-address': host['mac-address'], address: '', comment: `Host: ${host['mac-address']}`, type: 'bypassed' });
+    
+    const handleMakeBindingSingle = (host, type) => {
+        setBindingFromHost({
+            'mac-address': host['mac-address'],
+            address: '',
+            toAddress: '', // Ensure 'To Address' is always empty on dialog open
+            comment: `Host: ${host['mac-address']}`,
+            type: type,
+            server: 'all'
+        });
+    };
+    
     const handleActionSuccess = () => { mutate(); onMakeBindingSuccess(); setSelectedHosts([]); setBindingFromHost(null); };
 
     const handleConfirmAction = async () => {
@@ -89,13 +100,15 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
         if (type.startsWith('make')) {
             const bindingType = type.split('-')[1];
             const hostsArray = Array.isArray(data) ? data : [data];
-            // Create a new array of hosts, adding `server: 'all'` but omitting the address.
+            
+            // Explicitly build the payload to avoid errors and ensure correctness
             const hostsToBind = hostsArray.map(h => ({
-                '.id': h['.id'],
                 'mac-address': h['mac-address'],
-                server: 'all',
-                comment: `Host: ${h['mac-address']}`
+                address: '0.0.0.0', // This is the key to fix the API error
+                comment: h.comment || `Host: ${h['mac-address']}`,
+                server: h.server || 'all'
             }));
+            
             toast.promise(
                 axiosInstance.post('/mikrotik/hotspot/bindings', { hosts: hostsToBind, type: bindingType }, { headers: { Authorization: `Bearer ${token}` } }),
                 {
@@ -149,8 +162,8 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
                                 <TableCell className="text-center">
                                      <div className="inline-flex items-center justify-center gap-1">
                                         <TooltipProvider>
-                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBypassSingle(host)}><ShieldCheck className="h-4 w-4 text-green-600"/></Button></TooltipTrigger><TooltipContent><p>Make Bypass</p></TooltipContent></Tooltip>
-                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openConfirmation('make-blocked', host)}><ShieldX className="h-4 w-4 text-red-600"/></Button></TooltipTrigger><TooltipContent><p>Make Block</p></TooltipContent></Tooltip>
+                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBindingSingle(host, 'bypassed')}><ShieldCheck className="h-4 w-4 text-green-600"/></Button></TooltipTrigger><TooltipContent><p>Make Bypass</p></TooltipContent></Tooltip>
+                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBindingSingle(host, 'blocked')}><ShieldX className="h-4 w-4 text-red-600"/></Button></TooltipTrigger><TooltipContent><p>Make Block</p></TooltipContent></Tooltip>
                                         </TooltipProvider>
                                      </div>
                                 </TableCell>

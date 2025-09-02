@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
+import useSWR from 'swr';
 
 const initialFormData = {
     macAddress: '',
@@ -15,13 +16,18 @@ const initialFormData = {
     toAddress: '',
     comment: '',
     type: 'bypassed',
+    server: 'all', 
 };
+
+const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
 export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave, initialData }) {
     const token = useAuthStore((state) => state.token);
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
     const isEditMode = !!binding;
+
+    const { data: hotspotServers } = useSWR(isOpen ? ['/mikrotik/hotspot/servers', token] : null, ([url, token]) => fetcher(url, token));
 
     useEffect(() => {
         if (isOpen) {
@@ -32,14 +38,16 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                     toAddress: binding['to-address'] || '',
                     comment: binding.comment || '',
                     type: binding.type || 'bypassed',
+                    server: binding.server || 'all',
                 });
             } else if (initialData) {
                  setFormData({
                     macAddress: initialData['mac-address'] || '',
                     address: initialData.address || '',
-                    toAddress: '',
+                    toAddress: initialData.toAddress || '', // Correctly handle toAddress
                     comment: initialData.comment || '',
                     type: initialData.type || 'bypassed',
+                    server: initialData.server || 'all',
                 });
             }
             else {
@@ -52,8 +60,8 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
         setFormData({ ...formData, [e.target.id]: e.target.value });
     };
 
-    const handleSelectChange = (value) => {
-        setFormData({ ...formData, type: value });
+    const handleSelectChange = (id, value) => {
+        setFormData({ ...formData, [id]: value });
     };
 
     const handleSubmit = async (e) => {
@@ -98,8 +106,20 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                         <Input id="toAddress" value={formData.toAddress} onChange={handleInputChange} placeholder="e.g., 192.168.88.20" />
                     </div>
                      <div className="space-y-2">
+                        <Label htmlFor="server">Hotspot Server</Label>
+                         <Select value={formData.server} onValueChange={(value) => handleSelectChange('server', value)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">all</SelectItem>
+                                {hotspotServers?.map(serverName => (
+                                    <SelectItem key={serverName} value={serverName}>{serverName}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
                         <Label htmlFor="type">Type</Label>
-                         <Select value={formData.type} onValueChange={handleSelectChange}>
+                         <Select value={formData.type} onValueChange={(value) => handleSelectChange('type', value)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="bypassed">Bypassed</SelectItem>
@@ -121,3 +141,4 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
         </Dialog>
     );
 }
+

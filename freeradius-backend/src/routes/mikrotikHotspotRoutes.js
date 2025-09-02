@@ -1,6 +1,6 @@
 // freeradius-backend/src/routes/mikrotikHotspotRoutes.js
 const express = require('express');
-const { getActiveHosts, getHosts, kickHosts, createBindings } = require('../controllers/mikrotikHotspotController');
+const { getActiveHosts, getHosts, kickHosts, createBindings, getServers } = require('../controllers/mikrotikHotspotController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
 
@@ -11,6 +11,7 @@ router.use(authorize('superadmin', 'admin'));
 
 router.get('/active', getActiveHosts);
 router.get('/hosts', getHosts);
+router.get('/servers', getServers); // Add new route for servers
 router.post('/kick', kickHosts);
 router.post('/bindings', createBindings);
 

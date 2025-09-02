@@ -86,6 +86,7 @@ const addBinding = async (bindingData) => {
         ];
         if (bindingData.address) command.push(`=address=${bindingData.address}`);
         if (bindingData.toAddress) command.push(`=to-address=${bindingData.toAddress}`);
+        if (bindingData.server) command.push(`=server=${bindingData.server}`); // Add server parameter
         if (bindingData.comment) command.push(`=comment=${encodeToMikrotikHex(bindingData.comment)}`);
         
         await conn.write(command);
@@ -103,33 +104,25 @@ const updateBinding = async (id, bindingData) => {
     try {
         conn = await connectToMikrotik();
 
-        // Step 1: Remove the existing binding
-        await conn.write('/ip/hotspot/ip-binding/remove', [`=.id=${id}`]);
-
-        // Step 2: Add a new binding with the updated data
-        // This command is almost identical to addBinding, so we build it here.
+        // Instead of remove/add, we use the 'set' command which is safer
         const command = [
-            '/ip/hotspot/ip-binding/add',
+            '/ip/hotspot/ip-binding/set',
+            `=.id=${id}`,
             `=mac-address=${bindingData.macAddress}`,
             `=type=${bindingData.type}`,
         ];
-        // Only add optional fields if they have a value
-        if (bindingData.address) {
-            command.push(`=address=${bindingData.address}`);
-        }
-        if (bindingData.toAddress) {
-            command.push(`=to-address=${bindingData.toAddress}`);
-        }
-        if (bindingData.comment) {
-            command.push(`=comment=${encodeToMikrotikHex(bindingData.comment)}`);
-        }
+
+        // Add optional fields if they have a value
+        if (bindingData.address) command.push(`=address=${bindingData.address}`);
+        if (bindingData.toAddress) command.push(`=to-address=${bindingData.toAddress}`);
+        if (bindingData.server) command.push(`=server=${bindingData.server}`); // Add server parameter
+        if (bindingData.comment) command.push(`=comment=${encodeToMikrotikHex(bindingData.comment)}`);
         
         await conn.write(command);
         return { success: true };
 
     } catch (error) {
         console.error("Mikrotik API Error (updateBinding):", error);
-        // Attempt to re-add if the remove succeeded but add failed? For now, just throw.
         throw new Error(`Failed to update IP binding: ${error.message}`);
     } finally {
         if (conn && conn.connected) await conn.close();
