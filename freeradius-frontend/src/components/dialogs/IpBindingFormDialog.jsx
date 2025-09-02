@@ -44,7 +44,7 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                  setFormData({
                     macAddress: initialData['mac-address'] || '',
                     address: initialData.address || '',
-                    toAddress: initialData.toAddress || '', // Correctly handle toAddress
+                    toAddress: initialData.toAddress || '',
                     comment: initialData.comment || '',
                     type: initialData.type || 'bypassed',
                     server: initialData.server || 'all',
@@ -55,6 +55,20 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
             }
         }
     }, [binding, initialData, isOpen]);
+
+    const handleMacAddressChange = (e) => {
+        const { id, value } = e.target;
+        const rawValue = value.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+        const limitedValue = rawValue.slice(0, 12);
+        const formattedValue = limitedValue.match(/.{1,2}/g)?.join(':') || '';
+        setFormData({ ...formData, [id]: formattedValue });
+    };
+
+    const handleIpAddressChange = (e) => {
+        const { id, value } = e.target;
+        const formattedValue = value.replace(/[^0-9.]/g, '');
+        setFormData({ ...formData, [id]: formattedValue });
+    };
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
@@ -95,15 +109,34 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
                 <form id="ip-binding-form" onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="macAddress">MAC Address</Label>
-                        <Input id="macAddress" value={formData.macAddress} onChange={handleInputChange} placeholder="00:11:22:33:44:55" required />
+                        <Input 
+                            id="macAddress" 
+                            value={formData.macAddress} 
+                            onChange={handleMacAddressChange} 
+                            placeholder="00:11:22:33:44:55" 
+                            maxLength={17}
+                            required 
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="address">IP Address (Optional)</Label>
-                        <Input id="address" value={formData.address} onChange={handleInputChange} placeholder="e.g., 192.168.88.10" />
+                        <Input 
+                            id="address" 
+                            value={formData.address} 
+                            onChange={handleIpAddressChange} 
+                            placeholder="e.g., 192.168.88.10" 
+                            maxLength={15}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="toAddress">To Address (Optional)</Label>
-                        <Input id="toAddress" value={formData.toAddress} onChange={handleInputChange} placeholder="e.g., 192.168.88.20" />
+                        <Input 
+                            id="toAddress" 
+                            value={formData.toAddress} 
+                            onChange={handleIpAddressChange} 
+                            placeholder="e.g., 192.168.88.20" 
+                            maxLength={15}
+                        />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="server">Hotspot Server</Label>
@@ -141,4 +174,3 @@ export default function IpBindingFormDialog({ isOpen, setIsOpen, binding, onSave
         </Dialog>
     );
 }
-
