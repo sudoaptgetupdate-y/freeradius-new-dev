@@ -87,7 +87,7 @@ export default function ActiveHostsTab({ token, onMakeBindingSuccess }) {
     const handleSelectSingle = (checked, host) => setSelectedHosts(prev => checked ? [...prev, host] : prev.filter(h => h['.id'] !== host['.id']));
     const openConfirmation = (type, data) => setActionState({ isOpen: true, type, data });
     const closeConfirmation = () => setActionState({ isOpen: false, type: null, data: null });
-    const handleMakeBypassSingle = (host) => setBindingFromHost({ 'mac-address': host['mac-address'], address: host.address, comment: host.user, type: 'bypassed' });
+    const handleMakeBypassSingle = (host) => setBindingFromHost({ 'mac-address': host['mac-address'], address: '', comment: host.user, type: 'bypassed' });
     const handleActionSuccess = () => { mutate(); onMakeBindingSuccess(); setSelectedHosts([]); setBindingFromHost(null); };
 
     const handleConfirmAction = async () => {
@@ -95,7 +95,9 @@ export default function ActiveHostsTab({ token, onMakeBindingSuccess }) {
         
         if (type.startsWith('make')) {
             const bindingType = type.split('-')[1];
-            const hostsToBind = Array.isArray(data) ? data : [data];
+            const hostsArray = Array.isArray(data) ? data : [data];
+            // Remove address property from hosts before sending
+            const hostsToBind = hostsArray.map(({ address, ...rest }) => rest);
             toast.promise(
                 axiosInstance.post('/mikrotik/hotspot/bindings', { hosts: hostsToBind, type: bindingType }, { headers: { Authorization: `Bearer ${token}` } }),
                 {

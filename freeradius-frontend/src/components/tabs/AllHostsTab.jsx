@@ -81,14 +81,21 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
     const handleSelectSingle = (checked, host) => setSelectedHosts(prev => checked ? [...prev, host] : prev.filter(h => h['.id'] !== host['.id']));
     const openConfirmation = (type, data) => setActionState({ isOpen: true, type, data });
     const closeConfirmation = () => setActionState({ isOpen: false, type: null, data: null });
-    const handleMakeBypassSingle = (host) => setBindingFromHost({ 'mac-address': host['mac-address'], address: host['to-address'], comment: `Host: ${host['mac-address']}`, type: 'bypassed' });
+    const handleMakeBypassSingle = (host) => setBindingFromHost({ 'mac-address': host['mac-address'], address: '', comment: `Host: ${host['mac-address']}`, type: 'bypassed' });
     const handleActionSuccess = () => { mutate(); onMakeBindingSuccess(); setSelectedHosts([]); setBindingFromHost(null); };
 
     const handleConfirmAction = async () => {
         const { type, data } = actionState;
         if (type.startsWith('make')) {
             const bindingType = type.split('-')[1];
-            const hostsToBind = (Array.isArray(data) ? data : [data]).map(h => ({ ...h, server: 'all', address: h['to-address'] }));
+            const hostsArray = Array.isArray(data) ? data : [data];
+            // Create a new array of hosts, adding `server: 'all'` but omitting the address.
+            const hostsToBind = hostsArray.map(h => ({
+                '.id': h['.id'],
+                'mac-address': h['mac-address'],
+                server: 'all',
+                comment: `Host: ${h['mac-address']}`
+            }));
             toast.promise(
                 axiosInstance.post('/mikrotik/hotspot/bindings', { hosts: hostsToBind, type: bindingType }, { headers: { Authorization: `Bearer ${token}` } }),
                 {
