@@ -29,7 +29,9 @@ export default function MikrotikGroupsPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    } = usePaginatedFetch("/mikrotik-profiles", 10, {}, 'data'); // Changed key to 'data' to match controller
+    // --- START: **แก้ไข** ---
+    } = usePaginatedFetch("/mikrotik-profiles", 10); // ลบ argument ที่ไม่ได้ใช้ออก
+    // --- END: **แก้ไข** ---
 
     const handleAddNew = () => {
         setEditingProfile(null);
@@ -90,20 +92,24 @@ export default function MikrotikGroupsPage() {
                                     <TableHead>Rate Limit</TableHead>
                                     <TableHead>Shared Users</TableHead>
                                     <TableHead>Session Timeout</TableHead>
+                                    <TableHead>Idle Timeout</TableHead>
+                                    <TableHead>Acct Interval</TableHead>
                                     <TableHead className="text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading && [...Array(pagination.itemsPerPage)].map((_, i) => (
-                                    <TableRow key={i}><TableCell colSpan={5}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
+                                    <TableRow key={i}><TableCell colSpan={7}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                 ))}
-                                {!isLoading && profiles.length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No Mikrotik groups found.</TableCell></TableRow>}
+                                {!isLoading && profiles.length === 0 && <TableRow><TableCell colSpan={7} className="text-center h-24">No Mikrotik groups found.</TableCell></TableRow>}
                                 {profiles.map((profile) => (
                                     <TableRow key={profile.id}>
                                         <TableCell className="font-medium">{profile.name}</TableCell>
                                         <TableCell>{profile.rateLimit || 'N/A'}</TableCell>
                                         <TableCell>{profile.sharedUsers || 'N/A'}</TableCell>
                                         <TableCell>{profile.sessionTimeout ? `${profile.sessionTimeout}s` : 'N/A'}</TableCell>
+                                        <TableCell>{profile.idleTimeout ? `${profile.idleTimeout}s` : 'N/A'}</TableCell>
+                                        <TableCell>{profile.acctInterimInterval ? `${profile.acctInterimInterval}s` : 'N/A'}</TableCell>
                                         <TableCell className="text-center">
                                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(profile)}><Edit className="h-4 w-4" /></Button>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(profile)}><Trash2 className="h-4 w-4" /></Button>

@@ -1,11 +1,13 @@
-// freeradius-backend/src/controllers/mikrotikProfileController.js
 const profileService = require('../services/profileService'); // For delete
 const mikrotikProfileService = require('../services/mikrotikProfileService');
 
 const createProfile = async (req, res, next) => {
     try {
-        const newProfile = await mikrotikProfileService.createMikrotikProfile(req.body);
-        res.status(201).json({ success: true, data: newProfile });
+        const profile = await mikrotikProfileService.createMikrotikProfile(req.body);
+        res.status(201).json({
+            success: true,
+            data: profile,
+        });
     } catch (error) {
         next(error);
     }
@@ -16,13 +18,7 @@ const getProfiles = async (req, res, next) => {
         const result = await mikrotikProfileService.getMikrotikProfiles(req.query);
         res.status(200).json({
             success: true,
-            data: {
-                // Ensure the array property key matches what the frontend hook expects
-                data: result.data, 
-                totalItems: result.totalItems,
-                totalPages: result.totalPages,
-                currentPage: result.currentPage,
-            }
+            data: result
         });
     } catch (error) {
         next(error);
@@ -31,19 +27,27 @@ const getProfiles = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
     try {
-        const updatedProfile = await mikrotikProfileService.updateMikrotikProfile(req.params.id, req.body);
-        res.status(200).json({ success: true, data: updatedProfile });
+        const { id } = req.params;
+        const profile = await mikrotikProfileService.updateMikrotikProfile(parseInt(id), req.body);
+        res.status(200).json({
+            success: true,
+            data: profile,
+        });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        next(error);
     }
 };
 
 const deleteProfile = async (req, res, next) => {
     try {
-        await profileService.deleteProfile(req.params.id);
-        res.status(200).json({ success: true, message: 'Profile deleted successfully' });
+        const { id } = req.params;
+        await profileService.deleteProfile(parseInt(id));
+        res.status(200).json({
+            success: true,
+            message: 'Profile deleted successfully',
+        });
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        next(error);
     }
 };
 

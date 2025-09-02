@@ -1,4 +1,3 @@
-// src/hooks/usePaginatedFetch.js
 import { useState, useEffect, useCallback, useRef } from "react";
 import useAuthStore from "@/store/authStore";
 import { toast } from "sonner";
@@ -37,7 +36,6 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
         setPagination(prev => ({ ...prev, currentPage: 1, itemsPerPage: initialItemsPerPage }));
     }, [stringifiedFilters, initialItemsPerPage]);
 
-    // --- START: แก้ไขโครงสร้าง Hook ทั้งหมดเพื่อแก้ปัญหา Loop ---
     const fetchData = useCallback(async () => {
         if (!token) return;
         setIsLoading(true);
@@ -63,8 +61,8 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
                 const newTotalPages = Math.ceil(newTotalItems / pagination.itemsPerPage) || 1;
                 setPagination(prev => ({ ...prev, totalItems: newTotalItems, totalPages: newTotalPages }));
             } else {
-                const items = responseData.users || responseData.organizations || responseData.history || responseData.admins || responseData.batches || [];
-                const total = responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || responseData.totalAdmins || responseData.totalBatches || 0;
+                const items = responseData.users || responseData.organizations || responseData.history || responseData.admins || responseData.batches || responseData.profiles || [];
+                const total = responseData.totalItems || responseData.totalUsers || responseData.totalOrgs || responseData.totalRecords || responseData.totalAdmins || responseData.totalBatches || 0;
                 setData(items);
                 setPagination(prev => ({
                     ...prev,
@@ -83,7 +81,6 @@ export function usePaginatedFetch(apiPath, initialItemsPerPage = 10, filtersProp
     useEffect(() => {
         fetchData();
     }, [fetchData]);
-    // --- END: สิ้นสุดการแก้ไขโครงสร้าง Hook ---
 
     const handleSearchChange = (value) => {
         setSearchTerm(value);
