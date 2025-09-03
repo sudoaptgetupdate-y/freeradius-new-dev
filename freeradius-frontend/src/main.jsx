@@ -40,6 +40,7 @@ import LogManagementPage from './pages/LogManagementPage.jsx';
 import MikrotikApiPage from './pages/MikrotikApiPage.jsx';
 import MikrotikGroupsPage from './pages/MikrotikGroupsPage.jsx';
 import HotspotManagementPage from './pages/HotspotManagementPage.jsx';
+import IpAddressManagementPage from './pages/IpAddressManagementPage.jsx';
 import LoginRegistrationSettingsPage from './pages/LoginRegistrationSettingsPage.jsx';
 
 
@@ -89,6 +90,7 @@ const router = createBrowserRouter([
               { path: 'log-management', element: <LogManagementPage /> },
               { path: 'mikrotik/groups', element: <MikrotikGroupsPage /> },
               { path: 'mikrotik/hotspot', element: <HotspotManagementPage /> },
+              { path: 'mikrotik/ip-management', element: <IpAddressManagementPage /> },
             ]
           }
         ]

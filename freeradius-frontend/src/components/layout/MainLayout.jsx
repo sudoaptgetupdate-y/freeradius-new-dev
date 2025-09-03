@@ -8,7 +8,7 @@ import {
     LogOut, LayoutDashboard, Server, Building, Users, Settings,
     Wifi, History, Menu, User as UserIcon, UserCog, ListChecks, Palette,
     Ticket, History as HistoryIcon, SlidersHorizontal,
-    Megaphone, ShieldCheck, Aperture, Link2, KeyRound
+    Megaphone, ShieldCheck, Aperture, Network, Link2, KeyRound
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -159,6 +159,7 @@ export default function MainLayout() {
                                 <>
                                     <NavItem to="/mikrotik/groups" icon={<Users size={18} />} text="Mikrotik Groups" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                     <NavItem to="/mikrotik/hotspot" icon={<Link2 size={18} />} text="Hotspot Management" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
+                                    <NavItem to="/mikrotik/ip-management" icon={<Network size={18} />} text="IP Management" isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
                                 </>
                             )}
                             <NavItem to="/login-registration" icon={<KeyRound size={18} />} text={t('nav.login_registration')} isCollapsed={isSidebarCollapsed} onClick={navLinkClickHandler} />
