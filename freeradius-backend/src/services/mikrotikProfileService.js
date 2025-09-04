@@ -1,5 +1,6 @@
 const prisma = require('../prisma');
 
+// === CREATE PROFILE ===
 const createMikrotikProfile = async (profileData) => {
     const {
         name,
@@ -19,27 +20,18 @@ const createMikrotikProfile = async (profileData) => {
         });
 
         const attributes = [];
-        if (rateLimit) {
-            attributes.push({ profileId: profile.id, attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit, type: 'reply' });
-        }
-        if (sessionTimeout) {
-            attributes.push({ profileId: profile.id, attribute: 'Session-Timeout', op: ':=', value: sessionTimeout.toString(), type: 'reply' });
-        }
-        if (idleTimeout) {
-            attributes.push({ profileId: profile.id, attribute: 'Idle-Timeout', op: ':=', value: idleTimeout.toString(), type: 'reply' });
-        }
-        if (acctInterimInterval) {
-            attributes.push({ profileId: profile.id, attribute: 'Acct-Interim-Interval', op: ':=', value: acctInterimInterval.toString(), type: 'reply' });
-        }
-        if (sharedUsers) {
-            attributes.push({ profileId: profile.id, attribute: 'Simultaneous-Use', op: ':=', value: sharedUsers.toString(), type: 'check' });
-        }
+        if (rateLimit) attributes.push({ groupname: name, attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit, type: 'reply' });
+        if (sessionTimeout) attributes.push({ groupname: name, attribute: 'Session-Timeout', op: ':=', value: String(sessionTimeout), type: 'reply' });
+        if (idleTimeout) attributes.push({ groupname: name, attribute: 'Idle-Timeout', op: ':=', value: String(idleTimeout), type: 'reply' });
+        if (acctInterimInterval) attributes.push({ groupname: name, attribute: 'Acct-Interim-Interval', op: ':=', value: String(acctInterimInterval), type: 'reply' });
+        if (sharedUsers) attributes.push({ groupname: name, attribute: 'Simultaneous-Use', op: ':=', value: String(sharedUsers), type: 'check' });
 
         for (const attr of attributes) {
-            if (attr.type === 'reply') {
-                await tx.radiusReplyAttribute.create({ data: attr });
+            const { type, ...data } = attr;
+            if (type === 'reply') {
+                await tx.radGroupReply.create({ data });
             } else {
-                await tx.radiusCheckAttribute.create({ data: attr });
+                await tx.radGroupCheck.create({ data });
             }
         }
 
@@ -47,6 +39,7 @@ const createMikrotikProfile = async (profileData) => {
     });
 };
 
+// === GET ALL PROFILES ===
 const getMikrotikProfiles = async (filters = {}) => {
     const { searchTerm, page = 1, pageSize = 10 } = filters;
     const whereClause = {
@@ -69,6 +62,7 @@ const getMikrotikProfiles = async (filters = {}) => {
         prisma.radiusProfile.findMany({
             where: whereClause,
             orderBy: { name: 'asc' },
+            // ✅ CORRECTED: Use the relation field names from the schema
             include: {
                 replyAttributes: true,
                 checkAttributes: true,
@@ -79,7 +73,9 @@ const getMikrotikProfiles = async (filters = {}) => {
         prisma.radiusProfile.count({ where: whereClause }),
     ]);
 
+    // แปลงข้อมูลให้อยู่ในรูปแบบที่ Frontend ต้องการ
     const formattedProfiles = profiles.map(p => {
+        // ✅ CORRECTED: Access relations via the correct field names
         const findAttr = (type, attrName) => {
             const list = type === 'reply' ? p.replyAttributes : p.checkAttributes;
             return list.find(a => a.attribute === attrName)?.value;
@@ -103,6 +99,7 @@ const getMikrotikProfiles = async (filters = {}) => {
     };
 };
 
+// === UPDATE PROFILE ===
 const updateMikrotikProfile = async (profileId, profileData) => {
     const {
         name,
@@ -114,6 +111,16 @@ const updateMikrotikProfile = async (profileId, profileData) => {
     } = profileData;
 
     return prisma.$transaction(async (tx) => {
+        const existingProfile = await tx.radiusProfile.findUnique({
+            where: { id: profileId },
+        });
+
+        if (!existingProfile) {
+            throw new Error('Profile not found.');
+        }
+
+        const oldGroupName = existingProfile.name;
+
         const updatedProfile = await tx.radiusProfile.update({
             where: { id: profileId },
             data: {
@@ -122,33 +129,22 @@ const updateMikrotikProfile = async (profileId, profileData) => {
             },
         });
 
-        // Clear existing attributes
-        await tx.radiusReplyAttribute.deleteMany({ where: { profileId } });
-        await tx.radiusCheckAttribute.deleteMany({ where: { profileId } });
+        await tx.radGroupReply.deleteMany({ where: { groupname: oldGroupName } });
+        await tx.radGroupCheck.deleteMany({ where: { groupname: oldGroupName } });
 
-        // Add new attributes
         const attributes = [];
-        if (rateLimit) {
-            attributes.push({ profileId, attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit, type: 'reply' });
-        }
-        if (sessionTimeout) {
-            attributes.push({ profileId, attribute: 'Session-Timeout', op: ':=', value: sessionTimeout.toString(), type: 'reply' });
-        }
-        if (idleTimeout) {
-            attributes.push({ profileId, attribute: 'Idle-Timeout', op: ':=', value: idleTimeout.toString(), type: 'reply' });
-        }
-        if (acctInterimInterval) {
-            attributes.push({ profileId, attribute: 'Acct-Interim-Interval', op: ':=', value: acctInterimInterval.toString(), type: 'reply' });
-        }
-        if (sharedUsers) {
-            attributes.push({ profileId, attribute: 'Simultaneous-Use', op: ':=', value: sharedUsers.toString(), type: 'check' });
-        }
+        if (rateLimit) attributes.push({ groupname: name, attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit, type: 'reply' });
+        if (sessionTimeout) attributes.push({ groupname: name, attribute: 'Session-Timeout', op: ':=', value: String(sessionTimeout), type: 'reply' });
+        if (idleTimeout) attributes.push({ groupname: name, attribute: 'Idle-Timeout', op: ':=', value: String(idleTimeout), type: 'reply' });
+        if (acctInterimInterval) attributes.push({ groupname: name, attribute: 'Acct-Interim-Interval', op: ':=', value: String(acctInterimInterval), type: 'reply' });
+        if (sharedUsers) attributes.push({ groupname: name, attribute: 'Simultaneous-Use', op: ':=', value: String(sharedUsers), type: 'check' });
         
         for (const attr of attributes) {
-            if (attr.type === 'reply') {
-                await tx.radiusReplyAttribute.create({ data: attr });
+            const { type, ...data } = attr;
+            if (type === 'reply') {
+                await tx.radGroupReply.create({ data });
             } else {
-                await tx.radiusCheckAttribute.create({ data: attr });
+                await tx.radGroupCheck.create({ data });
             }
         }
         
@@ -156,9 +152,33 @@ const updateMikrotikProfile = async (profileId, profileData) => {
     });
 };
 
+// === DELETE PROFILE ===
+const deleteMikrotikProfile = async (profileId) => {
+    return prisma.$transaction(async (tx) => {
+        const profileToDelete = await tx.radiusProfile.findUnique({
+            where: { id: profileId },
+        });
+
+        if (!profileToDelete) {
+            throw new Error('Profile not found.');
+        }
+
+        const groupNameToDelete = profileToDelete.name;
+
+        await tx.radGroupReply.deleteMany({ where: { groupname: groupNameToDelete } });
+        await tx.radGroupCheck.deleteMany({ where: { groupname: groupNameToDelete } });
+        
+        await tx.radiusProfile.delete({
+            where: { id: profileId },
+        });
+
+        return { message: 'Profile deleted successfully.' };
+    });
+};
 
 module.exports = {
     createMikrotikProfile,
     getMikrotikProfiles,
-    updateMikrotikProfile
+    updateMikrotikProfile,
+    deleteMikrotikProfile
 };
