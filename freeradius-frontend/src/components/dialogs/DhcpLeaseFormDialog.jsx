@@ -10,136 +10,213 @@ import axiosInstance from "@/api/axiosInstance";
 import useAuthStore from "@/store/authStore";
 import useSWR from 'swr';
 
-const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
+const fetcher = (url, token) =>
+  axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
+/**
+ * Props:
+ *  - isOpen: boolean
+ *  - setIsOpen: (open:boolean)=>void
+ *  - lease: Mikrotik lease object
+ *  - mode: 'makeStatic' | 'editStatic' | 'addStatic'
+ *  - onSave: () => void
+ */
 export default function DhcpLeaseFormDialog({ isOpen, setIsOpen, lease, mode, onSave }) {
-    const token = useAuthStore((state) => state.token);
-    const [formData, setFormData] = useState({
-        macAddress: '',
-        address: '',
-        comment: '',
-        server: 'all'
-    });
-    const [isLoading, setIsLoading] = useState(false);
+  const token = useAuthStore((state) => state.token);
 
-    const { data: hotspotServers } = useSWR(isOpen ? ['/mikrotik/hotspot/servers', token] : null, ([url, token]) => fetcher(url, token));
+  // Reuse hotspot servers list for now (backend provides this route)
+  const { data: servers } = useSWR(
+    isOpen && mode !== 'makeStatic' ? ['/mikrotik/hotspot/servers', token] : null,
+    ([url, token]) => fetcher(url, token)
+  );
 
-    useEffect(() => {
-        if (isOpen) {
-            if (lease) {
-                // **START: แก้ไขตรรกะ**
-                // 1. กำหนดค่าเริ่มต้นสำหรับ comment และ server
-                let initialComment = '';
-                let initialServer = 'all';
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    macAddress: "",
+    address: "",
+    comment: "",
+    server: "all",
+  });
 
-                // 2. ตรวจสอบโหมดเพื่อกำหนดค่าที่ถูกต้อง
-                if (mode === 'editStatic') {
-                    // ถ้าเป็นการแก้ไข ให้ดึงค่าปัจจุบันมาใช้
-                    initialComment = lease.comment || '';
-                    initialServer = lease.server || 'all';
-                } else if (mode === 'makeStatic') {
-                    // ถ้าเป็นการทำให้เป็น Static ให้ใช้ค่าเริ่มต้นตามที่กำหนด
-                    initialComment = lease['active-host-name'] || lease.comment || '';
-                    initialServer = 'all'; // Server ต้องเป็น 'all' เสมอ
-                }
-                // **END: แก้ไขตรรกะ**
+  // Initialize form values per mode
+  useEffect(() => {
+    if (!isOpen) return;
 
-                setFormData({
-                    macAddress: lease['mac-address'] || '',
-                    address: lease.address || '',
-                    comment: initialComment,
-                    server: initialServer
-                });
+    if (lease) {
+      const mac = lease["mac-address"] || lease.macAddress || "";
+      const addr = lease.address || "";
+      const hostName = lease["active-host-name"] || lease["host-name"] || "";
+      const comment = mode === "makeStatic" ? (hostName || lease.comment || "") : (lease.comment || "");
+      const server = lease.server || "all";
 
-            } else {
-                // กรณี "Add Manual" ให้รีเซ็ตฟอร์ม
-                setFormData({ macAddress: '', address: '', comment: '', server: 'all' });
-            }
-        }
-    }, [lease, isOpen, mode]);
-
-    const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
-    };
-
-    const handleSelectChange = (id, value) => {
-        setFormData({ ...formData, [id]: value });
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-
-        let promise;
-        const payload = { ...formData };
-        
-        if (mode === 'makeStatic') {
-            promise = axiosInstance.put(`/mikrotik/dhcp/leases/${lease['.id']}`, payload, { headers: { Authorization: `Bearer ${token}` } })
-              .then(() => axiosInstance.post(`/mikrotik/dhcp/leases/${lease['.id']}/make-static`, {}, { headers: { Authorization: `Bearer ${token}` } }));
-        } else if (mode === 'editStatic') {
-            promise = axiosInstance.put(`/mikrotik/dhcp/leases/${lease['.id']}`, payload, { headers: { Authorization: `Bearer ${token}` } });
-        } else { // addStatic
-            promise = axiosInstance.post('/mikrotik/dhcp/leases', payload, { headers: { Authorization: `Bearer ${token}` } });
-        }
-
-        toast.promise(promise, {
-            loading: `Saving lease...`,
-            success: () => {
-                onSave();
-                setIsOpen(false);
-                return `Lease for ${formData.macAddress} saved successfully.`;
-            },
-            error: (err) => err.response?.data?.message || "Failed to save lease.",
-            finally: () => setIsLoading(false)
-        });
-    };
-    
-    const getDialogTitle = () => {
-        switch(mode) {
-            case 'makeStatic': return 'Make Lease Static';
-            case 'editStatic': return 'Edit Static Lease';
-            case 'addStatic': return 'Add Manual Static Lease';
-            default: return 'Manage Lease';
-        }
+      setFormData({
+        macAddress: mac,
+        address: addr,
+        comment,
+        server,
+      });
+    } else {
+      // Add manual
+      setFormData({
+        macAddress: "",
+        address: "",
+        comment: "",
+        server: "all",
+      });
     }
+  }, [isOpen, lease, mode]);
 
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>{getDialogTitle()}</DialogTitle>
-                </DialogHeader>
-                <form id="lease-form" onSubmit={handleSubmit} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="server">Server</Label>
-                        <Select value={formData.server} onValueChange={(value) => handleSelectChange('server', value)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">all</SelectItem>
-                                {hotspotServers?.map(serverName => (
-                                    <SelectItem key={serverName} value={serverName}>{serverName}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="macAddress">MAC Address</Label>
-                        <Input id="macAddress" value={formData.macAddress} onChange={handleInputChange} placeholder="00:11:22:33:44:55" required disabled={mode === 'makeStatic'} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="address">IP Address</Label>
-                        <Input id="address" value={formData.address} onChange={handleInputChange} placeholder="192.168.1.100" required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="comment">Comment</Label>
-                        <Input id="comment" value={formData.comment} onChange={handleInputChange} placeholder="e.g., John's Laptop" />
-                    </div>
-                </form>
-                <DialogFooter>
-                    <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="lease-form" disabled={isLoading}>{isLoading ? 'Saving...' : 'Save'}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
+  // Keep server in sync with the current lease while making static
+  useEffect(() => {
+    if (isOpen && mode === "makeStatic" && lease?.server) {
+      setFormData(prev => ({ ...prev, server: lease.server }));
+    }
+  }, [isOpen, mode, lease]);
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSelectChange = (id, value) => {
+    setFormData({ ...formData, [id]: value });
+  };
+
+  const close = () => {
+    setIsOpen(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const id = lease?.[".id"] || lease?.id;
+      if (mode === "makeStatic") {
+        // Use the current lease's server automatically; do not allow editing in this dialog
+        const payload = {
+          address: formData.address,
+          macAddress: formData.macAddress,
+          comment: formData.comment ?? "",
+          server: lease?.server || "all",
+        };
+
+        await axiosInstance.put(`/mikrotik/dhcp/leases/${encodeURIComponent(id)}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        await axiosInstance.post(`/mikrotik/dhcp/leases/${encodeURIComponent(id)}/make-static`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success("Converted to static lease.");
+      } else if (mode === "editStatic") {
+        const payload = {
+          address: formData.address,
+          macAddress: formData.macAddress,
+          comment: formData.comment ?? "",
+          server: formData.server,
+        };
+        await axiosInstance.put(`/mikrotik/dhcp/leases/${encodeURIComponent(id)}`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success("Static lease updated.");
+      } else {
+        // addStatic
+        const payload = {
+          address: formData.address,
+          macAddress: formData.macAddress,
+          comment: formData.comment ?? "",
+          server: formData.server,
+        };
+        await axiosInstance.post(`/mikrotik/dhcp/leases`, payload, { headers: { Authorization: `Bearer ${token}` } });
+        toast.success("Static lease added.");
+      }
+
+      onSave?.();
+      close();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to save lease.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const dialogTitle =
+    mode === "makeStatic"
+      ? "Make Static"
+      : mode === "editStatic"
+      ? "Edit Static Lease"
+      : "Add Static Lease";
+
+  const serverOptions = (() => {
+    const list = Array.isArray(servers) ? servers : [];
+    const value = formData.server;
+    return value && !list.includes(value) ? [...list, value] : list;
+  })();
+
+  return (
+    <Dialog open={!!isOpen} onOpenChange={close}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="macAddress">MAC Address</Label>
+            <Input
+              id="macAddress"
+              value={formData.macAddress}
+              onChange={handleInputChange}
+              placeholder="00:11:22:33:44:55"
+              required
+              disabled={mode === "makeStatic"}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">IP Address</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              placeholder="192.168.1.100"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="comment">Comment</Label>
+            <Input
+              id="comment"
+              value={formData.comment}
+              onChange={handleInputChange}
+              placeholder="e.g., host name"
+            />
+          </div>
+
+          {mode !== "makeStatic" && (
+            <div className="space-y-2">
+              <Label htmlFor="server">Server</Label>
+              <Select value={formData.server} onValueChange={(v) => handleSelectChange("server", v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select server" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">all</SelectItem>
+                  {serverOptions.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={close} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
