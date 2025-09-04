@@ -15,18 +15,17 @@ const fetcher = (url, token) =>
 
 /**
  * Props:
- *  - isOpen: boolean
- *  - setIsOpen: (open:boolean)=>void
- *  - lease: Mikrotik lease object
- *  - mode: 'makeStatic' | 'editStatic' | 'addStatic'
- *  - onSave: () => void
+ * - isOpen: boolean
+ * - setIsOpen: (open:boolean)=>void
+ * - lease: Mikrotik lease object
+ * - mode: 'makeStatic' | 'editStatic' | 'addStatic'
+ * - onSave: () => void
  */
 export default function DhcpLeaseFormDialog({ isOpen, setIsOpen, lease, mode, onSave }) {
   const token = useAuthStore((state) => state.token);
 
-  // Reuse hotspot servers list for now (backend provides this route)
   const { data: servers } = useSWR(
-    isOpen && mode !== 'makeStatic' ? ['/mikrotik/hotspot/servers', token] : null,
+    isOpen && mode === 'addStatic' ? ['/mikrotik/hotspot/servers', token] : null,
     ([url, token]) => fetcher(url, token)
   );
 
@@ -92,7 +91,6 @@ export default function DhcpLeaseFormDialog({ isOpen, setIsOpen, lease, mode, on
     try {
       const id = lease?.[".id"] || lease?.id;
       if (mode === "makeStatic") {
-        // Use the current lease's server automatically; do not allow editing in this dialog
         const payload = {
           address: formData.address,
           macAddress: formData.macAddress,
@@ -108,7 +106,6 @@ export default function DhcpLeaseFormDialog({ isOpen, setIsOpen, lease, mode, on
           address: formData.address,
           macAddress: formData.macAddress,
           comment: formData.comment ?? "",
-          server: formData.server,
         };
         await axiosInstance.put(`/mikrotik/dhcp/leases/${encodeURIComponent(id)}`, payload, { headers: { Authorization: `Bearer ${token}` } });
         toast.success("Static lease updated.");
@@ -188,7 +185,8 @@ export default function DhcpLeaseFormDialog({ isOpen, setIsOpen, lease, mode, on
             />
           </div>
 
-          {mode !== "makeStatic" && (
+          {/* This field will now only show when adding a new static lease */}
+          {mode === "addStatic" && (
             <div className="space-y-2">
               <Label htmlFor="server">Server</Label>
               <Select value={formData.server} onValueChange={(v) => handleSelectChange("server", v)}>

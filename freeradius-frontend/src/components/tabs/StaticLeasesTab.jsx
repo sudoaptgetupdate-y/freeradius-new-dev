@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlusCircle, Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import DhcpLeaseFormDialog from "@/components/dialogs/DhcpLeaseFormDialog";
 
 const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
@@ -27,9 +29,13 @@ export default function StaticLeasesTab({ token }) {
         { revalidateOnFocus: true }
     );
 
+    const isStatic = (lease) => {
+        return lease.dynamic === 'false' || !lease.dynamic;
+    };
+    
     const staticLeases = useMemo(() => {
         if (!allLeases) return [];
-        const staticOnly = allLeases.filter(lease => lease.dynamic === 'false');
+        const staticOnly = allLeases.filter(lease => isStatic(lease));
         if (!searchTerm) return staticOnly;
         
         const lowercasedFilter = searchTerm.toLowerCase();
@@ -39,9 +45,16 @@ export default function StaticLeasesTab({ token }) {
             )
         );
     }, [allLeases, searchTerm]);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const totalPages = Math.max(1, Math.ceil(staticLeases.length / rowsPerPage));
+    const page = Math.min(currentPage, totalPages);
+    const paged = staticLeases.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
 
     const handleSelectAll = (checked) => {
-        setSelectedLeases(checked ? staticLeases : []);
+        setSelectedLeases(checked ? paged : []);
     };
     
     const handleSelectSingle = (checked, lease) => {
@@ -79,22 +92,22 @@ export default function StaticLeasesTab({ token }) {
             }
         );
     };
-
+    
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
-                <Input placeholder="Search static leases..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="max-w-sm" />
+             <div className="flex justify-between items-center mb-4">
+                <Input placeholder="Search static leases..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="max-w-sm" />
                 <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={handleAddNew}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Static Lease
+                    </Button>
                     {selectedLeases.length > 0 && (
                         <Button variant="destructive" size="sm" onClick={() => setLeasesToDelete(selectedLeases)}>
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete ({selectedLeases.length})
+                            Delete Selected ({selectedLeases.length})
                         </Button>
                     )}
-                    <Button size="sm" onClick={handleAddNew}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Manual
-                    </Button>
                 </div>
             </div>
              <div className="border rounded-md">
@@ -103,21 +116,22 @@ export default function StaticLeasesTab({ token }) {
                         <TableRow>
                             <TableHead className="w-[50px]">
                                 <Checkbox
-                                    checked={selectedLeases.length === staticLeases.length && staticLeases.length > 0}
+                                    checked={selectedLeases.length === paged.length && paged.length > 0}
                                     onCheckedChange={handleSelectAll}
                                 />
                             </TableHead>
                             <TableHead>IP Address</TableHead>
                             <TableHead>MAC Address</TableHead>
+                            <TableHead>Server</TableHead>
                             <TableHead>Comment</TableHead>
                             <TableHead className="text-center">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading && <TableRow><TableCell colSpan={5} className="h-24 text-center">Loading static leases...</TableCell></TableRow>}
-                        {error && <TableRow><TableCell colSpan={5} className="h-24 text-center text-destructive">Failed to load static leases.</TableCell></TableRow>}
-                        {!isLoading && staticLeases.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No static leases found.</TableCell></TableRow>}
-                        {staticLeases.map((lease) => (
+                        {isLoading && <TableRow><TableCell colSpan={6} className="h-24 text-center">Loading static leases...</TableCell></TableRow>}
+                        {error && <TableRow><TableCell colSpan={6} className="h-24 text-center text-destructive">Failed to load static leases.</TableCell></TableRow>}
+                        {!isLoading && paged.length === 0 && <TableRow><TableCell colSpan={6} className="h-24 text-center">No static leases found.</TableCell></TableRow>}
+                        {paged.map((lease) => (
                              <TableRow key={lease['.id']} data-state={selectedLeases.some(l => l['.id'] === lease['.id']) && "selected"}>
                                 <TableCell>
                                     <Checkbox
@@ -127,6 +141,7 @@ export default function StaticLeasesTab({ token }) {
                                 </TableCell>
                                 <TableCell className="font-mono">{lease.address}</TableCell>
                                 <TableCell className="font-mono">{lease['mac-address']}</TableCell>
+                                <TableCell>{lease.server}</TableCell>
                                 <TableCell>{lease.comment}</TableCell>
                                 <TableCell className="text-center">
                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(lease)}><Edit className="h-4 w-4" /></Button>
@@ -137,13 +152,35 @@ export default function StaticLeasesTab({ token }) {
                     </TableBody>
                 </Table>
             </div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Label htmlFor="rows-per-page-static">Rows per page:</Label>
+                    <Select value={`${rowsPerPage}`} onValueChange={(v)=>{ setRowsPerPage(Number(v)); setCurrentPage(1); }}>
+                        <SelectTrigger id="rows-per-page-static" className="w-20"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {[10, 20, 50, 100].map(n => (<SelectItem key={n} value={`${n}`}>{n}</SelectItem>))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages} ({staticLeases.length} items)
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={()=>setCurrentPage(p=>Math.max(1,p-1))} disabled={page<=1}>
+                        Previous
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={()=>setCurrentPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages}>
+                        Next
+                    </Button>
+                </div>
+            </div>
 
-            {isFormOpen && (
+            {(isFormOpen || editingLease) && (
                 <DhcpLeaseFormDialog
-                    isOpen={isFormOpen}
-                    setIsOpen={setIsFormOpen}
+                    isOpen={isFormOpen || !!editingLease}
+                    setIsOpen={() => { setIsFormOpen(false); setEditingLease(null); }}
                     lease={editingLease}
-                    mode={formMode}
+                    mode={isFormOpen && !editingLease ? 'addStatic' : 'editStatic'}
                     onSave={mutate}
                 />
             )}

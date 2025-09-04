@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import IpBindingFormDialog from "@/components/dialogs/IpBindingFormDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
 
 export default function IpBindingsTab({ token, refreshTrigger, onRefreshDone }) {
     const [typeFilter, setTypeFilter] = useState("");
@@ -33,8 +34,9 @@ export default function IpBindingsTab({ token, refreshTrigger, onRefreshDone }) 
     
     const confirmDelete = async () => {
         if (!bindingToDelete) return;
+        const id = encodeURIComponent(bindingToDelete['.id']);
         toast.promise(
-            axiosInstance.delete(`/mikrotik/bindings/${bindingToDelete['.id']}`, { headers: { Authorization: `Bearer ${token}` } }),
+            axiosInstance.delete(`/mikrotik/bindings/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
             {
                 loading: "Removing IP Binding...",
                 success: () => { refreshData(); return `Binding for '${bindingToDelete['mac-address']}' removed.`; },
@@ -89,19 +91,30 @@ export default function IpBindingsTab({ token, refreshTrigger, onRefreshDone }) 
                     </Table>
                 </TooltipProvider>
             </div>
-            <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">Page {pagination.currentPage} of {pagination.totalPages}</p>
-                <div className="flex items-center space-x-2">
-                    <Select onValueChange={(value) => handleItemsPerPageChange(Number(value))} defaultValue={`${pagination.itemsPerPage}`}>
-                        <SelectTrigger className="w-[120px]"><SelectValue placeholder="Rows per page" /></SelectTrigger>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Label htmlFor="rows-per-page-binding">Rows per page:</Label>
+                    <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                        <SelectTrigger id="rows-per-page-binding" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={`${size}`}>{size} rows</SelectItem>))}
+                            {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>Previous</Button>
-                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>Next</Button>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                    Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
+                        Previous
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
+                        Next
+                    </Button>
                 </div>
             </div>
+
             {isFormDialogOpen && <IpBindingFormDialog isOpen={isFormDialogOpen} setIsOpen={setIsFormDialogOpen} binding={editingBinding} onSave={refreshData} />}
             <AlertDialog open={!!bindingToDelete} onOpenChange={() => setBindingToDelete(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the IP Binding for MAC address: <strong>{bindingToDelete?.['mac-address']}</strong>.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Remove</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
         </div>

@@ -18,9 +18,8 @@ const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorizatio
 
 export default function DhcpLeasesTab({ token }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const { data: leases, mutate, isLoading } = useSWR(['/mikrotik/dhcp/leases', token], ([url, t]) => fetcher(url, t));
 
@@ -28,22 +27,26 @@ export default function DhcpLeasesTab({ token }) {
   const [leasesToDelete, setLeasesToDelete] = useState([]);
   const [makeStaticLease, setMakeStaticLease] = useState(null);
 
-  // computed filtered list
+  const isStatic = (lease) => {
+    return lease.dynamic === 'false' || !lease.dynamic;
+  };
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = Array.isArray(leases) ? leases : [];
     return list.filter(l => {
+      if (isStatic(l)) {
+        return false;
+      }
+      
       const ip = (l.address || '').toLowerCase();
       const mac = (l["mac-address"] || l.macAddress || '').toLowerCase();
       const host = (l["active-host-name"] || l["host-name"] || '').toLowerCase();
-      const status = (l.status || (l.dynamic ? "dynamic" : "static") || '').toLowerCase();
       const matchesSearch = !q || ip.includes(q) || mac.includes(q) || host.includes(q);
-      const matchesStatus = statusFilter === "all" || status === statusFilter;
-      return matchesSearch && matchesStatus;
+      return matchesSearch;
     });
-  }, [leases, search, statusFilter]);
+  }, [leases, search]);
 
-  // pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / rowsPerPage));
   const page = Math.min(currentPage, totalPages);
   const paged = filtered.slice((page - 1) * rowsPerPage, page * rowsPerPage);
@@ -51,6 +54,7 @@ export default function DhcpLeasesTab({ token }) {
   const toggleAll = (checked) => {
     setSelected(checked ? paged : []);
   };
+
   const toggleRow = (lease, checked) => {
     setSelected(prev => checked ? [...prev, lease] : prev.filter(x => (x[".id"]||x.id) !== (lease[".id"]||lease.id)));
   };
@@ -59,59 +63,46 @@ export default function DhcpLeasesTab({ token }) {
     const items = leasesToDelete;
     setLeasesToDelete([]);
     try {
-      for (const l of items) {
+      const deletePromises = items.map(l => {
         const id = encodeURIComponent(l[".id"] || l.id);
-        await axiosInstance.delete(`/mikrotik/dhcp/leases/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      }
+        return axiosInstance.delete(`/mikrotik/dhcp/leases/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      });
+      await Promise.all(deletePromises);
+      
       toast.success(`Deleted ${items.length} lease(s).`);
       mutate();
+      setSelected([]); // Clear selection after deletion
     } catch (e) {
       console.error(e);
       toast.error("Failed to delete some leases.");
     }
   };
-
+  
   const formatStatus = (l) => {
-    const s = (l.status || "").toLowerCase();
-    if (s) return s;
-    return l.dynamic ? "dynamic" : "static";
+    if (isStatic(l)) return 'static';
+    return (l.status || "dynamic").toLowerCase();
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex-1 min-w-[220px]">
-          <Label>Search</Label>
-          <Input placeholder="Search IP / MAC / Hostname" value={search} onChange={(e)=>{ setSearch(e.target.value); setCurrentPage(1); }} />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-[220px]">
+                <Input placeholder="Search IP / MAC / Hostname" value={search} onChange={(e)=>{ setSearch(e.target.value); setCurrentPage(1); }} />
+            </div>
         </div>
-        <div className="min-w-[200px]">
-          <Label>Status</Label>
-          <Select value={statusFilter} onValueChange={(v)=>{ setStatusFilter(v); setCurrentPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="bound">bound</SelectItem>
-              <SelectItem value="waiting">waiting</SelectItem>
-              <SelectItem value="offered">offered</SelectItem>
-              <SelectItem value="busy">busy</SelectItem>
-              <SelectItem value="testing">testing</SelectItem>
-              <SelectItem value="expired">expired</SelectItem>
-              <SelectItem value="blocked">blocked</SelectItem>
-              <SelectItem value="static">static</SelectItem>
-              <SelectItem value="dynamic">dynamic</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="ml-auto flex items-end gap-2">
+        {/* --- START: EDIT --- */}
+        {/* Button will only render if one or more items are selected */}
+        {selected.length > 0 && (
           <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setLeasesToDelete(selected)}
-            disabled={selected.length === 0}
+              variant="destructive"
+              size="sm"
+              onClick={() => setLeasesToDelete(selected)}
           >
-            <Trash2 className="w-4 h-4 mr-1" /> Delete
+              <Trash2 className="w-4 h-4 mr-1" /> Delete Selected ({selected.length})
           </Button>
-        </div>
+        )}
+        {/* --- END: EDIT --- */}
       </div>
 
       <div className="rounded-md border">
@@ -134,15 +125,15 @@ export default function DhcpLeasesTab({ token }) {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="h-24 text-center">Loading...</TableCell></TableRow>
             ) : paged.length === 0 ? (
-              <TableRow><TableCell colSpan={6}>No data</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="h-24 text-center">No dynamic leases found.</TableCell></TableRow>
             ) : paged.map((l) => {
               const id = l[".id"] || l.id;
               const status = formatStatus(l);
               const host = l["active-host-name"] || l["host-name"] || "-";
               return (
-                <TableRow key={id}>
+                <TableRow key={id} data-state={selected.find(x => (x[".id"]||x.id) === id) ? 'selected' : ''}>
                   <TableCell>
                     <Checkbox
                       checked={!!selected.find(x => (x[".id"]||x.id) === id)}
@@ -159,8 +150,18 @@ export default function DhcpLeasesTab({ token }) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => setMakeStaticLease(l)}>
-                      <Lock className="w-4 h-4 mr-1" /> Make Static
+                    {!isStatic(l) && (
+                      <Button size="sm" variant="outline" onClick={() => setMakeStaticLease(l)}>
+                        <Lock className="w-4 h-4 mr-1" /> Make Static
+                      </Button>
+                    )}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setLeasesToDelete([l])}
+                    >
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -170,22 +171,27 @@ export default function DhcpLeasesTab({ token }) {
         </Table>
       </div>
 
-      {/* Pagination controls */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing {(page-1)*rowsPerPage + 1}–{Math.min(page*rowsPerPage, filtered.length)} of {filtered.length}
-        </div>
-        <div className="flex items-center gap-2">
-          <Label className="mr-2">Rows per page</Label>
-          <Select value={`${rowsPerPage}`} onValueChange={(v)=>{ setRowsPerPage(Number(v)); setCurrentPage(1); }}>
-            <SelectTrigger className="w-[110px]"><SelectValue placeholder={`${rowsPerPage}`} /></SelectTrigger>
-            <SelectContent>
-              {[10,20,50,100].map(n => <SelectItem key={n} value={`${n}`}>{n} rows</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="sm" onClick={()=>setCurrentPage(p=>Math.max(1,p-1))} disabled={page<=1}>Previous</Button>
-          <Button variant="outline" size="sm" onClick={()=>setCurrentPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages}>Next</Button>
-        </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Label htmlFor="rows-per-page">Rows per page:</Label>
+              <Select value={`${rowsPerPage}`} onValueChange={(v)=>{ setRowsPerPage(Number(v)); setCurrentPage(1); }}>
+                  <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                      {[10, 20, 50, 100].map(n => (<SelectItem key={n} value={`${n}`}>{n}</SelectItem>))}
+                  </SelectContent>
+              </Select>
+          </div>
+          <div className="text-sm text-muted-foreground">
+              Page {page} of {totalPages} ({filtered.length} items)
+          </div>
+          <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={()=>setCurrentPage(p=>Math.max(1,p-1))} disabled={page<=1}>
+                  Previous
+              </Button>
+              <Button variant="outline" size="sm" onClick={()=>setCurrentPage(p=>Math.min(totalPages,p+1))} disabled={page>=totalPages}>
+                  Next
+              </Button>
+          </div>
       </div>
 
       {makeStaticLease && (
@@ -215,3 +221,4 @@ export default function DhcpLeasesTab({ token }) {
     </div>
   );
 }
+
