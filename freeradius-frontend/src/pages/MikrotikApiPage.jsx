@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+// freeradius-frontend/src/pages/MikrotikApiPage.jsx
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 import { Server, Save, PlugZap } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import axiosInstance from '@/api/axiosInstance';
+import { Badge } from "@/components/ui/badge";
 
 export default function MikrotikApiPage() {
     const token = useAuthStore((state) => state.token);
@@ -15,6 +17,19 @@ export default function MikrotikApiPage() {
     const passwordRef = useRef('');
     const [isLoading, setIsLoading] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
+    const [status, setStatus] = useState({ state: 'loading', reason: '' });
+
+    const fetchStatus = useCallback(() => {
+        setStatus({ state: 'loading', reason: '' });
+        axiosInstance.get('/mikrotik/settings/status', { headers: { Authorization: `Bearer ${token}` }})
+            .then(response => {
+                setStatus({ 
+                    state: response.data.data.status, 
+                    reason: response.data.data.reason || '' 
+                });
+            })
+            .catch(() => setStatus({ state: 'offline', reason: 'Failed to fetch status' }));
+    }, [token]);
 
     useEffect(() => {
         setIsLoading(true);
@@ -26,7 +41,9 @@ export default function MikrotikApiPage() {
             })
             .catch(() => toast.error("Failed to load Mikrotik API settings."))
             .finally(() => setIsLoading(false));
-    }, [token]);
+        
+        fetchStatus();
+    }, [token, fetchStatus]);
 
     const handleInputChange = (e) => {
         setDisplayData({ ...displayData, [e.target.id]: e.target.value });
@@ -34,15 +51,16 @@ export default function MikrotikApiPage() {
 
     const handleSave = () => {
         const password = passwordRef.current.value;
-        if (!password) {
-            toast.error("Password is required to save new settings.");
+        if (!displayData.host || !displayData.user) {
+            toast.error("Host and API Username are required.");
             return;
         }
-
-        const dataToSave = {
-            ...displayData,
-            password: password,
-        };
+        
+        // รหัสผ่านจำเป็นเฉพาะเมื่อสร้างครั้งแรก หรือเมื่อต้องการเปลี่ยน
+        const dataToSave = { ...displayData };
+        if (password) {
+            dataToSave.password = password;
+        }
 
         setIsLoading(true);
         toast.promise(
@@ -50,45 +68,58 @@ export default function MikrotikApiPage() {
             {
                 loading: "Saving API settings...",
                 success: () => {
-                    passwordRef.current.value = '';
+                    passwordRef.current.value = ''; // ล้างช่องรหัสผ่านหลังบันทึก
+                    fetchStatus();
                     return "Mikrotik API settings saved successfully!";
                 },
-                error: (err) => err.response?.data?.message || "Failed to save settings.",
+                error: (err) => {
+                    fetchStatus();
+                    return err.response?.data?.message || "Failed to save settings.";
+                },
                 finally: () => setIsLoading(false)
             }
         );
     };
 
     const handleTestConnection = () => {
-        const password = passwordRef.current.value;
-        if (!password) {
-            toast.info("Please enter the current password to test the connection.");
-            return;
-        }
-        
-        const dataToTest = {
-            host: displayData.host,
-            user: displayData.user,
-            useTls: displayData.useTls,
-            password: password,
-        };
-
         setIsTesting(true);
         toast.promise(
-            axiosInstance.post('/mikrotik/settings/test-connection', dataToTest, { headers: { Authorization: `Bearer ${token}` } }),
+            // ส่ง request ไปโดยไม่มี body, backend จะใช้ค่าที่บันทึกไว้
+            axiosInstance.post('/mikrotik/settings/test-connection', {}, { headers: { Authorization: `Bearer ${token}` } }),
             {
                 loading: "Testing connection...",
-                success: (res) => res.data.message || "Connection successful!",
-                error: (err) => err.response?.data?.message || "Connection failed.",
+                success: (res) => {
+                    fetchStatus();
+                    return res.data.message || "Connection successful!";
+                },
+                error: (err) => {
+                    fetchStatus();
+                    return err.response?.data?.message || "Connection failed.";
+                },
                 finally: () => setIsTesting(false)
             }
-        )
+        );
     };
 
     return (
         <Card className="max-w-2xl mx-auto">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"> <Server className="h-6 w-6" /> Mikrotik API Settings </CardTitle>
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <Server className="h-6 w-6" />
+                        <CardTitle>Mikrotik API Settings</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Label>Status:</Label>
+                        {status.state === 'loading' ? (
+                            <Badge variant="secondary">Checking...</Badge>
+                        ) : status.state === 'online' ? (
+                            <Badge variant="success">Online</Badge>
+                        ) : (
+                            <Badge variant="destructive" title={status.reason}>Offline</Badge>
+                        )}
+                    </div>
+                </div>
                 <CardDescription> Configure the connection details for your Mikrotik router. </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -100,11 +131,18 @@ export default function MikrotikApiPage() {
                     <Label htmlFor="user">API Username</Label>
                     <Input id="user" value={displayData.user} onChange={handleInputChange} placeholder="e.g., api" />
                 </div>
+                
+                {/* --- START: แก้ไขส่วน Password --- */}
                 <div className="space-y-2">
                     <Label htmlFor="password">API Password</Label>
-                    <Input id="password" type="password" ref={passwordRef} placeholder="Enter password to save or test" />
-                    <p className="text-xs text-muted-foreground">For security, the password is not displayed. Enter it only when you need to save or test.</p>
+                    <Input id="password" type="password" ref={passwordRef} placeholder="Enter password to save or update" />
+                    <p className="text-xs text-muted-foreground">
+                        The password is not displayed for security. Only enter a password if you want to change it.
+                        The <strong>Test Connection</strong> button uses the currently saved settings.
+                    </p>
                 </div>
+                {/* --- END --- */}
+                
                 <div className="flex items-center justify-between rounded-lg border p-3">
                     <div className="space-y-0.5">
                         <Label>Use API-SSL (TLS)</Label>

@@ -26,6 +26,7 @@ const saveConfig = async (req, res, next) => {
 
 const testConnection = async (req, res, next) => {
     try {
+        // ไม่ว่า client จะส่ง password มาหรือไม่, service จะจัดการเอง
         const result = await mikrotikApiService.testApiConnection(req.body);
         res.status(200).json({ success: true, message: result.message });
     } catch (error) {
@@ -33,8 +34,18 @@ const testConnection = async (req, res, next) => {
     }
 };
 
+const getConnectionStatus = async (req, res, next) => {
+    try {
+        const result = await mikrotikApiService.getMikrotikStatus();
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getConfig,
     saveConfig,
     testConnection,
+    getConnectionStatus, // <-- Export ฟังก์ชันใหม่
 };
