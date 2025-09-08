@@ -295,6 +295,7 @@
     "retention_days": "Retention Days",
     "critical_disk_usage": "Critical Disk Usage (%)",
     "target_disk_usage": "Target Disk Usage (%) after cleanup",
+    "old_password": "Old Password",
     "new_password": "New Password",
     "new_password_placeholder": "Leave blank to keep current password",
     "confirm_new_password": "Confirm New Password",

@@ -295,6 +295,7 @@
     "retention_days": "จำนวนวันที่เก็บข้อมูล (วัน)",
     "critical_disk_usage": "ระดับพื้นที่ใช้งานวิกฤต (%)",
     "target_disk_usage": "ระดับพื้นที่เป้าหมาย (%) หลังล้างข้อมูล",
+    "old_password": "รหัสผ่านเดิม",
     "new_password": "รหัสผ่านใหม่",
     "new_password_placeholder": "เว้นว่างไว้เพื่อใช้รหัสผ่านเดิม",
     "confirm_new_password": "ยืนยันรหัสผ่านใหม่",
