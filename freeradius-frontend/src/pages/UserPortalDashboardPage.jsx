@@ -21,8 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { useTranslation } from 'react-i18next'; // <-- 1. Import hook
-import { th, enUS } from 'date-fns/locale'; // <-- Import locales for date-fns
+import { useTranslation } from 'react-i18next';
+import { th, enUS } from 'date-fns/locale';
 
 const formatBytes = (bytes, decimals = 2) => {
     if (!bytes || bytes === "0") return '0 Bytes';
@@ -174,9 +174,9 @@ const SessionInfoCard = ({ session, t, i18n }) => {
     const locale = i18n.language === 'th' ? th : enUS;
     if (!session) {
         return (
-            <Card>
+            <Card className="h-full flex flex-col">
                 <CardHeader><CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5 text-muted-foreground"/>{t('user_portal.current_session')}</CardTitle></CardHeader>
-                <CardContent className="text-center text-muted-foreground py-10"><p>{t('user_portal.not_connected')}</p></CardContent>
+                <CardContent className="flex-grow flex items-center justify-center text-center text-muted-foreground py-10"><p>{t('user_portal.not_connected')}</p></CardContent>
             </Card>
         );
     }
@@ -186,19 +186,19 @@ const SessionInfoCard = ({ session, t, i18n }) => {
     const totalData = dataUp + dataDown;
 
     return (
-         <Card>
+         <Card className="h-full flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5 text-emerald-500"/>{t('user_portal.current_session')}</CardTitle>
                 <CardDescription>{t('user_portal.active_connection_details')}</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-x-4 gap-y-6 pt-2">
+            <CardContent className="flex-grow grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6 pt-2">
                 <InfoRow label={t('table_headers.ip_address')} value={session.ip} t={t} />
                 <InfoRow label={t('table_headers.mac_address')} value={formatMacAddress(session.mac)} t={t} />
                 <InfoRow label={t('user_portal.connection_time')} value={formatDistanceToNowStrict(new Date(session.loginTime), { addSuffix: true, locale })} t={t} />
                 <InfoRow label={t('user_portal.connected_via')} value={session.nas} t={t} />
                 <InfoRow icon={ArrowDown} label={t('table_headers.data_down')} value={formatBytes(dataDown)} t={t} />
                 <InfoRow icon={ArrowUp} label={t('table_headers.data_up')} value={formatBytes(dataUp)} t={t} />
-                <div className="col-span-2 border-t pt-4"><InfoRow icon={Server} label={t('user_portal.total_data_used')} value={formatBytes(totalData)} t={t} /></div>
+                <div className="col-span-1 sm:col-span-2 border-t pt-4"><InfoRow icon={Server} label={t('user_portal.total_data_used')} value={formatBytes(totalData)} t={t} /></div>
             </CardContent>
         </Card>
     )
@@ -216,7 +216,7 @@ const InfoRow = ({ icon: Icon, label, value, t }) => (
 
 
 export default function UserPortalDashboardPage() {
-    const { t, i18n } = useTranslation(); // <-- 2. เรียกใช้ hook
+    const { t, i18n } = useTranslation();
     const { token, logout, setUser, user: initialProfile, pendingAd, clearPendingAd } = useUserAuthStore();
     const navigate = useNavigate();
     const fetcher = url => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
@@ -271,49 +271,69 @@ export default function UserPortalDashboardPage() {
         return <div className="p-4">{t('loading_ad')}</div>;
     }
 
-    // --- 3. แปลภาษาในส่วน JSX ทั้งหมด ---
     return (
         <motion.div className="min-h-screen bg-slate-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, ease: "easeInOut" }}>
             <header className="bg-white shadow-sm">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                     <h1 className="text-xl font-bold text-slate-800">{t('user_portal.connection_status')}</h1>
-                    <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /> {t('logout')}</Button>
                 </div>
             </header>
-            <main className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            <main className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+                {/* Column 1: User Info */}
                 <div className="md:col-span-1">
                     <UserInfoCard profile={profile} logoUrl={settings.logoUrl} t={t} i18n={i18n} />
                 </div>
-                <div className="md:col-span-2 space-y-8">
+
+                {/* Column 2: Session Info */}
+                <div className="md:col-span-1">
                     <SessionInfoCard session={profile.currentSession} t={t} i18n={i18n} />
-                    <Card>
+                </div>
+
+                {/* Column 3: Security & Sessions */}
+                <div className="md:col-span-1">
+                    <Card className="h-full flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> {t('user_portal.security_sessions.title')}</CardTitle>
                             <CardDescription>{t('user_portal.security_sessions.description')}</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <h4 className="font-semibold">{t('user_portal.change_password_button')}</h4>
-                                <p className="text-sm text-muted-foreground mb-2">{t('user_portal.security_sessions.change_password_desc')}</p>
-                                <ChangePasswordDialog token={token} />
+                        <CardContent className="flex-grow flex flex-col justify-between space-y-4">
+                            <div className="space-y-4">
+                                {/* Change Password Section */}
+                                <div>
+                                    <h4 className="font-semibold">{t('user_portal.change_password_button')}</h4>
+                                    <p className="text-sm text-muted-foreground mb-2">{t('user_portal.security_sessions.change_password_desc')}</p>
+                                    <ChangePasswordDialog token={token} />
+                                </div>
+                                <hr/>
+                                {/* Active Connections Section */}
+                                <div>
+                                    <h4 className="font-semibold">{t('user_portal.security_sessions.active_connections_title')}</h4>
+                                    <p className="text-sm text-muted-foreground mb-2">{t('user_portal.security_sessions.active_connections_desc')}</p>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild><Button variant="destructive"><WifiOff className="mr-2 h-4 w-4" /> {t('user_portal.security_sessions.disconnect_button')}</Button></AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
+                                                <AlertDialogDescription>{t('user_portal.security_sessions.disconnect_dialog_desc')}</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleClearOtherSessions}>{t('user_portal.security_sessions.disconnect_dialog_confirm')}</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             </div>
-                            <hr/>
-                            <div>
-                                <h4 className="font-semibold">{t('user_portal.security_sessions.active_connections_title')}</h4>
-                                <p className="text-sm text-muted-foreground mb-2">{t('user_portal.security_sessions.active_connections_desc')}</p>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild><Button variant="destructive"><WifiOff className="mr-2 h-4 w-4" /> {t('user_portal.security_sessions.disconnect_button')}</Button></AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>{t('are_you_sure')}</AlertDialogTitle>
-                                            <AlertDialogDescription>{t('user_portal.security_sessions.disconnect_dialog_desc')}</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleClearOtherSessions}>{t('user_portal.security_sessions.disconnect_dialog_confirm')}</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                            
+                            {/* Logout Section */}
+                            <div className="border-t pt-4">
+                                <h4 className="font-semibold">{t('logout')}</h4>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                    {t('user_portal.security_sessions.logout_desc', 'Securely log out of your account and end your session.')}
+                                </p>
+                                <Button variant="outline" onClick={handleLogout}>
+                                    <LogOut className="mr-2 h-4 w-4" /> {t('logout')}
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
