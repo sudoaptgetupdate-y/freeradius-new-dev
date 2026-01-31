@@ -61,7 +61,7 @@ export default function ExternalLoginPage() {
             let actionUrl = linkLoginOnly;
             if (!actionUrl) {
                 // ✅ ใช้ IP 10.5.55.1 ตามที่คุณระบุ (Fallback)
-                actionUrl = settings?.hotspotUrl || 'http://10.5.55.1/login'; 
+                actionUrl = settings?.hotspotUrl || 'http://10.0.0.108/login'; 
             }
 
             // ✅ ใช้ window.location.origin เพื่อความยืดหยุ่น (ได้ทั้ง http://10.0.0.105 หรือ Domain อื่น)
