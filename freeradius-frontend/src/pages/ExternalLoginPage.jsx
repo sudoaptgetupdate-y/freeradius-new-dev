@@ -55,7 +55,7 @@ export default function ExternalLoginPage() {
 
         if (linkLoginOnly || linkOrig || dst || mac || ip) {
             // โหมด MikroTik: ดึงค่าจาก URL หรือใช้ค่าจาก Settings ถ้า URL ไม่มี
-            const actionUrl = linkLoginOnly || settings?.hotspotUrl || 'http://10.5.55.1/login'; 
+            const actionUrl = linkLoginOnly || settings?.hotspotUrl || 'http://10.70.0.1/login'; 
             setMikrotikConfig({
                 actionUrl: actionUrl,
                 dst: dst || `${window.location.origin}/portal/dashboard`,
