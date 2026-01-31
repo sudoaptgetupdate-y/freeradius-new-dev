@@ -7,33 +7,35 @@ const axiosInstance = axios.create({
   baseURL: '/api',
 });
 
+// --- เพิ่มส่วนนี้: ส่ง Token ไปกับทุก Request ---
+axiosInstance.interceptors.request.use((config) => {
+    // ดึง Token จากทั้ง Admin Store และ User Store
+    const adminToken = useAuthStore.getState().token;
+    const userToken = useUserAuthStore.getState().token;
+    const token = adminToken || userToken;
+
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const originalRequest = error.config;
-
-    // เงื่อนไขที่สำคัญที่สุด:
-    // 1. Error ต้องเป็น 401 Unauthorized
-    // 2. originalRequest ต้องมี Authorization header อยู่แล้ว (หมายความว่าเราพยายามใช้ token ที่อาจจะหมดอายุ)
-    // 3. token ใน store ของ "Admin" ต้องมีค่าอยู่ (ยืนยันว่านี่คือ session ของ Admin จริงๆ)
+    // ... โค้ดส่วน Response Interceptor เดิมของคุณ ...
     if (
       error.response?.status === 401 &&
       originalRequest.headers['Authorization'] &&
       useAuthStore.getState().token
     ) {
-      console.error("Admin session expired or invalid! Logging out admin.");
-      
-      // ทำการ Logout ทั้งสอง Store เพื่อความปลอดภัย
       useAuthStore.getState().logout();
       if (useUserAuthStore.getState().token) {
         useUserAuthStore.getState().logout();
       }
-
-      // ส่งกลับไปหน้า login หลักของ admin
       window.location.href = '/login';
     }
-
-    // สำหรับ Error อื่นๆ ทั้งหมด (รวมถึง login fail ของ user portal) ให้ส่งต่อไปตามปกติ
     return Promise.reject(error);
   }
 );

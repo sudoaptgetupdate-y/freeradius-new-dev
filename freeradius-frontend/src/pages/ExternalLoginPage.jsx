@@ -17,6 +17,8 @@ import { useTranslation } from 'react-i18next';
 export default function ExternalLoginPage() {
     const { t, i18n } = useTranslation();
     const location = useLocation();
+    
+    // ดึงฟังก์ชัน login จาก User Auth Store
     const { login } = useUserAuthStore(); 
     const formRef = useRef(null);
 
@@ -27,19 +29,19 @@ export default function ExternalLoginPage() {
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
-    // กำหนดค่าคอนฟิกสำหรับ MikroTik
+    // ตั้งค่าเริ่มต้นสำหรับ MikroTik Gateway
     const [mikrotikConfig, setMikrotikConfig] = useState({
-        actionUrl: 'http://10.70.0.1/login', // กำหนด Gateway ใหม่เป็น 10.70.0.1 ตามต้องการ
-        dst: `${window.location.origin}/portal/dashboard`,
+        actionUrl: 'http://10.70.0.1/login', // กำหนด Gateway เป็น 10.70.0.1
+        dst: `${window.location.origin}/portal/dashboard`, // ปลายทางหลัง Login สำเร็จ
     });
 
-    // โหลด Settings จาก Backend
+    // โหลดการตั้งค่าจากระบบ
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => {
               const data = response.data.data;
               setSettings(data);
-              // หากใน Settings มีการตั้งค่า Hotspot URL ไว้ ให้ใช้ค่านั้นแทนค่า Default
+              // ถ้ามีการตั้งค่า Hotspot URL ในระบบ ให้ใช้ค่านั้นแทน
               if (data.hotspotUrl) {
                   setMikrotikConfig(prev => ({ ...prev, actionUrl: data.hotspotUrl }));
               }
@@ -48,10 +50,9 @@ export default function ExternalLoginPage() {
           .finally(() => setIsPageLoading(false));
     }, []);
 
-    // ตรวจสอบ URL Params จาก MikroTik
+    // ตรวจสอบ Parameter ที่ MikroTik ส่งมาให้
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        
         const linkLoginOnly = params.get('link-login-only');
         const dst = params.get('dst');
         const errorMsg = params.get('error');
@@ -61,11 +62,11 @@ export default function ExternalLoginPage() {
                 actionUrl: linkLoginOnly || prev.actionUrl,
                 dst: dst || prev.dst,
             }));
+        }
 
-            if (errorMsg) {
-                toast.error(`Router Error: ${errorMsg}`);
-            }
-        } 
+        if (errorMsg) {
+            toast.error(`Router Error: ${errorMsg}`);
+        }
     }, [location.search]);
 
     const handleInputChange = (e) => {
@@ -74,6 +75,7 @@ export default function ExternalLoginPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (!agreed) {
             toast.error(t('toast.must_agree_terms'));
             return;
@@ -81,24 +83,25 @@ export default function ExternalLoginPage() {
         setIsLoading(true);
 
         try {
-            // Step 1: ตรวจสอบสิทธิ์กับ Backend (FreeRADIUS)
+            // Step 1: ตรวจสอบ Username/Password กับ Backend
             const response = await axiosInstance.post('/external-auth/login', formData);
             const { token, user, advertisement } = response.data.data;
             
-            // Step 2: บันทึก Session
+            // Step 2: บันทึกข้อมูลการเข้าสู่ระบบลง Store
             login(token, user, advertisement);
 
-            toast.success("Authentication Verified. Connecting to Hotspot...");
+            toast.success("Login Verified. Connecting to Hotspot...");
 
-            // Step 3: ส่งฟอร์มไปยัง MikroTik Gateway
-            // ใช้ความหน่วงเวลา 1 วินาที เพื่อให้แน่ใจว่า Browser บันทึก Session Storage เสร็จสิ้น
+            // Step 3: ส่งฟอร์มไปยัง MikroTik เพื่อเปิดสัญญาณอินเทอร์เน็ต
+            // ใช้ความหน่วงเวลา 1.5 วินาที เพื่อให้ Browser จัดเก็บข้อมูล Session สำเร็จก่อนเปลี่ยนหน้า
             setTimeout(() => {
                 if (formRef.current) {
                     formRef.current.submit(); 
                 }
-            }, 1000);
+            }, 1500);
 
         } catch (error) {
+            console.error(error);
             toast.error(t('toast.login_failed_title'), {
                 description: error.response?.data?.message || t('toast.login_failed_desc'),
             });
@@ -106,9 +109,9 @@ export default function ExternalLoginPage() {
         }
     };
     
-    if (isPageLoading) return <div className="flex items-center justify-center p-8">{t('loading')}</div>;
-
-    const isButtonDisabled = isLoading || !agreed;
+    if (isPageLoading) {
+        return <div className="flex items-center justify-center p-8">{t('loading')}</div>;
+    }
 
     return (
         <>
@@ -123,14 +126,14 @@ export default function ExternalLoginPage() {
             
             {settings?.externalLoginEnabled === 'true' && (
                 <CardContent>
-                    <form 
-                        ref={formRef} 
-                        action={mikrotikConfig.actionUrl} 
-                        method="POST" 
-                        className="space-y-4" 
+                    <form
+                        ref={formRef}
+                        action={mikrotikConfig.actionUrl}
+                        method="POST"
+                        className="space-y-4"
                         onSubmit={handleSubmit}
                     >
-                        {/* Hidden Fields สำหรับ MikroTik เท่านั้น */}
+                        {/* ข้อมูลที่ MikroTik ต้องการเพื่อเริ่มใช้งาน Hotspot */}
                         <input type="hidden" name="username" value={formData.username} />
                         <input type="hidden" name="password" value={formData.password} />
                         <input type="hidden" name="dst" value={mikrotikConfig.dst} />
@@ -155,7 +158,9 @@ export default function ExternalLoginPage() {
                             <Dialog>
                                 <div className="text-xs text-muted-foreground pl-6">
                                     {t('external_login_page.must_agree_prefix')}
-                                    <DialogTrigger asChild><Button variant="link" className="p-1 h-auto text-xs">{t('external_login_page.terms_and_conditions')}</Button></DialogTrigger>
+                                    <DialogTrigger asChild>
+                                        <Button variant="link" className="p-1 h-auto text-xs">{t('external_login_page.terms_and_conditions')}</Button>
+                                    </DialogTrigger>
                                     {t('external_login_page.must_agree_suffix')}
                                 </div>
                                 <DialogContent className="sm:max-w-[625px]">
@@ -166,7 +171,7 @@ export default function ExternalLoginPage() {
                             </Dialog>
                         </div>
 
-                        <Button type="submit" className="w-full !mt-6" disabled={isButtonDisabled}>
+                        <Button type="submit" className="w-full !mt-6" disabled={isLoading || !agreed}>
                             {isLoading ? t('authenticating') : t('log_in')}
                         </Button>
                     </form>
