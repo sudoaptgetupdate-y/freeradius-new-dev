@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import axiosInstance from '@/api/axiosInstance';
-import useUserAuthStore from '@/store/userAuthStore'; // ✅ ใช้ Store ปกติ (เพราะทดสอบแล้วว่าผ่าน)
+import useUserAuthStore from '@/store/userAuthStore'; 
 import { Button } from '@/components/ui/button';
 import { CardContent, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,66 +19,60 @@ export default function ExternalLoginPage() {
     const { t, i18n } = useTranslation();
     const location = useLocation();
     
-    // ✅ เรียกใช้ฟังก์ชัน login จาก Store (ทำงานได้ถูกต้องเมื่อ IP Gateway ถูกต้อง)
+    // เรียกใช้ฟังก์ชัน login จาก Store เพื่อบันทึก Session
     const { login } = useUserAuthStore(); 
     const formRef = useRef(null);
 
     // --- State ---
-    const [magic, setMagic] = useState('');
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
-    // State สำหรับ MikroTik
+    // แยก State สำหรับ Router แต่ละประเภท
     const [mikrotikConfig, setMikrotikConfig] = useState(null);
+    const [fortigateMagic, setFortigateMagic] = useState('');
 
-    // โหลด Settings
+    // โหลด Settings จาก Backend
     useEffect(() => {
         axiosInstance.get('/settings')
           .then(response => setSettings(response.data.data))
           .catch(() => {
-              setSettings({ externalLoginEnabled: 'true', terms: '' });
+              setSettings({ externalLoginEnabled: 'true', terms: '', hotspotUrl: '' });
           })
           .finally(() => setIsPageLoading(false));
     }, []);
 
-    // ตรวจสอบ URL Params
+    // ตรวจสอบ URL Params เพื่อแยกแยะโหมดการทำงาน
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         
+        // 1. ตรวจสอบเงื่อนไขของ MikroTik
         const linkLoginOnly = params.get('link-login-only');
-        const linkOrig = params.get('link-orig');
-        const dst = params.get('dst');
-        const errorMsg = params.get('error');
         const mac = params.get('mac');
-        const ip = params.get('ip'); 
+        const errorMsg = params.get('error');
 
-        // ตรวจสอบว่าเป็น MikroTik หรือไม่
-        if (linkLoginOnly || linkOrig || dst || mac || ip) {
-            
-            let actionUrl = linkLoginOnly;
-            if (!actionUrl) {
-                // ✅ ใช้ IP 10.5.55.1 ตามที่คุณระบุ (Fallback)
-                actionUrl = settings?.hotspotUrl || 'http://10.0.0.108/login'; 
-            }
-
-            // ✅ ใช้ window.location.origin เพื่อความยืดหยุ่น (ได้ทั้ง http://10.0.0.105 หรือ Domain อื่น)
+        if (linkLoginOnly || mac) {
+            // ใช้ Action URL จาก Router หรือ Fallback ไปยัง Settings
+            const actionUrl = linkLoginOnly || settings?.hotspotUrl || 'http://10.70.0.1/login'; 
             const forceDashboardUrl = `${window.location.origin}/portal/dashboard`;
 
             setMikrotikConfig({
                 actionUrl: actionUrl,
-                dst: forceDashboardUrl, // บังคับเด้งไป Dashboard
+                dst: params.get('dst') || forceDashboardUrl, // นำทางไปยังหน้า Dashboard หลัง Login สำเร็จ
             });
 
             if (errorMsg) {
-                toast.error(`Login Failed: ${errorMsg}`);
+                toast.error(`MikroTik Error: ${errorMsg}`);
             }
         } 
         
+        // 2. ตรวจสอบเงื่อนไขของ FortiGate
         const magicValue = params.get('magic');
-        if (magicValue) setMagic(magicValue);
+        if (magicValue) {
+            setFortigateMagic(magicValue);
+        }
 
     }, [location.search, settings]);
 
@@ -96,22 +90,22 @@ export default function ExternalLoginPage() {
         setIsLoading(true);
 
         try {
-            // 1. ตรวจสอบรหัสผ่านกับ Backend (เก็บ Token)
+            // Step 1: ตรวจสอบสิทธิ์กับ Backend (FreeRADIUS)
             const response = await axiosInstance.post('/external-auth/login', formData);
             const { token, user, advertisement } = response.data.data;
             
-            // 2. Login เข้า App ทันที (บันทึก Token)
+            // Step 2: บันทึก Token และข้อมูลผู้ใช้ลงใน Store
             login(token, user, advertisement);
 
-            toast.success("Authentication Verified. Logging in to Hotspot...");
+            toast.success("Authentication Verified. Connecting to Hotspot...");
 
-            // 3. ส่ง Form เข้า MikroTik เพื่อเปิดเน็ต
-            // ตั้งเวลาหน่วง 0.5 วิ เพื่อให้ State ของ React อัปเดตเสร็จก่อนส่ง Form
+            // Step 3: ส่งฟอร์มเข้า Router เพื่อเปิดการเข้าถึงอินเทอร์เน็ต
+            // หน่วงเวลาเล็กน้อยเพื่อให้ระบบบันทึก State เสร็จสมบูรณ์
             setTimeout(() => {
                 if (formRef.current) {
                     formRef.current.submit(); 
                 }
-            }, 500);
+            }, 800);
 
         } catch (error) {
             console.error(error);
@@ -126,11 +120,12 @@ export default function ExternalLoginPage() {
         return <div className="flex items-center justify-center p-8">{t('loading')}</div>;
     }
 
+    // กำหนด Action URL หลักตามโหมดที่ตรวจพบ
     const currentFormAction = mikrotikConfig 
         ? mikrotikConfig.actionUrl 
         : "http://192.168.146.1:1000/fgtauth";
 
-    const isButtonDisabled = isLoading || !agreed || (!magic && !mikrotikConfig);
+    const isButtonDisabled = isLoading || !agreed || (!fortigateMagic && !mikrotikConfig);
 
     return (
         <>
@@ -151,7 +146,7 @@ export default function ExternalLoginPage() {
             {settings?.externalLoginEnabled === 'true' ? (
                 <>
                     <CardContent>
-                        {(!magic && !mikrotikConfig) && (
+                        {(!fortigateMagic && !mikrotikConfig) && (
                             <div className="mb-4 p-2 bg-yellow-50 text-yellow-600 text-xs rounded border border-yellow-200 text-center">
                                 ⚠️ Connecting directly without Router Params.<br/>
                                 Please connect via WiFi Hotspot Login Page.
@@ -165,22 +160,27 @@ export default function ExternalLoginPage() {
                             className="space-y-4"
                             onSubmit={handleSubmit}
                         >
-                            {mikrotikConfig ? (
+                            {/* Hidden Fields สำหรับ MikroTik */}
+                            {mikrotikConfig && (
                                 <>
-                                    {/* Fields ที่ MikroTik ต้องการ */}
-                                    <input type="hidden" name="dst" value={mikrotikConfig.dst} />
-                                    <input type="hidden" name="popup" value="true" />
-                                    {/* ส่ง Username/Password แบบ HTTP PAP */}
                                     <input type="hidden" name="username" value={formData.username} />
                                     <input type="hidden" name="password" value={formData.password} />
+                                    <input type="hidden" name="dst" value={mikrotikConfig.dst} />
+                                    <input type="hidden" name="popup" value="true" />
                                 </>
-                            ) : (
-                                <input type="hidden" name="magic" value={magic} />
+                            )}
+
+                            {/* Hidden Fields สำหรับ FortiGate */}
+                            {fortigateMagic && (
+                                <>
+                                    <input type="hidden" name="username" value={formData.username} />
+                                    <input type="hidden" name="password" value={formData.password} />
+                                    <input type="hidden" name="magic" value={fortigateMagic} />
+                                </>
                             )}
                             
                             <div className="space-y-2">
                                 <Label htmlFor="username">{t('form_labels.username')}</Label>
-                                {/* เอา name ออกจาก input ที่โชว์ เพื่อป้องกันส่งค่าซ้ำ (Optional แต่แนะนำ) */}
                                 <Input id="username" value={formData.username} onChange={handleInputChange} placeholder={t('form_labels.username_placeholder')} required autoFocus/>
                             </div>
                             <div className="space-y-2">
@@ -196,13 +196,13 @@ export default function ExternalLoginPage() {
                                             {t('external_login_page.agree_terms_checkbox')}
                                         </Label>
                                     </div>
-                                    <p className="text-xs text-muted-foreground pl-6">
+                                    <div className="text-xs text-muted-foreground pl-6">
                                         {t('external_login_page.must_agree_prefix')}
                                         <DialogTrigger asChild>
                                             <Button variant="link" className="p-1 h-auto text-xs">{t('external_login_page.terms_and_conditions')}</Button>
                                         </DialogTrigger>
                                         {t('external_login_page.must_agree_suffix')}
-                                    </p>
+                                    </div>
                                 </div>
                                 <DialogContent className="sm:max-w-[625px]">
                                     <DialogHeader><DialogTitle>{t('terms_dialog.title')}</DialogTitle></DialogHeader>
