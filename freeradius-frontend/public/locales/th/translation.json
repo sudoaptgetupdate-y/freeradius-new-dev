@@ -3,6 +3,9 @@
   "logout": "ออกจากระบบ",
   "registered_users": "ผู้ใช้รออนุมัติ",
   "nav": {
+    "mikrotik_groups": "การจัดการกลุ่มโปรไฟล์",
+    "hotspot_management": "การจัดการ Hotspot",
+    "ip_management": "การจัดการ IP Address",
     "login_registration": "การล็อกอินและลงทะเบียน",
     "dashboard": "แดชบอร์ด",
     "online_users": "ผู้ใช้ออนไลน์",
@@ -115,7 +118,8 @@
     "size": "ขนาด",
     "modified_date": "วันที่แก้ไข",
     "timestamp": "เวลา",
-    "source_ip": "IP ต้นทาง"
+    "source_ip": "IP ต้นทาง",
+    "to_address": "IP ปลายทาง"
   },
   "recent_logins": {
     "title": "การล็อกอินล่าสุด",
@@ -886,5 +890,169 @@
     "title": "ยืนยันการอนุมัติผู้ใช้",
     "description": "การดำเนินการนี้จะอนุมัติผู้ใช้ที่เลือก <strong>{{count}} คน</strong>, เปลี่ยนสถานะเป็น 'ใช้งานได้', และอนุญาตให้ล็อกอินเข้าสู่ระบบได้",
     "confirm": "ยืนยันการอนุมัติ"
+  },
+  "mikrotik_groups_page": {
+  "title": "กลุ่มผู้ใช้งาน Mikrotik",
+  "description": "จัดการโปรไฟล์ผู้ใช้งานสำหรับ Mikrotik Hotspot",
+  "add_new": "เพิ่มกลุ่มใหม่",
+  "search_placeholder": "ค้นหาตามชื่อกลุ่ม...",
+  "no_groups_found": "ไม่พบกลุ่ม Mikrotik",
+  "toast_deleting": "กำลังลบโปรไฟล์...",
+  "toast_delete_success": "ลบโปรไฟล์ '{{name}}' สำเร็จ",
+  "toast_delete_error": "ลบโปรไฟล์ไม่สำเร็จ",
+  "delete_dialog_title": "คุณแน่ใจหรือไม่?",
+  "delete_dialog_description": "การดำเนินการนี้จะลบกลุ่ม: <strong>{{name}}</strong> อย่างถาวร และไม่สามารถเรียกคืนได้",
+  "confirm_delete": "ยืนยันการลบ",
+  "table": {
+    "group_name": "ชื่อกลุ่ม",
+    "rate_limit": "จำกัดความเร็ว",
+    "shared_users": "ผู้ใช้ที่ใช้งานพร้อมกัน",
+    "session_timeout": "เวลาเชื่อมต่อสูงสุด",
+    "idle_timeout": "เวลาว่างสูงสุด",
+    "acct_interval": "ช่วงเวลาบันทึกข้อมูล"
   }
+},
+"mikrotik_group_form": {
+  "add_title": "เพิ่มกลุ่ม Mikrotik ใหม่",
+  "edit_title": "แก้ไขกลุ่ม Mikrotik",
+  "name_label": "ชื่อกลุ่ม",
+  "name_placeholder": "เช่น gold-package",
+  "rate_limit_label": "จำกัดความเร็ว (อัปโหลด/ดาวน์โหลด)",
+  "rate_limit_placeholder": "เช่น 5M/10M (เว้นว่างไว้สำหรับไม่จำกัด)",
+  "shared_users_label": "ผู้ใช้ที่ใช้งานพร้อมกัน",
+  "session_timeout_label": "เวลาเชื่อมต่อสูงสุด (Session Timeout)",
+  "idle_timeout_label": "เวลาว่างสูงสุด (Idle Timeout)",
+  "acct_interval_label": "ช่วงเวลาบันทึกข้อมูล (Accounting Interval)",
+  "hours": "ชั่วโมง",
+  "minutes": "นาที",
+  "toast_saving": "กำลังบันทึกกลุ่ม Mikrotik...",
+  "toast_save_success": "บันทึกกลุ่ม '{{name}}' สำเร็จ",
+  "toast_save_error": "เกิดข้อผิดพลาดในการบันทึก"
+},
+"hotspot_management_page": {
+  "title": "การจัดการ Hotspot",
+  "description": "ดูแลผู้ใช้งานที่กำลังเชื่อมต่อ โฮสต์ที่รู้จัก และจัดการการผูก IP ถาวรสำหรับ Mikrotik Hotspot",
+  "tabs": {
+    "active": "ผู้ใช้งานปัจจุบัน",
+    "all": "โฮสต์ทั้งหมด",
+    "bindings": "การผูก IP"
+  },
+  "search_active": "ค้นหาผู้ใช้งานปัจจุบัน...",
+  "search_all": "ค้นหาโฮสต์ทั้งหมด...",
+  "search_bindings": "ค้นหาด้วย MAC, IP, หมายเหตุ...",
+  "filter_type": "กรองตามประเภท...",
+  "all_types": "ทุกประเภท",
+  "add_binding": "เพิ่มการผูก IP ด้วยตนเอง",
+  "loading_active": "กำลังโหลดผู้ใช้งานปัจจุบัน...",
+  "loading_hosts": "กำลังโหลดโฮสต์...",
+  "error_active": "โหลดข้อมูลผู้ใช้งานปัจจุบันไม่สำเร็จ",
+  "error_hosts": "โหลดข้อมูลโฮสต์ไม่สำเร็จ",
+  "no_active_found": "ไม่พบผู้ใช้งานปัจจุบัน",
+  "no_hosts_found": "ไม่พบโฮสต์",
+  "no_bindings_found": "ไม่พบข้อมูลการผูก IP",
+  "buttons": {
+    "make_bypassed": "ตั้งค่า Bypass",
+    "make_blocked": "ตั้งค่า Block",
+    "kick_selected": "เตะผู้ใช้งานที่เลือก"
+  },
+  "tooltips": {
+    "make_bypass": "ตั้งค่า Bypass",
+    "make_block": "ตั้งค่า Block",
+    "kick_host": "เตะผู้ใช้งาน",
+    "edit_binding": "แก้ไขการผูก IP",
+    "remove_binding": "ลบการผูก IP"
+  },
+  "table": {
+    "uptime": "ระยะเวลาเชื่อมต่อ"
+  },
+  "dialogs": {
+    "confirm_action": "ยืนยันการดำเนินการ",
+    "kick_confirm": "คุณแน่ใจหรือไม่ว่าต้องการตัดการเชื่อมต่อผู้ใช้ที่เลือกจำนวน {{count}} ราย?",
+    "bypassed_confirm": "การดำเนินการนี้จะสร้างการผูก IP แบบ \"ข้ามการล็อกอิน\" ถาวรสำหรับผู้ใช้ที่เลือกจำนวน {{count}} ราย",
+    "blocked_confirm": "การดำเนินการนี้จะสร้างการผูก IP แบบ \"บล็อก\" ถาวรสำหรับผู้ใช้ที่เลือกจำนวน {{count}} ราย",
+    "remove_binding_title": "คุณแน่ใจหรือไม่?",
+    "remove_binding_desc": "การดำเนินการนี้จะลบการผูก IP สำหรับ MAC: <strong>{{mac}}</strong> อย่างถาวร",
+    "confirm_remove": "ยืนยันการลบ"
+  },
+  "toast": {
+    "creating_bindings": "กำลังสร้างการผูก IP แบบ {{type}}...",
+    "bindings_created": "สร้างการผูก IP สำเร็จจำนวน {{count}} รายการ",
+    "create_failed": "สร้างการผูก IP ไม่สำเร็จ",
+    "kicking": "กำลังเตะผู้ใช้งาน...",
+    "removing_binding": "กำลังลบการผูก IP...",
+    "remove_success": "ลบการผูก IP สำหรับ '{{mac}}' สำเร็จ",
+    "remove_failed": "ลบการผูก IP ไม่สำเร็จ"
+  },
+    "binding_types": {
+    "bypassed": "ข้ามการล็อกอิน",
+    "blocked": "บล็อก",
+    "regular": "ปกติ"
+  }
+},
+"ip_binding_form": {
+  "add_title": "เพิ่มการผูก IP ใหม่",
+  "edit_title": "แก้ไขการผูก IP",
+  "mac_label": "ที่อยู่ MAC",
+  "address_label": "ที่อยู่ (IP)",
+  "to_address_label": "IP ปลายทาง",
+  "server_label": "เซิร์ฟเวอร์",
+  "type_label": "ประเภท",
+  "comment_label": "หมายเหตุ",
+  "all_servers": "ทั้งหมด",
+  "regular": "ปกติ",
+  "bypassed": "ข้ามการล็อกอิน",
+  "blocked": "บล็อก",
+  "toast_saving": "กำลังบันทึกการผูก IP...",
+  "toast_save_success": "บันทึกการผูก IP สำหรับ '{{mac}}' สำเร็จ",
+  "toast_save_error": "เกิดข้อผิดพลาดในการบันทึก"
+},
+"ip_management_page": {
+  "title": "การจัดการที่อยู่ IP",
+  "description": "ดูแลสัญญาเช่า DHCP และจัดการการจอง IP แบบคงที่สำหรับอุปกรณ์เครือข่ายของคุณ",
+  "tabs": {
+    "dhcp_leases": "สัญญาเช่า DHCP",
+    "static_leases": "IP แบบคงที่"
+  },
+  "search_dhcp": "ค้นหาด้วย IP / MAC / ชื่อโฮสต์",
+  "search_static": "ค้นหา IP แบบคงที่...",
+  "add_static": "เพิ่ม IP แบบคงที่",
+  "delete_selected": "ลบที่เลือก ({{count}})",
+  "loading_dhcp": "กำลังโหลดสัญญาเช่า DHCP...",
+  "loading_static": "กำลังโหลด IP แบบคงที่...",
+  "no_dhcp_found": "ไม่พบสัญญาเช่า DHCP",
+  "no_static_found": "ไม่พบข้อมูล IP แบบคงที่",
+  "error_dhcp": "โหลดสัญญาเช่า DHCP ไม่สำเร็จ",
+  "error_static": "โหลดข้อมูล IP แบบคงที่ไม่สำเร็จ",
+  "make_static": "ทำให้เป็นแบบคงที่",
+  "table": {
+    "hostname": "ชื่อโฮสต์"
+  },
+  "dialogs": {
+    "delete_title": "คุณแน่ใจหรือไม่?",
+    "delete_dhcp_desc": "การดำเนินการนี้จะลบสัญญาเช่าจำนวน {{count}} รายการอย่างถาวร และไม่สามารถเรียกคืนได้",
+    "delete_static_desc": "การดำเนินการนี้จะลบข้อมูล IP แบบคงที่จำนวน {{count}} รายการอย่างถาวร และไม่สามารถเรียกคืนได้"
+  },
+  "toast": {
+    "delete_dhcp_success": "ลบสัญญาเช่าจำนวน {{count}} รายการสำเร็จ",
+    "delete_dhcp_error": "ลบสัญญาเช่าบางรายการไม่สำเร็จ",
+    "delete_static_success": "ลบข้อมูล IP แบบคงที่จำนวน {{count}} รายการสำเร็จ",
+    "delete_static_error": "ลบข้อมูล IP แบบคงที่ไม่สำเร็จ"
+  }
+},
+"dhcp_lease_form": {
+  "title_make_static": "เปลี่ยนเป็น IP แบบคงที่",
+  "title_edit_static": "แก้ไข IP แบบคงที่",
+  "title_add_static": "เพิ่ม IP แบบคงที่ใหม่",
+  "mac_label": "ที่อยู่ MAC",
+  "address_label": "ที่อยู่ IP",
+  "comment_label": "หมายเหตุ",
+  "server_label": "เซิร์ฟเวอร์",
+  "all_servers": "ทั้งหมด",
+  "toast": {
+    "make_static_success": "เปลี่ยนเป็น IP แบบคงที่สำเร็จ",
+    "edit_static_success": "อัปเดตข้อมูล IP แบบคงที่สำเร็จ",
+    "add_static_success": "เพิ่ม IP แบบคงที่สำเร็จ",
+    "save_error": "บันทึกข้อมูลไม่สำเร็จ"
+  }
+}
 }

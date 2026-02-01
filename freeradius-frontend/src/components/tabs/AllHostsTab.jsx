@@ -14,10 +14,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "react-i18next"; //
 
 const fetcher = (url, token) => axiosInstance.get(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.data.data);
 
 export default function AllHostsTab({ token, onMakeBindingSuccess }) {
+    const { t } = useTranslation(); //
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedHosts, setSelectedHosts] = useState([]);
     const [actionState, setActionState] = useState({ isOpen: false, type: null, data: null });
@@ -47,7 +49,7 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
         setBindingFromHost({
             'mac-address': host['mac-address'],
             address: '',
-            toAddress: '', // Ensure 'To Address' is always empty on dialog open
+            toAddress: '',
             comment: `Host: ${host['mac-address']}`,
             type: type,
             server: 'all'
@@ -61,7 +63,6 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
         if (type.startsWith('make')) {
             const bindingType = type.split('-')[1];
             const hostsArray = Array.isArray(data) ? data : [data];
-            
             const hostsToBind = hostsArray.map(h => ({
                 'mac-address': h['mac-address'],
                 address: '0.0.0.0',
@@ -72,9 +73,9 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
             toast.promise(
                 axiosInstance.post('/mikrotik/hotspot/bindings', { hosts: hostsToBind, type: bindingType }, { headers: { Authorization: `Bearer ${token}` } }),
                 {
-                    loading: `Creating ${bindingType} binding(s)...`,
-                    success: (res) => { handleActionSuccess(); return `${res.data.data.createdCount} binding(s) created.`; },
-                    error: (err) => err.response?.data?.message || 'Failed to create bindings.',
+                    loading: t('hotspot_management_page.toast.creating_bindings', { type: bindingType }),
+                    success: (res) => { handleActionSuccess(); return t('hotspot_management_page.toast.bindings_created', { count: res.data.data.createdCount }); },
+                    error: (err) => err.response?.data?.message || t('hotspot_management_page.toast.create_failed'),
                 }
             );
         }
@@ -85,9 +86,9 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
         if (!actionState.type) return '';
         const count = Array.isArray(actionState.data) ? actionState.data.length : 1;
         switch (actionState.type) {
-            case 'make-bypassed': return `This will create a "bypassed" IP Binding for the ${count} selected host(s).`;
-            case 'make-blocked': return `This will create a "blocked" IP Binding for the ${count} selected host(s).`;
-            default: return 'Are you sure?';
+            case 'make-bypassed': return t('hotspot_management_page.dialogs.bypassed_confirm', { count });
+            case 'make-blocked': return t('hotspot_management_page.dialogs.blocked_confirm', { count });
+            default: return t('are_you_sure');
         }
     };
 
@@ -100,21 +101,21 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
-                 <Input placeholder="Search all hosts..." value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="max-w-sm"/>
+                 <Input placeholder={t('hotspot_management_page.search_all')} value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} className="max-w-sm"/>
                 {selectedHosts.length > 0 && (
                      <div className="flex items-center gap-2">
-                        <Button size="sm" onClick={() => openConfirmation('make-bypassed', selectedHosts)}><ShieldCheck className="mr-2 h-4 w-4"/>Make Bypassed</Button>
-                        <Button size="sm" variant="destructive" onClick={() => openConfirmation('make-blocked', selectedHosts)}><ShieldX className="mr-2 h-4 w-4"/>Make Blocked</Button>
+                        <Button size="sm" onClick={() => openConfirmation('make-bypassed', selectedHosts)}><ShieldCheck className="mr-2 h-4 w-4"/>{t('hotspot_management_page.buttons.make_bypassed')}</Button>
+                        <Button size="sm" variant="destructive" onClick={() => openConfirmation('make-blocked', selectedHosts)}><ShieldX className="mr-2 h-4 w-4"/>{t('hotspot_management_page.buttons.make_blocked')}</Button>
                     </div>
                 )}
             </div>
              <div className="border rounded-md">
                 <Table>
-                    <TableHeader><TableRow><TableHead className="w-[50px]"><Checkbox checked={selectedHosts.length === pagedHosts.length && pagedHosts.length > 0} onCheckedChange={handleSelectAll} /></TableHead><TableHead>MAC Address</TableHead><TableHead>To Address</TableHead><TableHead>Server</TableHead><TableHead>Status</TableHead><TableHead>Comment</TableHead><TableHead className="text-center">Actions</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead className="w-[50px]"><Checkbox checked={selectedHosts.length === pagedHosts.length && pagedHosts.length > 0} onCheckedChange={handleSelectAll} /></TableHead><TableHead>{t('table_headers.mac_address')}</TableHead><TableHead>{t('table_headers.to_address')}</TableHead><TableHead>{t('table_headers.radius_profile')}</TableHead><TableHead>{t('table_headers.status')}</TableHead><TableHead>{t('table_headers.description')}</TableHead><TableHead className="text-center">{t('table_headers.actions')}</TableHead></TableRow></TableHeader>
                     <TableBody>
-                        {isLoading && <TableRow><TableCell colSpan={7} className="h-24 text-center">Loading hosts...</TableCell></TableRow>}
-                        {error && <TableRow><TableCell colSpan={7} className="h-24 text-center text-destructive">Failed to load hosts.</TableCell></TableRow>}
-                        {!isLoading && pagedHosts.length === 0 && <TableRow><TableCell colSpan={7} className="h-24 text-center">No hosts found.</TableCell></TableRow>}
+                        {isLoading && <TableRow><TableCell colSpan={7} className="h-24 text-center">{t('hotspot_management_page.loading_hosts')}</TableCell></TableRow>}
+                        {error && <TableRow><TableCell colSpan={7} className="h-24 text-center text-destructive">{t('hotspot_management_page.error_hosts')}</TableCell></TableRow>}
+                        {!isLoading && pagedHosts.length === 0 && <TableRow><TableCell colSpan={7} className="h-24 text-center">{t('hotspot_management_page.no_hosts_found')}</TableCell></TableRow>}
                         {pagedHosts.map(host => (
                             <TableRow key={host['.id']} data-state={selectedHosts.some(h => h['.id'] === host['.id']) && "selected"}>
                                 <TableCell><Checkbox checked={selectedHosts.some(h => h['.id'] === host['.id'])} onCheckedChange={(checked) => handleSelectSingle(checked, host)}/></TableCell>
@@ -122,8 +123,8 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
                                 <TableCell className="text-center">
                                      <div className="inline-flex items-center justify-center gap-1">
                                         <TooltipProvider>
-                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBindingSingle(host, 'bypassed')}><ShieldCheck className="h-4 w-4 text-green-600"/></Button></TooltipTrigger><TooltipContent><p>Make Bypass</p></TooltipContent></Tooltip>
-                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBindingSingle(host, 'blocked')}><ShieldX className="h-4 w-4 text-red-600"/></Button></TooltipTrigger><TooltipContent><p>Make Block</p></TooltipContent></Tooltip>
+                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBindingSingle(host, 'bypassed')}><ShieldCheck className="h-4 w-4 text-green-600"/></Button></TooltipTrigger><TooltipContent><p>{t('hotspot_management_page.tooltips.make_bypass')}</p></TooltipContent></Tooltip>
+                                            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleMakeBindingSingle(host, 'blocked')}><ShieldX className="h-4 w-4 text-red-600"/></Button></TooltipTrigger><TooltipContent><p>{t('hotspot_management_page.tooltips.make_block')}</p></TooltipContent></Tooltip>
                                         </TooltipProvider>
                                      </div>
                                 </TableCell>
@@ -135,7 +136,7 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Label htmlFor="rows-per-page-all">Rows per page:</Label>
+                    <Label htmlFor="rows-per-page-all">{t('pagination.rows_per_page')}</Label>
                     <Select value={`${rowsPerPage}`} onValueChange={(v) => { setRowsPerPage(Number(v)); setCurrentPage(1); }}>
                         <SelectTrigger id="rows-per-page-all" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -144,20 +145,20 @@ export default function AllHostsTab({ token, onMakeBindingSuccess }) {
                     </Select>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages} ({filteredHosts.length} items)
+                    {t('pagination.page_info', { currentPage: page, totalPages: totalPages, totalItems: filteredHosts.length })}
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={page <= 1}>
-                        Previous
+                        {t('pagination.previous')}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
-                        Next
+                        {t('pagination.next')}
                     </Button>
                 </div>
             </div>
 
-            <AlertDialog open={actionState.isOpen} onOpenChange={closeConfirmation}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirm Action</AlertDialogTitle><AlertDialogDescription>{getDialogDescription()}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleConfirmAction}>Confirm</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+            <AlertDialog open={actionState.isOpen} onOpenChange={closeConfirmation}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t('hotspot_management_page.dialogs.confirm_action')}</AlertDialogTitle><AlertDialogDescription>{getDialogDescription()}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t('cancel')}</AlertDialogCancel><AlertDialogAction onClick={handleConfirmAction}>{t('confirm')}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
             {bindingFromHost && (<IpBindingFormDialog isOpen={!!bindingFromHost} setIsOpen={() => setBindingFromHost(null)} initialData={bindingFromHost} onSave={handleActionSuccess} />)}
         </div>
     );
-};
+}

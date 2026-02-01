@@ -9,68 +9,42 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from "sonner";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose,
-} from "@/components/ui/dialog";
 import { useTranslation } from 'react-i18next';
 
 export default function ExternalLoginPage() {
     const { t, i18n } = useTranslation();
     const location = useLocation();
-    const { login } = useUserAuthStore(); //
+    const { login } = useUserAuthStore();
     const formRef = useRef(null);
 
-    // --- State ---
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [agreed, setAgreed] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [settings, setSettings] = useState(null);
     const [isPageLoading, setIsPageLoading] = useState(true);
 
-    // รองรับทั้ง 2 ระบบ
-    const [mikrotikConfig, setMikrotikConfig] = useState(null);
-    const [fortigateMagic, setFortigateMagic] = useState('');
+    // Dynamic Config: ไม่ Hardcode IP อีกต่อไป
+    const [routerConfig, setRouterConfig] = useState({
+        actionUrl: '', // จะถูกเติมจาก URL Parameter
+        dst: '',
+    });
 
-    // โหลด Settings
-    useEffect(() => {
-        axiosInstance.get('/settings')
-          .then(response => setSettings(response.data.data))
-          .catch(() => setSettings({ externalLoginEnabled: 'true', terms: '', hotspotUrl: '' }))
-          .finally(() => setIsPageLoading(false));
-    }, []);
-
-    // ตรวจสอบ Router Params เพื่อแยกแยะระบบ
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        
-        // 1. ตรวจสอบ MikroTik
         const linkLoginOnly = params.get('link-login-only');
         const dst = params.get('dst');
-        const mac = params.get('mac');
-        
-        // 2. ตรวจสอบ FortiGate
-        const magicValue = params.get('magic');
 
-        if (linkLoginOnly || dst || mac) {
-            // โหมด MikroTik: ใช้ Gateway 10.70.0.1 เป็นค่าเริ่มต้น
-            const actionUrl = linkLoginOnly || settings?.hotspotUrl || 'http://10.70.0.1/login'; 
-            setMikrotikConfig({
-                actionUrl: actionUrl,
+        if (linkLoginOnly) {
+            setRouterConfig({
+                actionUrl: linkLoginOnly,
                 dst: dst || `${window.location.origin}/portal/dashboard`,
             });
-        } else if (magicValue) {
-            // โหมด FortiGate
-            setFortigateMagic(magicValue);
+            setIsPageLoading(false);
+        } else {
+            // กรณีไม่มีพารามิเตอร์ส่งมา (เช่น เข้าหน้าเว็บตรงๆ)
+            toast.error("กรุณาเชื่อมต่อ WiFi ก่อนทำรายการ");
+            setIsPageLoading(false);
         }
-
-        const errorMsg = params.get('error');
-        if (errorMsg) toast.error(`Router Error: ${errorMsg}`);
-
-    }, [location.search, settings]);
-
-    const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.id]: e.target.value });
-    };
+    }, [location.search]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -81,18 +55,20 @@ export default function ExternalLoginPage() {
         setIsLoading(true);
 
         try {
-            // Step 1: ยืนยันตัวตนกับ Backend
+            // Step 1: ตรวจสอบบัญชีกับ Backend (FreeRADIUS)
             const response = await axiosInstance.post('/external-auth/login', formData);
             const { token, user, advertisement } = response.data.data;
             
-            // Step 2: บันทึก Token
+            // Step 2: บันทึก Session ลง Store
             login(token, user, advertisement);
 
-            toast.success("Login Verified. Connecting to Network...");
+            toast.success("ตรวจสอบสำเร็จ กำลังเชื่อมต่ออินเทอร์เน็ต...");
 
-            // Step 3: ส่งฟอร์มให้ Router (หน่วงเวลา 1.5 วินาทีเพื่อความเสถียร)
+            // Step 3: ส่งฟอร์มไปยัง Gateway IP ของ Hotspot นั้นๆ (หน่วงเวลา 1.5 วินาที)
             setTimeout(() => {
-                if (formRef.current) formRef.current.submit(); 
+                if (formRef.current && routerConfig.actionUrl) {
+                    formRef.current.submit();
+                }
             }, 1500);
 
         } catch (error) {
@@ -102,92 +78,42 @@ export default function ExternalLoginPage() {
             setIsLoading(false);
         }
     };
-    
-    if (isPageLoading) return <div className="flex items-center justify-center p-8">{t('loading')}</div>;
 
-    // เลือก Action URL ตามระบบที่ตรวจพบ
-    const currentFormAction = mikrotikConfig 
-        ? mikrotikConfig.actionUrl 
-        : "http://192.168.146.1:1000/fgtauth"; // URL เริ่มต้นของ FortiGate
+    if (isPageLoading) return <div className="p-8 text-center">{t('loading')}</div>;
 
     return (
-        <>
+        <div className="max-w-md mx-auto">
             <div className="text-center mb-6 px-6">
-                <CardTitle className="text-2xl">
-                    {settings?.externalLoginEnabled === 'true' ? t('external_login_page.user_login_title') : t('external_login_page.login_disabled_title')}
-                </CardTitle>
-                <CardDescription>
-                    {settings?.externalLoginEnabled === 'true' ? t('external_login_page.description') : t('external_login_page.login_disabled_desc')}
-                </CardDescription>
+                <CardTitle className="text-2xl">{t('external_login_page.user_login_title')}</CardTitle>
+                <CardDescription>{t('external_login_page.description')}</CardDescription>
             </div>
             
-            {settings?.externalLoginEnabled === 'true' && (
-                <CardContent>
-                    <form ref={formRef} action={currentFormAction} method="POST" className="space-y-4" onSubmit={handleSubmit}>
-                        
-                        {/* Hidden Fields สำหรับ MikroTik */}
-                        {mikrotikConfig && (
-                            <>
-                                <input type="hidden" name="username" value={formData.username} />
-                                <input type="hidden" name="password" value={formData.password} />
-                                <input type="hidden" name="dst" value={mikrotikConfig.dst} />
-                                <input type="hidden" name="popup" value="true" />
-                            </>
-                        )}
-
-                        {/* Hidden Fields สำหรับ FortiGate */}
-                        {fortigateMagic && (
-                            <>
-                                <input type="hidden" name="username" value={formData.username} />
-                                <input type="hidden" name="password" value={formData.password} />
-                                <input type="hidden" name="magic" value={fortigateMagic} />
-                            </>
-                        )}
-                        
-                        <div className="space-y-2">
-                            <Label htmlFor="username">{t('form_labels.username')}</Label>
-                            <Input id="username" value={formData.username} onChange={handleInputChange} required autoFocus/>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">{t('form_labels.password')}</Label>
-                            <Input id="password" type="password" value={formData.password} onChange={handleInputChange} required />
-                        </div>
-                        
-                        <div className="space-y-2 pt-2">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
-                                <Label htmlFor="terms" className="text-sm font-medium leading-none cursor-pointer">
-                                    {t('external_login_page.agree_terms_checkbox')}
-                                </Label>
-                            </div>
-                            <Dialog>
-                                <div className="text-xs text-muted-foreground pl-6">
-                                    {t('external_login_page.must_agree_prefix')}
-                                    <DialogTrigger asChild><Button variant="link" className="p-1 h-auto text-xs">{t('external_login_page.terms_and_conditions')}</Button></DialogTrigger>
-                                    {t('external_login_page.must_agree_suffix')}
-                                </div>
-                                <DialogContent className="sm:max-w-[625px]">
-                                    <DialogHeader><DialogTitle>{t('terms_dialog.title')}</DialogTitle></DialogHeader>
-                                    <div className="max-h-[60vh] overflow-y-auto p-4 border rounded-md text-sm text-muted-foreground whitespace-pre-wrap">{settings?.terms}</div>
-                                    <DialogFooter><DialogClose asChild><Button type="button">{t('close')}</Button></DialogClose></DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-
-                        <Button type="submit" className="w-full !mt-6" disabled={isLoading || !agreed}>
-                            {isLoading ? t('authenticating') : t('log_in')}
-                        </Button>
-                    </form>
+            <CardContent>
+                <form ref={formRef} action={routerConfig.actionUrl} method="POST" className="space-y-4" onSubmit={handleSubmit}>
+                    {/* Hidden Fields: สำคัญมากสำหรับการยืนยันตัวตนกับ MikroTik */}
+                    <input type="hidden" name="username" value={formData.username} />
+                    <input type="hidden" name="password" value={formData.password} />
+                    <input type="hidden" name="dst" value={routerConfig.dst} />
                     
-                    <CardFooter className="flex flex-col gap-4 pt-4">
-                        <div className="w-full flex justify-center text-sm text-muted-foreground">
-                            <Button variant="link" onClick={() => i18n.changeLanguage('th')} className={i18n.language === 'th' ? 'font-bold text-primary' : ''}>ภาษาไทย</Button>
-                            <span className="mx-1">|</span>
-                            <Button variant="link" onClick={() => i18n.changeLanguage('en')} className={i18n.language === 'en' ? 'font-bold text-primary' : ''}>English</Button>
-                        </div>
-                    </CardFooter>
-                </CardContent>
-            )}
-        </>
+                    <div className="space-y-2">
+                        <Label htmlFor="username">{t('form_labels.username')}</Label>
+                        <Input id="username" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} required autoFocus/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="password">{t('form_labels.password')}</Label>
+                        <Input id="password" type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required />
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox id="terms" checked={agreed} onCheckedChange={setAgreed} />
+                        <Label htmlFor="terms" className="text-sm cursor-pointer">{t('external_login_page.agree_terms_checkbox')}</Label>
+                    </div>
+
+                    <Button type="submit" className="w-full mt-4" disabled={isLoading || !agreed || !routerConfig.actionUrl}>
+                        {isLoading ? t('authenticating') : t('log_in')}
+                    </Button>
+                </form>
+            </CardContent>
+        </div>
     );
 }

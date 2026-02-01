@@ -13,8 +13,10 @@ import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import useAuthStore from "@/store/authStore";
 import axiosInstance from "@/api/axiosInstance";
 import MikrotikGroupFormDialog from "@/components/dialogs/MikrotikGroupFormDialog";
+import { useTranslation } from "react-i18next"; // เพิ่ม import
 
 export default function MikrotikGroupsPage() {
+    const { t } = useTranslation(); // เรียกใช้ hook
     const token = useAuthStore((state) => state.token);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingProfile, setEditingProfile] = useState(null);
@@ -29,9 +31,7 @@ export default function MikrotikGroupsPage() {
         handlePageChange,
         handleItemsPerPageChange,
         refreshData
-    // --- START: **แก้ไข** ---
-    } = usePaginatedFetch("/mikrotik-profiles", 10); // ลบ argument ที่ไม่ได้ใช้ออก
-    // --- END: **แก้ไข** ---
+    } = usePaginatedFetch("/mikrotik-profiles", 10);
 
     const handleAddNew = () => {
         setEditingProfile(null);
@@ -52,12 +52,12 @@ export default function MikrotikGroupsPage() {
         toast.promise(
             axiosInstance.delete(`/mikrotik-profiles/${profileToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } }),
             {
-                loading: "Deleting profile...",
+                loading: t('mikrotik_groups_page.toast_deleting'), // ใช้คีย์แปลภาษา
                 success: () => {
                     refreshData();
-                    return `Profile '${profileToDelete.name}' deleted successfully.`;
+                    return t('mikrotik_groups_page.toast_delete_success', { name: profileToDelete.name });
                 },
-                error: (err) => err.response?.data?.message || "Failed to delete profile.",
+                error: (err) => err.response?.data?.message || t('mikrotik_groups_page.toast_delete_error'),
                 finally: () => setProfileToDelete(null)
             }
         );
@@ -69,16 +69,16 @@ export default function MikrotikGroupsPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6" />Mikrotik User Groups</CardTitle>
-                            <CardDescription>Manage user profiles for Mikrotik Hotspot.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Users className="h-6 w-6" />{t('mikrotik_groups_page.title')}</CardTitle>
+                            <CardDescription>{t('mikrotik_groups_page.description')}</CardDescription>
                         </div>
-                        <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> Add New Group</Button>
+                        <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4" /> {t('mikrotik_groups_page.add_new')}</Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="mb-4">
                         <Input
-                            placeholder="Search by group name..."
+                            placeholder={t('mikrotik_groups_page.search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => handleSearchChange(e.target.value)}
                             className="max-w-sm"
@@ -88,20 +88,20 @@ export default function MikrotikGroupsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Group Name</TableHead>
-                                    <TableHead>Rate Limit</TableHead>
-                                    <TableHead>Shared Users</TableHead>
-                                    <TableHead>Session Timeout</TableHead>
-                                    <TableHead>Idle Timeout</TableHead>
-                                    <TableHead>Acct Interval</TableHead>
-                                    <TableHead className="text-center">Actions</TableHead>
+                                    <TableHead>{t('mikrotik_groups_page.table.group_name')}</TableHead>
+                                    <TableHead>{t('mikrotik_groups_page.table.rate_limit')}</TableHead>
+                                    <TableHead>{t('mikrotik_groups_page.table.shared_users')}</TableHead>
+                                    <TableHead>{t('mikrotik_groups_page.table.session_timeout')}</TableHead>
+                                    <TableHead>{t('mikrotik_groups_page.table.idle_timeout')}</TableHead>
+                                    <TableHead>{t('mikrotik_groups_page.table.acct_interval')}</TableHead>
+                                    <TableHead className="text-center">{t('table_headers.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading && [...Array(pagination.itemsPerPage)].map((_, i) => (
                                     <TableRow key={i}><TableCell colSpan={7}><div className="h-8 bg-muted rounded animate-pulse"></div></TableCell></TableRow>
                                 ))}
-                                {!isLoading && profiles.length === 0 && <TableRow><TableCell colSpan={7} className="text-center h-24">No Mikrotik groups found.</TableCell></TableRow>}
+                                {!isLoading && profiles.length === 0 && <TableRow><TableCell colSpan={7} className="text-center h-24">{t('mikrotik_groups_page.no_groups_found')}</TableCell></TableRow>}
                                 {profiles.map((profile) => (
                                     <TableRow key={profile.id}>
                                         <TableCell className="font-medium">{profile.name}</TableCell>
@@ -122,7 +122,7 @@ export default function MikrotikGroupsPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Label htmlFor="rows-per-page">Rows per page:</Label>
+                        <Label htmlFor="rows-per-page">{t('pagination.rows_per_page')}</Label>
                         <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
                             <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -131,14 +131,14 @@ export default function MikrotikGroupsPage() {
                         </Select>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems || 0} items)
+                        {t('pagination.page_info', { currentPage: pagination.currentPage, totalPages: pagination.totalPages, totalItems: pagination.totalItems || 0 })}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={pagination.currentPage <= 1}>
-                            Previous
+                            {t('pagination.previous')}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={pagination.currentPage >= pagination.totalPages}>
-                            Next
+                            {t('pagination.next')}
                         </Button>
                     </div>
                 </CardFooter>
@@ -156,12 +156,14 @@ export default function MikrotikGroupsPage() {
             <AlertDialog open={!!profileToDelete} onOpenChange={() => setProfileToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the group: <strong>{profileToDelete?.name}</strong>. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogTitle>{t('mikrotik_groups_page.delete_dialog_title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('mikrotik_groups_page.delete_dialog_description', { name: profileToDelete?.name })}
+                        </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">{t('mikrotik_groups_page.confirm_delete')}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

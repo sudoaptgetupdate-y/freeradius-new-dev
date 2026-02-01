@@ -3,6 +3,9 @@
   "logout": "Log Out",
   "registered_users": "Registered Users",
   "nav": {
+    "mikrotik_groups": "Mikrotik Profile Group",
+    "hotspot_management": "Hotspot Management",
+    "ip_management": "IP Management",
     "login_registration": "Login & Registration",
     "dashboard": "Dashboard",
     "online_users": "Online Users",
@@ -115,7 +118,8 @@
     "size": "Size",
     "modified_date": "Modified Date",
     "timestamp": "Timestamp",
-    "source_ip": "Source IP"
+    "source_ip": "Source IP",
+    "to_address": "To Address"
   },
   "recent_logins": {
     "title": "Recent Logins",
@@ -886,5 +890,169 @@
     "title": "Confirm Approve Users",
     "description": "This will approve <strong>{{count}} selected user(s)</strong>, change their status to 'active', and allow them to log in.",
     "confirm": "Confirm Approve"
+  },
+  "mikrotik_groups_page": {
+  "title": "Mikrotik User Groups",
+  "description": "Manage user profiles for Mikrotik Hotspot.",
+  "add_new": "Add New Group",
+  "search_placeholder": "Search by group name...",
+  "no_groups_found": "No Mikrotik groups found.",
+  "toast_deleting": "Deleting profile...",
+  "toast_delete_success": "Profile '{{name}}' deleted successfully.",
+  "toast_delete_error": "Failed to delete profile.",
+  "delete_dialog_title": "Are you absolutely sure?",
+  "delete_dialog_description": "This will permanently delete the group: <strong>{{name}}</strong>. This action cannot be undone.",
+  "confirm_delete": "Confirm Delete",
+  "table": {
+    "group_name": "Group Name",
+    "rate_limit": "Rate Limit",
+    "shared_users": "Shared Users",
+    "session_timeout": "Session Timeout",
+    "idle_timeout": "Idle Timeout",
+    "acct_interval": "Acct Interval"
   }
+},
+"mikrotik_group_form": {
+  "add_title": "Add New Mikrotik Group",
+  "edit_title": "Edit Mikrotik Group",
+  "name_label": "Group Name",
+  "name_placeholder": "e.g., gold-package",
+  "rate_limit_label": "Rate Limit (Upload/Download)",
+  "rate_limit_placeholder": "e.g., 5M/10M (leave blank for unlimited)",
+  "shared_users_label": "Shared Users",
+  "session_timeout_label": "Session Timeout",
+  "idle_timeout_label": "Idle Timeout",
+  "acct_interval_label": "Accounting Interval",
+  "hours": "Hours",
+  "minutes": "Minutes",
+  "toast_saving": "Saving Mikrotik group...",
+  "toast_save_success": "Group '{{name}}' saved successfully.",
+  "toast_save_error": "An error occurred."
+},
+"hotspot_management_page": {
+  "title": "Hotspot Management",
+  "description": "Oversee active users, known hosts, and manage permanent IP bindings for the Mikrotik Hotspot.",
+  "tabs": {
+    "active": "Active Hosts",
+    "all": "All Hosts",
+    "bindings": "IP Bindings"
+  },
+  "search_active": "Search active hosts...",
+  "search_all": "Search all hosts...",
+  "search_bindings": "Search by MAC, IP, Comment...",
+  "filter_type": "Filter by type...",
+  "all_types": "All Types",
+  "add_binding": "Add Manual Binding",
+  "loading_active": "Loading active hosts...",
+  "loading_hosts": "Loading hosts...",
+  "error_active": "Failed to load active hosts.",
+  "error_hosts": "Failed to load hosts.",
+  "no_active_found": "No active hosts found.",
+  "no_hosts_found": "No hosts found.",
+  "no_bindings_found": "No IP bindings found.",
+  "buttons": {
+    "make_bypassed": "Make Bypassed",
+    "make_blocked": "Make Blocked",
+    "kick_selected": "Kick Selected"
+  },
+  "tooltips": {
+    "make_bypass": "Make Bypass",
+    "make_block": "Make Block",
+    "kick_host": "Kick Host",
+    "edit_binding": "Edit Binding",
+    "remove_binding": "Remove Binding"
+  },
+  "table": {
+    "uptime": "Uptime"
+  },
+  "dialogs": {
+    "confirm_action": "Confirm Action",
+    "kick_confirm": "Are you sure you want to disconnect the {{count}} selected host(s)?",
+    "bypassed_confirm": "This will create a permanent \"bypassed\" IP Binding for the {{count}} selected host(s).",
+    "blocked_confirm": "This will create a permanent \"blocked\" IP Binding for the {{count}} selected host(s).",
+    "remove_binding_title": "Are you absolutely sure?",
+    "remove_binding_desc": "This will permanently remove the IP Binding for MAC address: <strong>{{mac}}</strong>.",
+    "confirm_remove": "Confirm Remove"
+  },
+  "toast": {
+    "creating_bindings": "Creating {{type}} binding(s)...",
+    "bindings_created": "{{count}} binding(s) created.",
+    "create_failed": "Failed to create bindings.",
+    "kicking": "Kicking host(s)...",
+    "removing_binding": "Removing IP Binding...",
+    "remove_success": "Binding for '{{mac}}' removed.",
+    "remove_failed": "Failed to remove binding."
+    },
+    "binding_types": {
+    "bypassed": "Bypassed",
+    "blocked": "Blocked",
+    "regular": "Regular"
+  }
+},
+"ip_binding_form": {
+  "add_title": "Add IP Binding",
+  "edit_title": "Edit IP Binding",
+  "mac_label": "MAC Address",
+  "address_label": "Address (IP)",
+  "to_address_label": "To Address",
+  "server_label": "Server",
+  "type_label": "Type",
+  "comment_label": "Comment",
+  "all_servers": "all",
+  "regular": "regular",
+  "bypassed": "bypassed",
+  "blocked": "blocked",
+  "toast_saving": "Saving IP binding...",
+  "toast_save_success": "IP Binding for '{{mac}}' saved successfully.",
+  "toast_save_error": "An error occurred."
+},
+"ip_management_page": {
+  "title": "IP Address Management",
+  "description": "Oversee DHCP leases and manage static IP reservations for your network devices.",
+  "tabs": {
+    "dhcp_leases": "DHCP Leases",
+    "static_leases": "Static Leases"
+  },
+  "search_dhcp": "Search IP / MAC / Hostname",
+  "search_static": "Search static leases...",
+  "add_static": "Add Static Lease",
+  "delete_selected": "Delete Selected ({{count}})",
+  "loading_dhcp": "Loading dynamic leases...",
+  "loading_static": "Loading static leases...",
+  "no_dhcp_found": "No dynamic leases found.",
+  "no_static_found": "No static leases found.",
+  "error_dhcp": "Failed to load dynamic leases.",
+  "error_static": "Failed to load static leases.",
+  "make_static": "Make Static",
+  "table": {
+    "hostname": "Hostname"
+  },
+  "dialogs": {
+    "delete_title": "Are you sure?",
+    "delete_dhcp_desc": "This will permanently remove {{count}} lease(s). This action cannot be undone.",
+    "delete_static_desc": "This will permanently remove {{count}} static lease(s). This action cannot be undone."
+  },
+  "toast": {
+    "delete_dhcp_success": "Deleted {{count}} lease(s).",
+    "delete_dhcp_error": "Failed to delete some leases.",
+    "delete_static_success": "{{count}} static lease(s) removed.",
+    "delete_static_error": "Failed to remove static leases."
+  }
+},
+"dhcp_lease_form": {
+  "title_make_static": "Make Lease Static",
+  "title_edit_static": "Edit Static Lease",
+  "title_add_static": "Add New Static Lease",
+  "mac_label": "MAC Address",
+  "address_label": "IP Address",
+  "comment_label": "Comment",
+  "server_label": "Server",
+  "all_servers": "all",
+  "toast": {
+    "make_static_success": "Converted to static lease.",
+    "edit_static_success": "Static lease updated.",
+    "add_static_success": "Static lease added.",
+    "save_error": "Failed to save lease."
+  }
+}
 }

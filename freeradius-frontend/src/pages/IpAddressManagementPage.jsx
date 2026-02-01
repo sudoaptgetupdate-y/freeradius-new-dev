@@ -5,8 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Network } from "lucide-react";
 import DhcpLeasesTab from "@/components/tabs/DhcpLeasesTab";
 import StaticLeasesTab from "@/components/tabs/StaticLeasesTab";
+import { useTranslation } from "react-i18next"; //
 
 export default function IpAddressManagementPage() {
+    const { t } = useTranslation(); //
     const token = useAuthStore((state) => state.token);
 
     return (
@@ -14,17 +16,17 @@ export default function IpAddressManagementPage() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Network className="h-6 w-6" />
-                    IP Address Management
+                    {t('ip_management_page.title')}
                 </CardTitle>
                 <CardDescription>
-                    Oversee DHCP leases and manage static IP reservations for your network devices.
+                    {t('ip_management_page.description')}
                 </CardDescription>
             </CardHeader>
             <CardContent>
                  <Tabs defaultValue="dhcp-leases" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="dhcp-leases">DHCP Leases</TabsTrigger>
-                        <TabsTrigger value="static-leases">Static Leases</TabsTrigger>
+                        <TabsTrigger value="dhcp-leases">{t('ip_management_page.tabs.dhcp_leases')}</TabsTrigger>
+                        <TabsTrigger value="static-leases">{t('ip_management_page.tabs.static_leases')}</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="dhcp-leases" className="mt-4">
