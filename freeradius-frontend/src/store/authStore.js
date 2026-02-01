@@ -8,6 +8,9 @@ const useAuthStore = create(
       token: null,
       user: null,
       operatingMode: 'AAA', // State เริ่มต้น
+      login: (token, user) => set({ token, user }), 
+      setToken: (token) => set({ token }),
+      setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
       setUser: (user) => set({ user }),
       // --- ฟังก์ชันใหม่ที่เพิ่มเข้ามา ---
